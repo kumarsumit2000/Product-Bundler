@@ -1,0 +1,19 @@
+{
+  "name": "product-bundler",
+  "version": "0.0.1",
+  "private": true,
+  "packageManager": "pnpm@9.12.0",
+  "scripts": {
+    "dev": "concurrently -n tunnel,vite,shopify -c blue,green,magenta \"pnpm dev:tunnel\" \"pnpm dev:vite\" \"pnpm dev:shopify\"",
+    "dev:tunnel": "cloudflared tunnel run bundler-dev",
+    "dev:vite": "pnpm --filter admin dev",
+    "dev:shopify": "shopify app dev --tunnel-url=https://bundler-dev.deepseatools.in",
+    "build": "pnpm --filter admin build",
+    "deploy": "pnpm --filter admin deploy",
+    "test": "pnpm --filter admin test"
+  },
+  "devDependencies": {
+    "@shopify/cli": "^3.70.0",
+    "concurrently": "^9.0.0"
+  }
+}

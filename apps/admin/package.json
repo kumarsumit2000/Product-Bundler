@@ -1,0 +1,13 @@
+{
+  "name": "admin",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "scripts": {
+    "dev": "echo 'placeholder — set up in Task 6'",
+    "build": "echo 'placeholder — set up in Task 6'",
+    "deploy": "echo 'placeholder — set up in Task 6'",
+    "test": "echo 'placeholder — set up in Task 6'"
+  }
+}
