@@ -35,9 +35,6 @@ export function createShopifyApp(context: AppLoadContext) {
     authPathPrefix: "/auth",
     sessionStorage: new KvSessionStorage(env.SESSIONS, env.DATABASE_ENCRYPTION_KEY),
     distribution: AppDistribution.AppStore,
-    future: {
-      unstable_newEmbeddedAuthStrategy: true,
-    },
   });
 }
 

@@ -2,24 +2,43 @@ import type { LoaderFunctionArgs, HeadersFunction } from "@remix-run/cloudflare"
 import { json } from "@remix-run/cloudflare";
 import { Outlet, useLoaderData, useRouteError } from "@remix-run/react";
 import { boundary } from "@shopify/shopify-app-remix/server";
-import { AppProvider } from "@shopify/shopify-app-remix/react";
+import { AppProvider as PolarisAppProvider } from "@shopify/polaris";
+import enTranslations from "@shopify/polaris/locales/en.json";
 import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
+import { getDb, schema } from "~/db.server";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
-  await authenticate.admin(request, ctx);
+  const { session } = await authenticate.admin(request, ctx);
+
+  const db = getDb(ctx.cloudflare.env.DB);
+  await db
+    .insert(schema.shops)
+    .values({
+      id: session.shop,
+      scopes: session.scope ?? "",
+      installedAt: new Date(),
+    })
+    .onConflictDoUpdate({
+      target: schema.shops.id,
+      set: {
+        scopes: session.scope ?? "",
+        uninstalledAt: null,
+      },
+    });
+
   return json({ apiKey: ctx.cloudflare.env.SHOPIFY_API_KEY });
 }
 
 export default function App() {
-  const { apiKey } = useLoaderData<typeof loader>();
+  useLoaderData<typeof loader>();
   return (
-    <AppProvider isEmbeddedApp apiKey={apiKey}>
+    <PolarisAppProvider i18n={enTranslations}>
       <Outlet />
-    </AppProvider>
+    </PolarisAppProvider>
   );
 }
 
