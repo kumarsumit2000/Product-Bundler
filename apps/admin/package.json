@@ -5,9 +5,39 @@
   "type": "module",
   "sideEffects": false,
   "scripts": {
-    "dev": "echo 'placeholder — set up in Task 6'",
-    "build": "echo 'placeholder — set up in Task 6'",
-    "deploy": "echo 'placeholder — set up in Task 6'",
-    "test": "echo 'placeholder — set up in Task 6'"
+    "dev": "vite dev --port 8788",
+    "build": "remix vite:build",
+    "deploy": "wrangler pages deploy ./build/client --project-name=bundler-admin --branch=main",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate:local": "wrangler d1 migrations apply bundler-prod --local",
+    "db:migrate:prod": "wrangler d1 migrations apply bundler-prod --remote",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remix-run/cloudflare": "^2.15.0",
+    "@remix-run/cloudflare-pages": "^2.15.0",
+    "@remix-run/react": "^2.15.0",
+    "@shopify/app-bridge-react": "^4.1.6",
+    "@shopify/polaris": "^13.9.0",
+    "@shopify/shopify-app-remix": "^3.5.0",
+    "@shopify/shopify-app-session-storage": "^3.0.0",
+    "drizzle-orm": "^0.36.0",
+    "isbot": "^5.1.17",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.5.0",
+    "@cloudflare/workers-types": "^4.20241011.0",
+    "@remix-run/dev": "^2.15.0",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.0",
+    "drizzle-kit": "^0.28.0",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10",
+    "vitest": "^2.1.4",
+    "wrangler": "^3.84.0"
   }
 }
