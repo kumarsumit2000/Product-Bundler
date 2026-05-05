@@ -18,6 +18,7 @@ SCOPES = "read_products,write_products,read_orders,write_orders,write_discounts,
 binding = "DB"
 database_name = "bundler-prod"
 database_id = "d464f2ae-af1d-45f0-a8d0-f63e9c32e9ec"
+migrations_dir = "drizzle/migrations"
 
 [[kv_namespaces]]
 binding = "SESSIONS"
@@ -28,7 +29,7 @@ binding = "SHOP_SETTINGS_CACHE"
 id = "0c09056732f74254a1d5501e381ed150"
 
 [[r2_buckets]]
-binding = "ASSETS"
+binding = "WIDGET_ASSETS"
 bucket_name = "bundler-widget-assets"
 
 # Queue producer/consumer deferred to Phase 6 (requires Workers Paid plan):
@@ -41,7 +42,7 @@ bucket_name = "bundler-widget-assets"
 # max_batch_timeout = 30
 
 # Analytics Engine activates on first writeDataPoint call
-[analytics_engine_datasets]
+[[analytics_engine_datasets]]
 binding = "ANALYTICS"
 dataset = "bundler_events"
 
