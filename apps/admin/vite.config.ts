@@ -3,6 +3,7 @@ import {
   cloudflareDevProxyVitePlugin as remixCloudflareDevProxy,
 } from "@remix-run/dev";
 import { defineConfig } from "vite";
+import path from "node:path";
 
 declare module "@remix-run/cloudflare" {
   interface Future {
@@ -23,6 +24,11 @@ export default defineConfig({
       },
     }),
   ],
+  resolve: {
+    alias: {
+      "~": path.resolve(__dirname, "./app"),
+    },
+  },
   server: {
     port: 8788,
   },
