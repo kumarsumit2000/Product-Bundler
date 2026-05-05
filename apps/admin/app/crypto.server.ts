@@ -26,7 +26,13 @@ async function importKey(keyHex: string): Promise<CryptoKey> {
   if (raw.length !== 32) {
     throw new Error("DATABASE_ENCRYPTION_KEY must be 32 bytes (64 hex chars)");
   }
-  return crypto.subtle.importKey("raw", raw, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
+  return crypto.subtle.importKey(
+    "raw",
+    raw as BufferSource,
+    { name: "AES-GCM" },
+    false,
+    ["encrypt", "decrypt"],
+  );
 }
 
 export async function encryptString(plain: string, keyHex: string): Promise<string> {
