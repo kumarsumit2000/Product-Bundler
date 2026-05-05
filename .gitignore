@@ -1,0 +1,15 @@
+node_modules
+.DS_Store
+.env
+.env.local
+.dev.vars
+build/
+dist/
+.wrangler/
+.shopify/
+.cache/
+*.log
+.vscode/
+.idea/
+coverage/
+scratch-ids.txt
