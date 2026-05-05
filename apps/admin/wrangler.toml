@@ -1,5 +1,4 @@
 name = "bundler-admin"
-account_id = "e3dfc3a3d6ef58eb226c8eaeec1ab73f"
 compatibility_date = "2026-04-01"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = "./build/client"
@@ -41,10 +40,10 @@ bucket_name = "bundler-widget-assets"
 # max_batch_size = 100
 # max_batch_timeout = 30
 
-# Analytics Engine activates on first writeDataPoint call
-[[analytics_engine_datasets]]
-binding = "ANALYTICS"
-dataset = "bundler_events"
+# Analytics Engine binding deferred to Phase 6 (must be enabled in dashboard first):
+# [[analytics_engine_datasets]]
+# binding = "ANALYTICS"
+# dataset = "bundler_events"
 
-[triggers]
-crons = ["0 * * * *", "0 2 * * *"]
+# Cron triggers configured in Cloudflare dashboard for Pages projects
+# (added in Phase 6 when first scheduled handler is implemented)
