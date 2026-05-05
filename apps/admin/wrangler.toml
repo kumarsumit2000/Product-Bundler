@@ -1,0 +1,49 @@
+name = "bundler-admin"
+account_id = "e3dfc3a3d6ef58eb226c8eaeec1ab73f"
+compatibility_date = "2026-04-01"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "./build/client"
+
+[vars]
+SHOPIFY_APP_URL = "https://bundler.deepseatools.in"
+SCOPES = "read_products,write_products,read_orders,write_orders,write_discounts,read_discounts,read_themes,write_metaobjects,read_metaobjects,read_inventory,read_locales,read_markets"
+
+# Secrets via `wrangler pages secret put` (already set):
+# - SHOPIFY_API_KEY
+# - SHOPIFY_API_SECRET
+# - SHOPIFY_WEBHOOK_SECRET
+# - DATABASE_ENCRYPTION_KEY  (32-byte hex; AES-GCM key for token encryption in KV)
+
+[[d1_databases]]
+binding = "DB"
+database_name = "bundler-prod"
+database_id = "d464f2ae-af1d-45f0-a8d0-f63e9c32e9ec"
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "4d9edb7231e34134a853ee17a75a8db6"
+
+[[kv_namespaces]]
+binding = "SHOP_SETTINGS_CACHE"
+id = "0c09056732f74254a1d5501e381ed150"
+
+[[r2_buckets]]
+binding = "ASSETS"
+bucket_name = "bundler-widget-assets"
+
+# Queue producer/consumer deferred to Phase 6 (requires Workers Paid plan):
+# [[queues.producers]]
+# binding = "ANALYTICS_QUEUE"
+# queue = "bundler-analytics"
+# [[queues.consumers]]
+# queue = "bundler-analytics"
+# max_batch_size = 100
+# max_batch_timeout = 30
+
+# Analytics Engine activates on first writeDataPoint call
+[analytics_engine_datasets]
+binding = "ANALYTICS"
+dataset = "bundler_events"
+
+[triggers]
+crons = ["0 * * * *", "0 2 * * *"]
