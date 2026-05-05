@@ -32,6 +32,9 @@ importers:
       '@shopify/polaris':
         specifier: ^13.9.0
         version: 13.9.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@shopify/shopify-api':
+        specifier: ^11.14.1
+        version: 11.14.1
       '@shopify/shopify-app-remix':
         specifier: ^3.5.0
         version: 3.8.5(@remix-run/node@2.17.4(typescript@5.9.3))(@remix-run/react@2.17.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@shopify/polaris@13.9.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)(typescript@5.9.3)
@@ -5495,7 +5498,7 @@ snapshots:
       '@babel/plugin-syntax-typescript': 7.28.6(@babel/core@7.29.0)
       '@vanilla-extract/babel-plugin-debug-ids': 1.2.2
       '@vanilla-extract/css': 1.20.1
-      esbuild: 0.17.6
+      esbuild: 0.19.12
       eval: 0.1.8
       find-up: 5.0.0
       javascript-stringify: 2.1.0
