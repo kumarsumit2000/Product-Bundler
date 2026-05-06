@@ -2,6 +2,9 @@ use shopify_function::prelude::*;
 use std::process;
 
 pub mod run;
+pub mod config;
+pub mod matcher;
+pub mod discount;
 
 #[typegen("schema.graphql")]
 pub mod schema {
