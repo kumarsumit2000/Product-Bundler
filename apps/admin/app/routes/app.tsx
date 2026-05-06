@@ -2,6 +2,7 @@ import type { LoaderFunctionArgs, HeadersFunction } from "@remix-run/cloudflare"
 import { json } from "@remix-run/cloudflare";
 import { Link, Outlet, useLoaderData, useRouteError } from "@remix-run/react";
 import { boundary } from "@shopify/shopify-app-remix/server";
+import { AppProvider as ShopifyAppProvider } from "@shopify/shopify-app-remix/react";
 import { NavMenu } from "@shopify/app-bridge-react";
 import { AppProvider as PolarisAppProvider } from "@shopify/polaris";
 import enTranslations from "@shopify/polaris/locales/en.json";
@@ -17,16 +18,18 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 }
 
 export default function App() {
-  useLoaderData<typeof loader>();
+  const { apiKey } = useLoaderData<typeof loader>();
   return (
-    <PolarisAppProvider i18n={enTranslations}>
-      <NavMenu>
-        <Link to="/app" rel="home">Dashboard</Link>
-        <Link to="/app/bundles">Bundles</Link>
-        <Link to="/app/quantity-breaks">Quantity Breaks</Link>
-      </NavMenu>
-      <Outlet />
-    </PolarisAppProvider>
+    <ShopifyAppProvider isEmbeddedApp apiKey={apiKey}>
+      <PolarisAppProvider i18n={enTranslations}>
+        <NavMenu>
+          <Link to="/app" rel="home">Dashboard</Link>
+          <Link to="/app/bundles">Bundles</Link>
+          <Link to="/app/quantity-breaks">Quantity Breaks</Link>
+        </NavMenu>
+        <Outlet />
+      </PolarisAppProvider>
+    </ShopifyAppProvider>
   );
 }
 
