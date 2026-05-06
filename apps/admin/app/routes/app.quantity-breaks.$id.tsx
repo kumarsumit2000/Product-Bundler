@@ -7,6 +7,7 @@ import { getDb } from "~/db.server";
 import * as qbRepo from "~/lib/quantity-breaks/repo";
 import { validateQb } from "~/lib/quantity-breaks/validate";
 import { syncShopConfig } from "~/lib/metafield-sync";
+import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { QbForm, type QbFormValues } from "~/components/QbForm";
 import type { TierFormValue } from "~/components/QbTierBuilder";
 
@@ -64,6 +65,7 @@ export async function action({
     combinable: input.combinable,
   });
 
+  await ensureDiscountNodes(admin, db, session.shop);
   await syncShopConfig(db, admin, session.shop);
   await ctx.cloudflare.env.SHOP_SETTINGS_CACHE.delete(
     `config:${session.shop}`

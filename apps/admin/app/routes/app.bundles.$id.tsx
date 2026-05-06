@@ -7,6 +7,7 @@ import { getDb } from "~/db.server";
 import * as bundleRepo from "~/lib/bundles/repo";
 import { validateBundle } from "~/lib/bundles/validate";
 import { syncShopConfig } from "~/lib/metafield-sync";
+import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { BundleForm, type BundleFormValues } from "~/components/BundleForm";
 import type { PickedProduct } from "~/components/ProductPicker";
 
@@ -72,6 +73,7 @@ export async function action({
       | "fixed_total",
   });
 
+  await ensureDiscountNodes(admin, db, session.shop);
   await syncShopConfig(db, admin, session.shop);
   await ctx.cloudflare.env.SHOP_SETTINGS_CACHE.delete(
     `config:${session.shop}`
