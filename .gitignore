@@ -13,3 +13,4 @@ dist/
 .idea/
 coverage/
 scratch-ids.txt
+.superpowers/
