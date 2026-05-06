@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { handleCustomersRedact } from "../app/routes/webhooks.customers.redact";
+import { handleCustomersRedact } from "../app/lib/webhooks/handlers/customers-redact";
 
 describe("handleCustomersRedact", () => {
   beforeEach(() => {

@@ -1,21 +1,7 @@
 import type { ActionFunctionArgs } from "@remix-run/cloudflare";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
 import { wasProcessed, markProcessed } from "~/lib/webhooks/idempotency";
-
-type CustomerDataRequestPayload = {
-  customer?: { id?: number };
-} | null;
-
-export function handleCustomersDataRequest(shop: string, payload: unknown): void {
-  const p = payload as CustomerDataRequestPayload;
-  console.log(
-    JSON.stringify({
-      event: "customers_data_request",
-      shop,
-      customerId: p?.customer?.id,
-    }),
-  );
-}
+import { handleCustomersDataRequest } from "~/lib/webhooks/handlers/customers-data-request";
 
 export async function action({ request, context }: ActionFunctionArgs) {
   const ctx = context as AppLoadContext;

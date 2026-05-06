@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { handleCustomersDataRequest } from "../app/routes/webhooks.customers.data-request";
+import { handleCustomersDataRequest } from "../app/lib/webhooks/handlers/customers-data-request";
 
 describe("handleCustomersDataRequest", () => {
   beforeEach(() => {
