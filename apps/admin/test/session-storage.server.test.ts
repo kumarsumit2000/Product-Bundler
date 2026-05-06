@@ -1,35 +1,9 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { Session } from "@shopify/shopify-api";
 import { KvSessionStorage } from "../app/session-storage.server";
+import { InMemoryKV } from "./helpers/kv-mock";
 
 const KEY_HEX = "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff";
-
-class InMemoryKV {
-  private store = new Map<string, string>();
-
-  async get(key: string): Promise<string | null> {
-    return this.store.get(key) ?? null;
-  }
-
-  async put(key: string, value: string): Promise<void> {
-    this.store.set(key, value);
-  }
-
-  async delete(key: string): Promise<void> {
-    this.store.delete(key);
-  }
-
-  async list({ prefix }: { prefix?: string } = {}): Promise<{ keys: { name: string }[] }> {
-    const all = Array.from(this.store.keys());
-    const filtered = prefix ? all.filter((k) => k.startsWith(prefix)) : all;
-    return { keys: filtered.map((name) => ({ name })) };
-  }
-
-  // For raw access in tests
-  rawGet(key: string): string | null {
-    return this.store.get(key) ?? null;
-  }
-}
 
 function makeSession(id = "offline_test.myshopify.com"): Session {
   return new Session({
