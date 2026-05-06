@@ -1,0 +1,88 @@
+import { describe, it, expect, beforeEach } from "vitest";
+import { drizzle } from "drizzle-orm/better-sqlite3";
+import { migrate } from "drizzle-orm/better-sqlite3/migrator";
+import Database from "better-sqlite3";
+import * as schema from "../drizzle/schema";
+import * as repo from "../app/lib/bundles/repo";
+
+function setupDb() {
+  const sqlite = new Database(":memory:");
+  const db = drizzle(sqlite, { schema });
+  migrate(db, { migrationsFolder: "./drizzle/migrations" });
+  return { db, sqlite };
+}
+
+const SHOP_A = "shop-a.myshopify.com";
+const SHOP_B = "shop-b.myshopify.com";
+
+const NEW_BUNDLE_INPUT = {
+  name: "Test bundle",
+  status: "draft" as const,
+  products: [
+    { productId: "gid://shopify/Product/1", variantId: null, qty: 1 },
+    { productId: "gid://shopify/Product/2", variantId: null, qty: 1 },
+  ],
+  discountType: "percentage",
+  discountValue: 20,
+  combinable: false,
+  triggerProductIds: [],
+  styleOverrides: null,
+  headline: null,
+  ctaLabel: null,
+};
+
+describe("bundles repo", () => {
+  let setup: ReturnType<typeof setupDb>;
+
+  beforeEach(() => {
+    setup = setupDb();
+    setup.db.insert(schema.shops).values({ id: SHOP_A, scopes: "", installedAt: new Date() }).run();
+    setup.db.insert(schema.shops).values({ id: SHOP_B, scopes: "", installedAt: new Date() }).run();
+  });
+
+  it("create + listByShop returns the new bundle", async () => {
+    const created = await repo.create(setup.db, SHOP_A, NEW_BUNDLE_INPUT);
+    const list = await repo.listByShop(setup.db, SHOP_A);
+    expect(list.length).toBe(1);
+    expect(list[0]!.id).toBe(created.id);
+    expect(list[0]!.name).toBe("Test bundle");
+  });
+
+  it("getById returns the bundle for the right shop", async () => {
+    const created = await repo.create(setup.db, SHOP_A, NEW_BUNDLE_INPUT);
+    const got = await repo.getById(setup.db, SHOP_A, created.id);
+    expect(got).not.toBeNull();
+    expect(got!.id).toBe(created.id);
+  });
+
+  it("getById returns null for the wrong shop (multi-tenancy)", async () => {
+    const created = await repo.create(setup.db, SHOP_A, NEW_BUNDLE_INPUT);
+    const got = await repo.getById(setup.db, SHOP_B, created.id);
+    expect(got).toBeNull();
+  });
+
+  it("update modifies the bundle", async () => {
+    const created = await repo.create(setup.db, SHOP_A, NEW_BUNDLE_INPUT);
+    await repo.update(setup.db, SHOP_A, created.id, { discountValue: 30 });
+    const got = await repo.getById(setup.db, SHOP_A, created.id);
+    expect(got!.discountValue).toBe(30);
+  });
+
+  it("update on wrong shop is a no-op", async () => {
+    const created = await repo.create(setup.db, SHOP_A, NEW_BUNDLE_INPUT);
+    await repo.update(setup.db, SHOP_B, created.id, { discountValue: 99 });
+    const got = await repo.getById(setup.db, SHOP_A, created.id);
+    expect(got!.discountValue).toBe(20);
+  });
+
+  it("listByShop returns only that shop's bundles", async () => {
+    await repo.create(setup.db, SHOP_A, NEW_BUNDLE_INPUT);
+    await repo.create(setup.db, SHOP_B, NEW_BUNDLE_INPUT);
+    const listA = await repo.listByShop(setup.db, SHOP_A);
+    const listB = await repo.listByShop(setup.db, SHOP_B);
+    expect(listA.length).toBe(1);
+    expect(listB.length).toBe(1);
+    expect(listA[0]!.shopId).toBe(SHOP_A);
+    expect(listB[0]!.shopId).toBe(SHOP_B);
+  });
+});
