@@ -1,4 +1,25 @@
 query Input {
+  cart {
+    lines {
+      id
+      quantity
+      merchandise {
+        __typename
+        ... on ProductVariant {
+          id
+          product { id }
+        }
+      }
+      cost {
+        amountPerQuantity { amount }
+      }
+    }
+  }
+  shop {
+    metafield(namespace: "pumper", key: "config") {
+      value
+    }
+  }
   discountNode {
     metafield(namespace: "$app:discount-function", key: "function-configuration") {
       jsonValue
