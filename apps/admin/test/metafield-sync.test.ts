@@ -1,0 +1,146 @@
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { drizzle } from "drizzle-orm/better-sqlite3";
+import { migrate } from "drizzle-orm/better-sqlite3/migrator";
+import Database from "better-sqlite3";
+import { eq } from "drizzle-orm";
+import * as schema from "../drizzle/schema";
+import * as bundleRepo from "../app/lib/bundles/repo";
+import * as qbRepo from "../app/lib/quantity-breaks/repo";
+import { syncShopConfig } from "../app/lib/metafield-sync";
+
+function setupDb() {
+  const sqlite = new Database(":memory:");
+  const db = drizzle(sqlite, { schema });
+  migrate(db, { migrationsFolder: "./drizzle/migrations" });
+  return { db, sqlite };
+}
+
+const SHOP = "test.myshopify.com";
+const SHOP_GID = "gid://shopify/Shop/12345";
+
+function makeAdmin(opts: { shopGid?: string } = {}) {
+  const calls: Array<{ query: string; variables?: unknown }> = [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const admin: any = {
+    graphql: vi.fn(async (query: string, options?: { variables?: unknown }) => {
+      calls.push({ query, variables: options?.variables });
+      if (query.includes("shop { id }")) {
+        return new Response(
+          JSON.stringify({ data: { shop: { id: opts.shopGid ?? SHOP_GID } } }),
+        );
+      }
+      return new Response(JSON.stringify({ data: { metafieldsSet: { userErrors: [] } } }));
+    }),
+  };
+  return { admin, calls };
+}
+
+describe("syncShopConfig", () => {
+  let setup: ReturnType<typeof setupDb>;
+
+  beforeEach(async () => {
+    setup = setupDb();
+    await setup.db.insert(schema.shops).values({
+      id: SHOP,
+      scopes: "",
+      installedAt: new Date(),
+    });
+  });
+
+  it("writes empty config when shop has no bundles or QBs", async () => {
+    const { admin, calls } = makeAdmin();
+    await syncShopConfig(setup.db, admin, SHOP);
+    const setCall = calls.find((c) => c.query.includes("metafieldsSet"));
+    expect(setCall).toBeDefined();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const value = JSON.parse((setCall!.variables as any).metafields[0]!.value);
+    expect(value).toEqual({
+      schemaVersion: 1,
+      bundles: [],
+      quantityBreaks: [],
+    });
+  });
+
+  it("includes bundles in config", async () => {
+    await bundleRepo.create(setup.db, SHOP, {
+      name: "B",
+      status: "active",
+      products: [
+        { productId: "gid://shopify/Product/1", variantId: null, qty: 1 },
+        { productId: "gid://shopify/Product/2", variantId: null, qty: 1 },
+      ],
+      discountType: "percentage",
+      discountValue: 20,
+      combinable: false,
+      triggerProductIds: [],
+      styleOverrides: null,
+      headline: null,
+      ctaLabel: null,
+    });
+    const { admin, calls } = makeAdmin();
+    await syncShopConfig(setup.db, admin, SHOP);
+    const setCall = calls.find((c) => c.query.includes("metafieldsSet"));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const value = JSON.parse((setCall!.variables as any).metafields[0]!.value);
+    expect(value.bundles.length).toBe(1);
+    expect(value.bundles[0]!.name).toBe("B");
+  });
+
+  it("includes QBs in config", async () => {
+    await qbRepo.create(setup.db, SHOP, {
+      name: "Q",
+      status: "active",
+      productId: "gid://shopify/Product/1",
+      collectionId: null,
+      tiers: [
+        {
+          qty: 1,
+          discountType: "percentage",
+          discountValue: 5,
+          label: "5%",
+          isMostPopular: false,
+        },
+      ],
+      combinable: false,
+      styleOverrides: null,
+    });
+    const { admin, calls } = makeAdmin();
+    await syncShopConfig(setup.db, admin, SHOP);
+    const setCall = calls.find((c) => c.query.includes("metafieldsSet"));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const value = JSON.parse((setCall!.variables as any).metafields[0]!.value);
+    expect(value.quantityBreaks.length).toBe(1);
+  });
+
+  it("caches shop GID in shops table after first call", async () => {
+    const { admin } = makeAdmin();
+    await syncShopConfig(setup.db, admin, SHOP);
+    const rows = await setup.db
+      .select()
+      .from(schema.shops)
+      .where(eq(schema.shops.id, SHOP));
+    expect(rows[0]!.shopifyShopGid).toBe(SHOP_GID);
+  });
+
+  it("throws when JSON exceeds 50KB", async () => {
+    await bundleRepo.create(setup.db, SHOP, {
+      name: "Big",
+      status: "active",
+      products: [
+        { productId: "gid://shopify/Product/1", variantId: null, qty: 1 },
+        { productId: "gid://shopify/Product/2", variantId: null, qty: 1 },
+      ],
+      discountType: "percentage",
+      discountValue: 20,
+      combinable: false,
+      triggerProductIds: [],
+      styleOverrides: null,
+      headline: "x".repeat(60_000),
+      ctaLabel: null,
+    });
+    const { admin } = makeAdmin();
+    await expect(syncShopConfig(setup.db, admin, SHOP)).rejects.toThrow(
+      /exceeds.*safety limit/,
+    );
+  });
+});
