@@ -1,6 +1,6 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/cloudflare";
 import { json, redirect } from "@remix-run/cloudflare";
-import { useFetcher, useLoaderData } from "@remix-run/react";
+import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import {
   Page,
   Card,
@@ -84,6 +84,7 @@ function DeleteRowButton({ id, name }: { id: string; name: string }) {
 export default function BundlesIndex() {
   const { bundles } = useLoaderData<typeof loader>();
   const fetcher = useFetcher();
+  const navigate = useNavigate();
   const resourceIDResolver = (b: { id: string }) => b.id;
   const { selectedResources, allResourcesSelected, handleSelectionChange, clearSelection } =
     useIndexResourceState(bundles as { id: string }[], { resourceIDResolver });
@@ -130,6 +131,7 @@ export default function BundlesIndex() {
       key={b.id}
       position={i}
       selected={selectedResources.includes(b.id)}
+      onClick={() => navigate(`/app/bundles/${b.id}`)}
     >
       <IndexTable.Cell>
         <Link url={`/app/bundles/${b.id}`} monochrome removeUnderline>

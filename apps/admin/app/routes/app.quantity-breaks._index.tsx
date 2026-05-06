@@ -1,6 +1,6 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/cloudflare";
 import { json, redirect } from "@remix-run/cloudflare";
-import { useFetcher, useLoaderData } from "@remix-run/react";
+import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import {
   Page,
   Card,
@@ -75,6 +75,7 @@ function DeleteRowButton({ id, name }: { id: string; name: string }) {
 export default function QbsIndex() {
   const { items } = useLoaderData<typeof loader>();
   const fetcher = useFetcher();
+  const navigate = useNavigate();
   const resourceIDResolver = (q: { id: string }) => q.id;
   const { selectedResources, allResourcesSelected, handleSelectionChange, clearSelection } =
     useIndexResourceState(items as { id: string }[], { resourceIDResolver });
@@ -128,6 +129,7 @@ export default function QbsIndex() {
       key={q.id}
       position={i}
       selected={selectedResources.includes(q.id)}
+      onClick={() => navigate(`/app/quantity-breaks/${q.id}`)}
     >
       <IndexTable.Cell>
         <Link url={`/app/quantity-breaks/${q.id}`} monochrome removeUnderline>
