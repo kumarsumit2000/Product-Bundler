@@ -32,7 +32,7 @@ function makeAdmin(opts: {
         return new Response(JSON.stringify({
           data: {
             shopifyFunctions: {
-              nodes: [{ id: opts.fnId ?? FUNCTION_ID, title: "discount-function" }],
+              nodes: [{ id: opts.fnId ?? FUNCTION_ID, apiType: "product_discounts", title: "discount-function" }],
             },
           },
         }));

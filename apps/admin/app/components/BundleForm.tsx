@@ -1,6 +1,7 @@
 import { Form } from "@remix-run/react";
 import {
   BlockStack,
+  Box,
   Card,
   ChoiceList,
   Banner,
@@ -192,12 +193,14 @@ export function BundleForm({ initialValues, errors, submitLabel }: Props) {
           </BlockStack>
         </Card>
 
-        <InlineStack align="end" gap="300">
-          <Button url="/app/bundles">Cancel</Button>
-          <Button submit variant="primary">
-            {submitLabel}
-          </Button>
-        </InlineStack>
+        <Box paddingBlockEnd="600">
+          <InlineStack align="end" gap="300">
+            <Button url="/app/bundles">Cancel</Button>
+            <Button submit variant="primary">
+              {submitLabel}
+            </Button>
+          </InlineStack>
+        </Box>
       </BlockStack>
     </Form>
   );

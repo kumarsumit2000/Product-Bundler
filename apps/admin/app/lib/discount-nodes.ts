@@ -46,16 +46,25 @@ export async function ensureDiscountNodes(
 }
 
 async function getOrFetchFunctionId(admin: AdminGraphqlClient): Promise<string> {
+  // Query our app's installed Functions. The discount Function is the only one we ship,
+  // so we pick the first product_discounts-typed node returned. Filtering by title is
+  // unreliable because the title field uses the localized name from the locale file
+  // rather than the handle.
   const res = await admin.graphql(
-    `query { shopifyFunctions(first: 25, apiType: "discount") { nodes { id title } } }`,
+    `query { shopifyFunctions(first: 25) { nodes { id apiType title } } }`,
   );
   const data = (await res.json()) as {
-    data: { shopifyFunctions: { nodes: { id: string; title: string }[] } };
+    data: { shopifyFunctions: { nodes: { id: string; apiType: string; title: string }[] } };
   };
-  const fn = data.data.shopifyFunctions.nodes.find((n) => n.title === FUNCTION_TITLE);
+  const fn = data.data.shopifyFunctions.nodes.find(
+    (n) => n.apiType === "product_discounts" || n.apiType === "discount",
+  );
   if (!fn) {
+    const available = data.data.shopifyFunctions.nodes
+      .map((n) => `${n.title} (${n.apiType})`)
+      .join(", ");
     throw new Error(
-      `Shopify Function "${FUNCTION_TITLE}" not found. Run \`shopify app deploy\` first.`,
+      `Discount Function not found. Available functions: [${available}]. Run \`shopify app deploy\` first.`,
     );
   }
   return fn.id;
