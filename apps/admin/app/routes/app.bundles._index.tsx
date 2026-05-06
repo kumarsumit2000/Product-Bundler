@@ -9,6 +9,7 @@ import {
   Text,
   Link,
   Button,
+  useIndexResourceState,
 } from "@shopify/polaris";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
 import { getDb } from "~/db.server";
@@ -29,17 +30,25 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const { session, admin } = await authenticate.admin(request, ctx);
   const form = await request.formData();
   const intent = form.get("_action") as string;
-  const id = form.get("id") as string;
+  const db = getDb(ctx.cloudflare.env.DB);
 
-  if (intent !== "delete" || !id) {
+  if (intent === "delete") {
+    const id = form.get("id") as string;
+    if (!id) return json({ error: "Missing id" }, { status: 400 });
+    await bundleRepo.deleteById(db, session.shop, id);
+  } else if (intent === "delete-bulk") {
+    const idsRaw = form.get("ids") as string;
+    const ids: string[] = idsRaw ? JSON.parse(idsRaw) : [];
+    if (ids.length === 0) return json({ error: "No ids" }, { status: 400 });
+    for (const id of ids) {
+      await bundleRepo.deleteById(db, session.shop, id);
+    }
+  } else {
     return json({ error: "Invalid action" }, { status: 400 });
   }
 
-  const db = getDb(ctx.cloudflare.env.DB);
-  await bundleRepo.deleteById(db, session.shop, id);
   await syncShopConfig(db, admin, session.shop);
   await ctx.cloudflare.env.SHOP_SETTINGS_CACHE.delete(`config:${session.shop}`);
-
   return redirect("/app/bundles");
 }
 
@@ -74,6 +83,25 @@ function DeleteRowButton({ id, name }: { id: string; name: string }) {
 
 export default function BundlesIndex() {
   const { bundles } = useLoaderData<typeof loader>();
+  const fetcher = useFetcher();
+  const resourceIDResolver = (b: { id: string }) => b.id;
+  const { selectedResources, allResourcesSelected, handleSelectionChange, clearSelection } =
+    useIndexResourceState(bundles as { id: string }[], { resourceIDResolver });
+
+  const bulkDelete = () => {
+    if (selectedResources.length === 0) return;
+    if (
+      confirm(
+        `Delete ${selectedResources.length} bundle${selectedResources.length === 1 ? "" : "s"}? This cannot be undone.`,
+      )
+    ) {
+      fetcher.submit(
+        { _action: "delete-bulk", ids: JSON.stringify(selectedResources) },
+        { method: "post" },
+      );
+      clearSelection();
+    }
+  };
 
   if (bundles.length === 0) {
     return (
@@ -97,7 +125,12 @@ export default function BundlesIndex() {
   }
 
   const rowMarkup = bundles.map((b, i) => (
-    <IndexTable.Row id={b.id} key={b.id} position={i}>
+    <IndexTable.Row
+      id={b.id}
+      key={b.id}
+      position={i}
+      selected={selectedResources.includes(b.id)}
+    >
       <IndexTable.Cell>
         <Link url={`/app/bundles/${b.id}`} monochrome removeUnderline>
           {b.name}
@@ -131,7 +164,13 @@ export default function BundlesIndex() {
             { title: "Updated" },
             { title: "" },
           ]}
-          selectable={false}
+          selectedItemsCount={
+            allResourcesSelected ? "All" : selectedResources.length
+          }
+          onSelectionChange={handleSelectionChange}
+          promotedBulkActions={[
+            { content: "Delete", onAction: bulkDelete },
+          ]}
         >
           {rowMarkup}
         </IndexTable>

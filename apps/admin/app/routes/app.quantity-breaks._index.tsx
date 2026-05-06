@@ -9,6 +9,7 @@ import {
   Text,
   Link,
   Button,
+  useIndexResourceState,
 } from "@shopify/polaris";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
 import { getDb } from "~/db.server";
@@ -29,17 +30,25 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const { session, admin } = await authenticate.admin(request, ctx);
   const form = await request.formData();
   const intent = form.get("_action") as string;
-  const id = form.get("id") as string;
+  const db = getDb(ctx.cloudflare.env.DB);
 
-  if (intent !== "delete" || !id) {
+  if (intent === "delete") {
+    const id = form.get("id") as string;
+    if (!id) return json({ error: "Missing id" }, { status: 400 });
+    await qbRepo.deleteById(db, session.shop, id);
+  } else if (intent === "delete-bulk") {
+    const idsRaw = form.get("ids") as string;
+    const ids: string[] = idsRaw ? JSON.parse(idsRaw) : [];
+    if (ids.length === 0) return json({ error: "No ids" }, { status: 400 });
+    for (const id of ids) {
+      await qbRepo.deleteById(db, session.shop, id);
+    }
+  } else {
     return json({ error: "Invalid action" }, { status: 400 });
   }
 
-  const db = getDb(ctx.cloudflare.env.DB);
-  await qbRepo.deleteById(db, session.shop, id);
   await syncShopConfig(db, admin, session.shop);
   await ctx.cloudflare.env.SHOP_SETTINGS_CACHE.delete(`config:${session.shop}`);
-
   return redirect("/app/quantity-breaks");
 }
 
@@ -65,6 +74,25 @@ function DeleteRowButton({ id, name }: { id: string; name: string }) {
 
 export default function QbsIndex() {
   const { items } = useLoaderData<typeof loader>();
+  const fetcher = useFetcher();
+  const resourceIDResolver = (q: { id: string }) => q.id;
+  const { selectedResources, allResourcesSelected, handleSelectionChange, clearSelection } =
+    useIndexResourceState(items as { id: string }[], { resourceIDResolver });
+
+  const bulkDelete = () => {
+    if (selectedResources.length === 0) return;
+    if (
+      confirm(
+        `Delete ${selectedResources.length} quantity break${selectedResources.length === 1 ? "" : "s"}? This cannot be undone.`,
+      )
+    ) {
+      fetcher.submit(
+        { _action: "delete-bulk", ids: JSON.stringify(selectedResources) },
+        { method: "post" },
+      );
+      clearSelection();
+    }
+  };
 
   if (items.length === 0) {
     return (
@@ -95,7 +123,12 @@ export default function QbsIndex() {
   }
 
   const rowMarkup = items.map((q, i) => (
-    <IndexTable.Row id={q.id} key={q.id} position={i}>
+    <IndexTable.Row
+      id={q.id}
+      key={q.id}
+      position={i}
+      selected={selectedResources.includes(q.id)}
+    >
       <IndexTable.Cell>
         <Link url={`/app/quantity-breaks/${q.id}`} monochrome removeUnderline>
           {q.name}
@@ -134,7 +167,13 @@ export default function QbsIndex() {
             { title: "Updated" },
             { title: "" },
           ]}
-          selectable={false}
+          selectedItemsCount={
+            allResourcesSelected ? "All" : selectedResources.length
+          }
+          onSelectionChange={handleSelectionChange}
+          promotedBulkActions={[
+            { content: "Delete", onAction: bulkDelete },
+          ]}
         >
           {rowMarkup}
         </IndexTable>
