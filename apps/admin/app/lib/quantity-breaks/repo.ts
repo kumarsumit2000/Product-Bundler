@@ -55,3 +55,14 @@ export async function update(
     .where(and(eq(schema.quantityBreaks.shopId, shopId), eq(schema.quantityBreaks.id, id)));
   return getById(db, shopId, id);
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function deleteById(
+  db: any,
+  shopId: string,
+  id: string,
+): Promise<void> {
+  await db
+    .delete(schema.quantityBreaks)
+    .where(and(eq(schema.quantityBreaks.shopId, shopId), eq(schema.quantityBreaks.id, id)));
+}

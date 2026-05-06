@@ -1,6 +1,6 @@
-import type { LoaderFunctionArgs } from "@remix-run/cloudflare";
-import { json } from "@remix-run/cloudflare";
-import { useLoaderData } from "@remix-run/react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/cloudflare";
+import { json, redirect } from "@remix-run/cloudflare";
+import { useFetcher, useLoaderData } from "@remix-run/react";
 import {
   Page,
   Card,
@@ -8,10 +8,12 @@ import {
   IndexTable,
   Text,
   Link,
+  Button,
 } from "@shopify/polaris";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
 import { getDb } from "~/db.server";
 import * as bundleRepo from "~/lib/bundles/repo";
+import { syncShopConfig } from "~/lib/metafield-sync";
 import { StatusBadge } from "~/components/StatusBadge";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
@@ -22,6 +24,25 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   return json({ bundles });
 }
 
+export async function action({ request, context }: ActionFunctionArgs) {
+  const ctx = context as AppLoadContext;
+  const { session, admin } = await authenticate.admin(request, ctx);
+  const form = await request.formData();
+  const intent = form.get("_action") as string;
+  const id = form.get("id") as string;
+
+  if (intent !== "delete" || !id) {
+    return json({ error: "Invalid action" }, { status: 400 });
+  }
+
+  const db = getDb(ctx.cloudflare.env.DB);
+  await bundleRepo.deleteById(db, session.shop, id);
+  await syncShopConfig(db, admin, session.shop);
+  await ctx.cloudflare.env.SHOP_SETTINGS_CACHE.delete(`config:${session.shop}`);
+
+  return redirect("/app/bundles");
+}
+
 function summarizeDiscount(b: {
   discountType: string;
   discountValue: number;
@@ -29,6 +50,26 @@ function summarizeDiscount(b: {
   if (b.discountType === "percentage") return `${b.discountValue}% off`;
   if (b.discountType === "flat") return `$${b.discountValue.toFixed(2)} off`;
   return `Fixed $${b.discountValue.toFixed(2)}`;
+}
+
+function DeleteRowButton({ id, name }: { id: string; name: string }) {
+  const fetcher = useFetcher();
+  const isDeleting = fetcher.state !== "idle";
+
+  return (
+    <Button
+      variant="plain"
+      tone="critical"
+      loading={isDeleting}
+      onClick={() => {
+        if (confirm(`Delete bundle "${name}"? This cannot be undone.`)) {
+          fetcher.submit({ _action: "delete", id }, { method: "post" });
+        }
+      }}
+    >
+      Delete
+    </Button>
+  );
 }
 
 export default function BundlesIndex() {
@@ -58,11 +99,7 @@ export default function BundlesIndex() {
   const rowMarkup = bundles.map((b, i) => (
     <IndexTable.Row id={b.id} key={b.id} position={i}>
       <IndexTable.Cell>
-        <Link
-          url={`/app/bundles/${b.id}`}
-          monochrome
-          removeUnderline
-        >
+        <Link url={`/app/bundles/${b.id}`} monochrome removeUnderline>
           {b.name}
         </Link>
       </IndexTable.Cell>
@@ -72,6 +109,9 @@ export default function BundlesIndex() {
       <IndexTable.Cell>{summarizeDiscount(b)}</IndexTable.Cell>
       <IndexTable.Cell>
         {new Date(b.updatedAt).toLocaleDateString()}
+      </IndexTable.Cell>
+      <IndexTable.Cell>
+        <DeleteRowButton id={b.id} name={b.name} />
       </IndexTable.Cell>
     </IndexTable.Row>
   ));
@@ -89,6 +129,7 @@ export default function BundlesIndex() {
             { title: "Status" },
             { title: "Discount" },
             { title: "Updated" },
+            { title: "" },
           ]}
           selectable={false}
         >
