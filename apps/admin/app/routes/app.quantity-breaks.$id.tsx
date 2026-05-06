@@ -13,11 +13,30 @@ import type { TierFormValue } from "~/components/QbTierBuilder";
 
 export async function loader({ request, params, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
-  const { session } = await authenticate.admin(request, ctx);
+  const { session, admin } = await authenticate.admin(request, ctx);
   const db = getDb(ctx.cloudflare.env.DB);
   const qb = await qbRepo.getById(db, session.shop, params.id!);
   if (!qb) throw new Response("Not found", { status: 404 });
-  return json({ qb });
+
+  let productTitle: string | undefined;
+  let productImage: string | undefined;
+  if (qb.productId) {
+    const res = await admin.graphql(
+      `query Product($id: ID!) {
+        product(id: $id) { id title featuredImage { url } }
+      }`,
+      { variables: { id: qb.productId } },
+    );
+    const data = (await res.json()) as {
+      data: { product: { id: string; title: string; featuredImage: { url: string } | null } | null };
+    };
+    if (data.data.product) {
+      productTitle = data.data.product.title;
+      productImage = data.data.product.featuredImage?.url ?? undefined;
+    }
+  }
+
+  return json({ qb, productTitle, productImage });
 }
 
 export async function action({
@@ -75,14 +94,22 @@ export async function action({
 }
 
 export default function QbEdit() {
-  const { qb } = useLoaderData<typeof loader>();
+  const { qb, productTitle, productImage } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const errors =
     actionData && "errors" in actionData ? actionData.errors : undefined;
 
   const initial: Partial<QbFormValues> = {
     name: qb.name,
-    product: [{ productId: qb.productId, variantId: null, qty: 1 }],
+    product: [
+      {
+        productId: qb.productId,
+        variantId: null,
+        qty: 1,
+        title: productTitle,
+        image: productImage,
+      },
+    ],
     tiers: qb.tiers.map((t) => ({
       qty: t.qty,
       discountType: t.discountType,

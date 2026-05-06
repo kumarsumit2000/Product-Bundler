@@ -11,13 +11,58 @@ import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { BundleForm, type BundleFormValues } from "~/components/BundleForm";
 import type { PickedProduct } from "~/components/ProductPicker";
 
+type ProductDetails = { id: string; title: string; image: string | null };
+
+async function fetchProductDetails(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  admin: any,
+  productIds: string[],
+): Promise<Record<string, ProductDetails>> {
+  if (productIds.length === 0) return {};
+  const res = await admin.graphql(
+    `query Products($ids: [ID!]!) {
+      nodes(ids: $ids) {
+        ... on Product {
+          id
+          title
+          featuredImage { url }
+        }
+      }
+    }`,
+    { variables: { ids: productIds } },
+  );
+  const data = (await res.json()) as {
+    data: {
+      nodes: Array<{ id: string; title: string; featuredImage: { url: string } | null } | null>;
+    };
+  };
+  const map: Record<string, ProductDetails> = {};
+  for (const node of data.data.nodes) {
+    if (node) {
+      map[node.id] = {
+        id: node.id,
+        title: node.title,
+        image: node.featuredImage?.url ?? null,
+      };
+    }
+  }
+  return map;
+}
+
 export async function loader({ request, params, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
-  const { session } = await authenticate.admin(request, ctx);
+  const { session, admin } = await authenticate.admin(request, ctx);
   const db = getDb(ctx.cloudflare.env.DB);
   const bundle = await bundleRepo.getById(db, session.shop, params.id!);
   if (!bundle) throw new Response("Not found", { status: 404 });
-  return json({ bundle });
+
+  const productIds = [
+    ...bundle.products.map((p) => p.productId),
+    ...bundle.triggerProductIds,
+  ];
+  const productDetails = await fetchProductDetails(admin, [...new Set(productIds)]);
+
+  return json({ bundle, productDetails });
 }
 
 export async function action({
@@ -83,7 +128,7 @@ export async function action({
 }
 
 export default function BundleEdit() {
-  const { bundle } = useLoaderData<typeof loader>();
+  const { bundle, productDetails } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const errors =
     actionData && "errors" in actionData ? actionData.errors : undefined;
@@ -94,6 +139,8 @@ export default function BundleEdit() {
       productId: p.productId,
       variantId: p.variantId,
       qty: p.qty,
+      title: productDetails[p.productId]?.title,
+      image: productDetails[p.productId]?.image ?? undefined,
     })),
     discountType: bundle.discountType as BundleFormValues["discountType"],
     discountValue: String(bundle.discountValue),
@@ -104,6 +151,8 @@ export default function BundleEdit() {
       productId: id,
       variantId: null,
       qty: 1,
+      title: productDetails[id]?.title,
+      image: productDetails[id]?.image ?? undefined,
     })),
     status: bundle.status as BundleFormValues["status"],
     headline: bundle.headline ?? "",

@@ -22,6 +22,8 @@ export type BundleProduct = {
   productId: string;
   variantId: string | null;
   qty: number;
+  title?: string;
+  image?: string;
 };
 
 export type QbTier = {
