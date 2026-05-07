@@ -13,9 +13,10 @@ describe("analytics.emit", () => {
     configureAnalytics({ apiBase: "https://x/api/storefront", shop: "s.myshopify.com" });
     emit("widget_impression", { widgetType: "bundle", widgetId: "b1", productId: "p1" });
     expect(beacon).toHaveBeenCalledOnce();
-    const [url, payload] = beacon.mock.calls[0]!;
+    const call = beacon.mock.calls[0] as unknown as [string, string];
+    const [url, payload] = call;
     expect(url).toBe("https://x/api/storefront/event");
-    const parsed = JSON.parse(payload as string);
+    const parsed = JSON.parse(payload);
     expect(parsed.type).toBe("widget_impression");
     expect(parsed.shop).toBe("s.myshopify.com");
     expect(parsed.widgetId).toBe("b1");

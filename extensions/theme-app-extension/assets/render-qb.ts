@@ -93,6 +93,7 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
     const cta = mount.querySelector<HTMLButtonElement>("[data-action=add-to-cart]");
     if (cta) {
       cta.addEventListener("click", async () => {
+        if (!variant) return; // narrowing for async closure (variant is checked at top of renderQb)
         const tr = qb.tiers[selectedIndex]!;
         cta.disabled = true;
         const unitCents = tierUnitCents(tr, variant.priceCents);
