@@ -1,0 +1,18 @@
+{% comment %} Bundler — mix and match widget. {% endcomment %}
+<div
+  class="pumper-mount"
+  data-pumper-type="mix_match"
+  data-product-id="{{ product.id }}"
+  data-product-handle="{{ product.handle }}"
+  data-shop="{{ shop.permanent_domain }}"
+  style="min-height:180px"
+></div>
+
+{% schema %}
+{
+  "name": "Bundler — Mix & Match",
+  "target": "section",
+  "enabled_on": { "templates": ["product", "collection"] },
+  "settings": []
+}
+{% endschema %}

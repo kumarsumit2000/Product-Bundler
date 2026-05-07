@@ -1,0 +1,18 @@
+{% comment %} Bundler — quantity break widget. {% endcomment %}
+<div
+  class="pumper-mount"
+  data-pumper-type="qb"
+  data-product-id="{{ product.id }}"
+  data-product-handle="{{ product.handle }}"
+  data-shop="{{ shop.permanent_domain }}"
+  style="min-height:180px"
+></div>
+
+{% schema %}
+{
+  "name": "Bundler — Quantity Break",
+  "target": "section",
+  "enabled_on": { "templates": ["product"] },
+  "settings": []
+}
+{% endschema %}

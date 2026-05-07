@@ -1,0 +1,18 @@
+{% comment %} Bundler — classic bundle widget. Drag onto PDP via theme editor. {% endcomment %}
+<div
+  class="pumper-mount"
+  data-pumper-type="bundle"
+  data-product-id="{{ product.id }}"
+  data-product-handle="{{ product.handle }}"
+  data-shop="{{ shop.permanent_domain }}"
+  style="min-height:180px"
+></div>
+
+{% schema %}
+{
+  "name": "Bundler — Bundle",
+  "target": "section",
+  "enabled_on": { "templates": ["product"] },
+  "settings": []
+}
+{% endschema %}

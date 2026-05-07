@@ -1,0 +1,21 @@
+{% comment %} Bundler — App Embed. Loads the widget once per page. {% endcomment %}
+<script>
+  window._pumperConfig = {
+    shop: "{{ shop.permanent_domain }}",
+    locale: "{{ request.locale.iso_code }}",
+    currency: "{{ cart.currency.iso_code }}",
+    apiBase: "{{ block.settings.api_base | default: 'https://bundler.deepseatools.in/api/storefront' }}"
+  };
+</script>
+<script src="{{ 'widget.js' | asset_url }}" defer></script>
+<link rel="stylesheet" href="{{ 'widget.css' | asset_url }}">
+
+{% schema %}
+{
+  "name": "Bundler",
+  "target": "head",
+  "settings": [
+    { "type": "text", "id": "api_base", "label": "API base (advanced)", "default": "https://bundler.deepseatools.in/api/storefront" }
+  ]
+}
+{% endschema %}
