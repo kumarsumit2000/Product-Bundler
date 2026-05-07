@@ -2,7 +2,12 @@ import { Banner } from "@shopify/polaris";
 import { Link } from "@remix-run/react";
 import type { UsageSnapshot } from "~/lib/billing/usage";
 
-type Props = { usage: UsageSnapshot };
+// resetAt is Date server-side but serialises to string (or null) over the Remix json() boundary.
+type SerializedUsageSnapshot = Omit<UsageSnapshot, "resetAt"> & {
+  resetAt: string | Date | null;
+};
+
+type Props = { usage: SerializedUsageSnapshot };
 
 export function UsageBanner({ usage }: Props) {
   if (usage.percentUsed < 80) return null;

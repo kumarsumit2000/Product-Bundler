@@ -16,13 +16,18 @@ import { getDb } from "~/db.server";
 import * as qbRepo from "~/lib/quantity-breaks/repo";
 import { syncShopConfig } from "~/lib/metafield-sync";
 import { StatusBadge } from "~/components/StatusBadge";
+import { getUsage } from "~/lib/billing/usage";
+import { UsageBanner } from "~/components/UsageBanner";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
   const { session } = await authenticate.admin(request, ctx);
   const db = getDb(ctx.cloudflare.env.DB);
-  const items = await qbRepo.listByShop(db, session.shop);
-  return json({ items });
+  const [items, usage] = await Promise.all([
+    qbRepo.listByShop(db, session.shop),
+    getUsage(db, session.shop),
+  ]);
+  return json({ items, usage });
 }
 
 export async function action({ request, context }: ActionFunctionArgs) {
@@ -73,7 +78,7 @@ function DeleteRowButton({ id, name }: { id: string; name: string }) {
 }
 
 export default function QbsIndex() {
-  const { items } = useLoaderData<typeof loader>();
+  const { items, usage } = useLoaderData<typeof loader>();
   const fetcher = useFetcher();
   const navigate = useNavigate();
   const resourceIDResolver = (q: { id: string }) => q.id;
@@ -104,6 +109,7 @@ export default function QbsIndex() {
           url: "/app/quantity-breaks/new",
         }}
       >
+        <UsageBanner usage={usage} />
         <Card>
           <EmptyState
             heading="No quantity breaks yet"
@@ -159,6 +165,7 @@ export default function QbsIndex() {
         url: "/app/quantity-breaks/new",
       }}
     >
+      <UsageBanner usage={usage} />
       <Card padding="0">
         <IndexTable
           itemCount={items.length}

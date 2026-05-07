@@ -16,13 +16,18 @@ import { getDb } from "~/db.server";
 import * as bundleRepo from "~/lib/bundles/repo";
 import { syncShopConfig } from "~/lib/metafield-sync";
 import { StatusBadge } from "~/components/StatusBadge";
+import { getUsage } from "~/lib/billing/usage";
+import { UsageBanner } from "~/components/UsageBanner";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
   const { session } = await authenticate.admin(request, ctx);
   const db = getDb(ctx.cloudflare.env.DB);
-  const bundles = await bundleRepo.listByShop(db, session.shop);
-  return json({ bundles });
+  const [bundles, usage] = await Promise.all([
+    bundleRepo.listByShop(db, session.shop),
+    getUsage(db, session.shop),
+  ]);
+  return json({ bundles, usage });
 }
 
 export async function action({ request, context }: ActionFunctionArgs) {
@@ -82,7 +87,7 @@ function DeleteRowButton({ id, name }: { id: string; name: string }) {
 }
 
 export default function BundlesIndex() {
-  const { bundles } = useLoaderData<typeof loader>();
+  const { bundles, usage } = useLoaderData<typeof loader>();
   const fetcher = useFetcher();
   const navigate = useNavigate();
   const resourceIDResolver = (b: { id: string }) => b.id;
@@ -110,6 +115,7 @@ export default function BundlesIndex() {
         title="Bundles"
         primaryAction={{ content: "Create bundle", url: "/app/bundles/new" }}
       >
+        <UsageBanner usage={usage} />
         <Card>
           <EmptyState
             heading="No bundles yet"
@@ -156,6 +162,7 @@ export default function BundlesIndex() {
       title="Bundles"
       primaryAction={{ content: "Create bundle", url: "/app/bundles/new" }}
     >
+      <UsageBanner usage={usage} />
       <Card padding="0">
         <IndexTable
           itemCount={bundles.length}

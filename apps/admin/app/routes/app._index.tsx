@@ -15,12 +15,14 @@ import {
   getQbTierBreakdown,
   getBundleListForFilter,
 } from "~/lib/analytics/dashboard-query";
+import { getUsage } from "~/lib/billing/usage";
 import { KpiCard } from "~/components/dashboard/KpiCard";
 import { ActivityChart } from "~/components/dashboard/ActivityChart";
 import { ConversionsSalesPair } from "~/components/dashboard/ConversionsSalesPair";
 import { TopBundlesTable } from "~/components/dashboard/TopBundlesTable";
 import { QbTierBreakdownTable } from "~/components/dashboard/QbTierBreakdownTable";
 import { DateRangePicker, type DateRangeValue } from "~/components/dashboard/DateRangePicker";
+import { UsageBanner } from "~/components/UsageBanner";
 
 function dateNDaysAgo(n: number): string {
   const d = new Date();
@@ -69,18 +71,19 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   type BundleListResult = Awaited<ReturnType<typeof getBundleListForFilter>>;
 
   const kpiFallback: KpisResult = { totalRevenueCents: 0, totalOrders: 0, bundleOrders: 0, revenueSeries: [], ordersSeries: [] };
-  const [kpis, activity, convSales, topBundles, qbTier, bundleList] = await Promise.all([
+  const [kpis, activity, convSales, topBundles, qbTier, bundleList, usage] = await Promise.all([
     getKpis(db, session.shop, range).catch((): KpisResult => kpiFallback),
     getActivitySeries(db, session.shop, range, selectedBundleIds.length > 0 ? selectedBundleIds : undefined).catch((): ActivityResult => []),
     getConversionsAndSales(db, session.shop, range).catch((): ConvSalesResult => ({ conversions: [], sales: [] })),
     getTopBundles(db, session.shop, range).catch((): TopBundlesResult => []),
     getQbTierBreakdown(db, session.shop, range).catch((): QbTierResult => []),
     getBundleListForFilter(db, session.shop).catch((): BundleListResult => []),
+    getUsage(db, session.shop),
   ]);
 
   return json({
     shop: session.shop, currency, locale, rangeParam, selectedBundleIds,
-    kpis, activity, convSales, topBundles, qbTier, bundleList,
+    kpis, activity, convSales, topBundles, qbTier, bundleList, usage,
   });
 }
 
@@ -93,7 +96,7 @@ function formatMoney(cents: number, currency: string, locale: string) {
 }
 
 export default function Dashboard() {
-  const { currency, locale, rangeParam, selectedBundleIds, kpis, activity, convSales, topBundles, qbTier, bundleList } = useLoaderData<typeof loader>();
+  const { currency, locale, rangeParam, selectedBundleIds, kpis, activity, convSales, topBundles, qbTier, bundleList, usage } = useLoaderData<typeof loader>();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const setRange = (range: DateRangeValue) => {
@@ -115,6 +118,7 @@ export default function Dashboard() {
     <PolarisVizProvider>
       <Page title="Analytics">
         <BlockStack gap="500">
+          <UsageBanner usage={usage} />
           <InlineStack align="end">
             <DateRangePicker value={rangeParam} onChange={setRange} />
           </InlineStack>
