@@ -25,7 +25,7 @@ export function VariantPicker({ variant, onChange, restrictToProductId }: Props)
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       result = await (shopify as any).resourcePicker({
-        type: "product-variant",
+        type: "variant",
         multiple: false,
         selectionIds: variant ? [{ id: variant.variantId }] : [],
       });
