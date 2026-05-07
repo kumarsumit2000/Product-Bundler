@@ -1,4 +1,5 @@
 api_version = "2026-04"
+uid = "97dbeb25-f261-7938-2ec0-85085cb449f1efcd8913"
 
 [[extensions]]
 name = "Bundler Cart Transform"
