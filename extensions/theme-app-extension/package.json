@@ -8,7 +8,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "check:size": "./scripts/check-bundle-size.sh"
+    "check:size": "node -e \"const fs=require('fs'),zlib=require('zlib');const sz=zlib.gzipSync(fs.readFileSync('assets/widget.js')).length;console.log('widget.js gzipped: '+sz+' bytes (limit: 30000)');process.exit(sz>30000?1:0)\""
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
