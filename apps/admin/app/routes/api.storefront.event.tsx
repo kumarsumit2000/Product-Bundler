@@ -2,6 +2,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/cloudfla
 import { eq } from "drizzle-orm";
 import { type AppLoadContext } from "~/shopify.server";
 import { getDb, schema } from "~/db.server";
+import { writeStorefrontEvent } from "~/lib/analytics/events-write";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -25,14 +26,23 @@ export async function action({ request, context }: ActionFunctionArgs) {
   if (text.length > MAX_BODY) {
     return new Response("Too large", { status: 413, headers: CORS_HEADERS });
   }
-  let event: { type?: string; shop?: string };
+  let body: {
+    type?: string;
+    shop?: string;
+    widgetType?: string;
+    widgetId?: string;
+    productId?: string;
+    tierQty?: number;
+    valueCents?: number;
+    ts?: number;
+  };
   try {
-    event = JSON.parse(text);
+    body = JSON.parse(text);
   } catch {
     return new Response("Bad JSON", { status: 400, headers: CORS_HEADERS });
   }
 
-  const shop = (event.shop ?? "").toLowerCase();
+  const shop = (body.shop ?? "").toLowerCase();
   if (!shop) {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
   }
@@ -43,19 +53,33 @@ export async function action({ request, context }: ActionFunctionArgs) {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
   }
 
-  // Phase 4 stub: Analytics Engine binding wired in Phase 6.
-  // If env.ANALYTICS exists at runtime (future), write here. Otherwise no-op.
-  const anyEnv = env as unknown as { ANALYTICS?: { writeDataPoint(p: unknown): void } };
-  if (anyEnv.ANALYTICS && typeof anyEnv.ANALYTICS.writeDataPoint === "function") {
-    try {
-      anyEnv.ANALYTICS.writeDataPoint({
-        blobs: [String(event.type ?? ""), shop],
-        doubles: [],
-        indexes: [shop],
-      });
-    } catch {
-      // swallow
-    }
+  const VALID_TYPES = ["widget_impression", "widget_click", "add_to_cart"] as const;
+  const VALID_WIDGETS = ["bundle", "qb", "mix_match"] as const;
+  if (!body.type || !(VALID_TYPES as readonly string[]).includes(body.type)) {
+    return new Response(null, { status: 204, headers: CORS_HEADERS });
+  }
+  if (!body.widgetType || !(VALID_WIDGETS as readonly string[]).includes(body.widgetType)) {
+    return new Response(null, { status: 204, headers: CORS_HEADERS });
+  }
+  if (!body.widgetId || typeof body.widgetId !== "string") {
+    return new Response(null, { status: 204, headers: CORS_HEADERS });
+  }
+  const ts = typeof body.ts === "number" && Number.isFinite(body.ts) ? body.ts : Date.now();
+
+  try {
+    await writeStorefrontEvent(db, shop, {
+      type: body.type as "widget_impression" | "widget_click" | "add_to_cart",
+      widgetType: body.widgetType as "bundle" | "qb" | "mix_match",
+      widgetId: body.widgetId,
+      productId: body.productId,
+      tierQty: body.tierQty,
+      valueCents: body.valueCents,
+      ts,
+    });
+  } catch (err) {
+    // Fire-and-forget; never block the storefront on a beacon write
+    // eslint-disable-next-line no-console
+    console.warn("[event-write] failed:", err);
   }
 
   return new Response(null, { status: 204, headers: CORS_HEADERS });

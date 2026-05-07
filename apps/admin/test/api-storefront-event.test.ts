@@ -79,4 +79,20 @@ describe("/api/storefront/event action", () => {
     const res = await action({ request: req, context: makeContext(s.db) } as never);
     expect((res as Response).status).toBe(204);
   });
+
+  it("inserts a row in events table on a valid beacon", async () => {
+    const ts = Date.now();
+    const req = new Request("https://x/api/storefront/event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "widget_impression", shop: SHOP, widgetType: "bundle", widgetId: "b1", productId: "p1", ts }),
+    });
+    const res = await action({ request: req, context: makeContext(s.db) } as never);
+    expect((res as Response).status).toBe(204);
+    const rows = s.db.select().from(schema.events).all();
+    expect(rows.length).toBe(1);
+    expect(rows[0]!.shopId).toBe(SHOP);
+    expect(rows[0]!.type).toBe("widget_impression");
+    expect(rows[0]!.ts).toBe(ts);
+  });
 });
