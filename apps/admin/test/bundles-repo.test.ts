@@ -29,6 +29,9 @@ const NEW_BUNDLE_INPUT = {
   styleOverrides: null,
   headline: null,
   ctaLabel: null,
+  mode: "classic" as const,
+  collectionId: null,
+  targetQty: null,
 };
 
 describe("bundles repo", () => {
@@ -84,5 +87,28 @@ describe("bundles repo", () => {
     expect(listB.length).toBe(1);
     expect(listA[0]!.shopId).toBe(SHOP_A);
     expect(listB[0]!.shopId).toBe(SHOP_B);
+  });
+
+  it("creates a mix_match bundle with collectionId + targetQty", async () => {
+    const created = await repo.create(setup.db, SHOP_A, {
+      ...NEW_BUNDLE_INPUT,
+      products: [],
+      mode: "mix_match",
+      collectionId: "gid://shopify/Collection/123",
+      targetQty: 3,
+    });
+    const got = await repo.getById(setup.db, SHOP_A, created.id);
+    expect(got).not.toBeNull();
+    expect(got!.mode).toBe("mix_match");
+    expect(got!.collectionId).toBe("gid://shopify/Collection/123");
+    expect(got!.targetQty).toBe(3);
+    expect(got!.products).toEqual([]);
+  });
+
+  it("stores classic mode with null collectionId and targetQty", async () => {
+    const created = await repo.create(setup.db, SHOP_A, NEW_BUNDLE_INPUT);
+    expect(created.mode).toBe("classic");
+    expect(created.collectionId).toBeNull();
+    expect(created.targetQty).toBeNull();
   });
 });
