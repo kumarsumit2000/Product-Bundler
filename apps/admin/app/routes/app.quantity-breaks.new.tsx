@@ -1,10 +1,12 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/cloudflare";
 import { json, redirect } from "@remix-run/cloudflare";
-import { useActionData } from "@remix-run/react";
+import { useActionData, useLoaderData } from "@remix-run/react";
 import { useState } from "react";
-import { Page, Layout } from "@shopify/polaris";
+import { Page, Layout, Card, EmptyState } from "@shopify/polaris";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
 import { getDb } from "~/db.server";
+import { getUsage } from "~/lib/billing/usage";
+import { canCreateNew } from "~/lib/billing/gating";
 import * as qbRepo from "~/lib/quantity-breaks/repo";
 import { validateQb } from "~/lib/quantity-breaks/validate";
 import { syncShopConfig } from "~/lib/metafield-sync";
@@ -16,8 +18,11 @@ import type { TierFormValue } from "~/components/QbTierBuilder";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
-  await authenticate.admin(request, ctx);
-  return json({});
+  const { session } = await authenticate.admin(request, ctx);
+  const db = getDb(ctx.cloudflare.env.DB);
+  const usage = await getUsage(db, session.shop);
+  const gate = canCreateNew(usage);
+  return json({ gate });
 }
 
 export async function action({ request, context }: ActionFunctionArgs) {
@@ -60,6 +65,12 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
   const db = getDb(ctx.cloudflare.env.DB);
 
+  const usage = await getUsage(db, session.shop);
+  const gate = canCreateNew(usage);
+  if (!gate.allowed) {
+    return json({ errors: { _form: gate.reason } }, { status: 403 });
+  }
+
   await qbRepo.create(db, session.shop, {
     name: input.name,
     status: input.status as "draft" | "active" | "paused",
@@ -80,9 +91,30 @@ export async function action({ request, context }: ActionFunctionArgs) {
 }
 
 export default function QbNew() {
+  const { gate } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const errors =
     actionData && "errors" in actionData ? actionData.errors : undefined;
+
+  if (!gate.allowed) {
+    return (
+      <Page title="Create quantity break" backAction={{ content: "Quantity Breaks", url: "/app/quantity-breaks" }}>
+        <Layout>
+          <Layout.Section>
+            <Card>
+              <EmptyState
+                heading="Free plan limit reached"
+                action={{ content: "Upgrade to create more", url: "/app/billing" }}
+                image=""
+              >
+                <p>{gate.reason}</p>
+              </EmptyState>
+            </Card>
+          </Layout.Section>
+        </Layout>
+      </Page>
+    );
+  }
 
   const [values, setValues] = useState<QbFormValues | null>(null);
 
