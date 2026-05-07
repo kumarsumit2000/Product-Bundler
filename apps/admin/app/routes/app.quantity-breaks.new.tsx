@@ -1,14 +1,17 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/cloudflare";
 import { json, redirect } from "@remix-run/cloudflare";
 import { useActionData } from "@remix-run/react";
-import { Page } from "@shopify/polaris";
+import { useState } from "react";
+import { Page, Layout } from "@shopify/polaris";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
 import { getDb } from "~/db.server";
 import * as qbRepo from "~/lib/quantity-breaks/repo";
 import { validateQb } from "~/lib/quantity-breaks/validate";
 import { syncShopConfig } from "~/lib/metafield-sync";
 import { ensureDiscountNodes } from "~/lib/discount-nodes";
-import { QbForm } from "~/components/QbForm";
+import { QbForm, type QbFormValues } from "~/components/QbForm";
+import { PreviewPane } from "~/components/PreviewPane";
+import { buildPreviewQbConfig, defaultPreviewSettings } from "~/lib/preview-config";
 import type { TierFormValue } from "~/components/QbTierBuilder";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
@@ -74,6 +77,46 @@ export default function QbNew() {
   const errors =
     actionData && "errors" in actionData ? actionData.errors : undefined;
 
+  const [values, setValues] = useState<QbFormValues | null>(null);
+
+  const previewConfig = values
+    ? buildPreviewQbConfig({
+        shop: "preview",
+        mockProduct: {
+          productId: values.product[0]?.productId ?? "gid://shopify/Product/0",
+          title: values.product[0]?.title ?? "Sample",
+          priceCents: 4999,
+        },
+        settings: defaultPreviewSettings(),
+        qb: {
+          id: "new",
+          name: values.name,
+          productId: values.product[0]?.productId ?? "gid://shopify/Product/0",
+          productTitle: values.product[0]?.title ?? "Sample product",
+          productImage: values.product[0]?.image ?? null,
+          productVariants: [
+            {
+              variantId:
+                values.product[0]?.variantId ?? "v0",
+              title: "Default",
+              available: true,
+              priceCents: 4999,
+            },
+          ],
+          tiers: values.tiers.map((tr) => ({
+            qty: tr.qty,
+            discountType: tr.discountType,
+            discountValue: tr.discountValue,
+            label: tr.label,
+            isMostPopular: tr.isMostPopular,
+            available: true,
+          })),
+          combinable: values.combinable,
+          styleOverrides: null,
+        },
+      })
+    : null;
+
   return (
     <Page
       title="Create quantity break"
@@ -82,7 +125,20 @@ export default function QbNew() {
         url: "/app/quantity-breaks",
       }}
     >
-      <QbForm submitLabel="Save quantity break" errors={errors} />
+      <Layout>
+        <Layout.Section>
+          <QbForm
+            submitLabel="Save quantity break"
+            errors={errors}
+            onValuesChange={setValues}
+          />
+        </Layout.Section>
+        <Layout.Section variant="oneThird">
+          {previewConfig && (
+            <PreviewPane type="qb" id="new" config={previewConfig} />
+          )}
+        </Layout.Section>
+      </Layout>
     </Page>
   );
 }

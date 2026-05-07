@@ -11,7 +11,7 @@ import {
   InlineStack,
   Text,
 } from "@shopify/polaris";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ProductPicker, type PickedProduct } from "./ProductPicker";
 import { DiscountValueInput } from "./DiscountValueInput";
 import { CollectionPicker, type PickedCollection } from "./CollectionPicker";
@@ -41,6 +41,7 @@ type Props = {
   initialValues?: Partial<BundleFormValues>;
   errors?: Record<string, string>;
   submitLabel: string;
+  onValuesChange?: (v: BundleFormValues) => void;
 };
 
 const DEFAULTS: BundleFormValues = {
@@ -59,11 +60,15 @@ const DEFAULTS: BundleFormValues = {
   ctaLabel: "",
 };
 
-export function BundleForm({ initialValues, errors, submitLabel }: Props) {
+export function BundleForm({ initialValues, errors, submitLabel, onValuesChange }: Props) {
   const [values, setValues] = useState<BundleFormValues>({ ...DEFAULTS, ...initialValues });
 
   const update = <K extends keyof BundleFormValues>(key: K, val: BundleFormValues[K]) =>
     setValues((v) => ({ ...v, [key]: val }));
+
+  useEffect(() => {
+    onValuesChange?.(values);
+  }, [values, onValuesChange]);
 
   const hasErrors = errors && Object.keys(errors).length > 0;
 

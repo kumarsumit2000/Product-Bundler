@@ -1,7 +1,8 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/cloudflare";
 import { json, redirect } from "@remix-run/cloudflare";
 import { useActionData } from "@remix-run/react";
-import { Page } from "@shopify/polaris";
+import { useState } from "react";
+import { Page, Layout } from "@shopify/polaris";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
 import { getDb } from "~/db.server";
 import * as bundleRepo from "~/lib/bundles/repo";
@@ -9,6 +10,8 @@ import { validateBundle } from "~/lib/bundles/validate";
 import { syncShopConfig } from "~/lib/metafield-sync";
 import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { BundleForm, type BundleFormValues } from "~/components/BundleForm";
+import { PreviewPane } from "~/components/PreviewPane";
+import { buildPreviewBundleConfig, defaultMockProduct, defaultPreviewSettings } from "~/lib/preview-config";
 import type { PickedProduct } from "~/components/ProductPicker";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
@@ -91,12 +94,78 @@ export default function BundleNew() {
   const errors =
     actionData && "errors" in actionData ? actionData.errors : undefined;
 
+  const [values, setValues] = useState<BundleFormValues | null>(null);
+
+  const previewConfig = values
+    ? buildPreviewBundleConfig({
+        shop: "preview",
+        mockProduct: defaultMockProduct(),
+        settings: defaultPreviewSettings(),
+        bundle: {
+          id: "new",
+          name: values.name,
+          mode: values.mode,
+          products:
+            values.mode === "classic"
+              ? values.products.map((p) => ({
+                  productId: p.productId,
+                  variantId: p.variantId,
+                  qty: p.qty,
+                  title: p.title ?? p.productId,
+                  image: p.image ?? null,
+                  available: true,
+                  priceCents: 4999,
+                }))
+              : [],
+          collectionId:
+            values.mode === "mix_match"
+              ? (values.collection?.collectionId ?? null)
+              : null,
+          targetQty:
+            values.mode === "mix_match"
+              ? parseInt(values.targetQty || "0", 10) || null
+              : null,
+          collectionProducts:
+            values.mode === "mix_match" && values.collection
+              ? Array.from({ length: 6 }).map((_, i) => ({
+                  productId: `gid://shopify/Product/preview-${i}`,
+                  variantId: `gid://shopify/ProductVariant/preview-${i}`,
+                  title: `Sample item ${i + 1}`,
+                  image: values.collection?.image ?? null,
+                  available: true,
+                  priceCents: 2400,
+                }))
+              : null,
+          discountType: values.discountType,
+          discountValue: parseFloat(values.discountValue) || 0,
+          combinable: values.combinable,
+          triggerProductIds: values.triggerProducts.map((p) => p.productId),
+          headline: values.headline || null,
+          ctaLabel: values.ctaLabel || null,
+          styleOverrides: null,
+        },
+      })
+    : null;
+
   return (
     <Page
       title="Create bundle"
       backAction={{ content: "Bundles", url: "/app/bundles" }}
     >
-      <BundleForm submitLabel="Save bundle" errors={errors} />
+      <Layout>
+        <Layout.Section>
+          <BundleForm
+            submitLabel="Save bundle"
+            errors={errors}
+            onValuesChange={setValues}
+          />
+        </Layout.Section>
+        <Layout.Section variant="oneThird">
+          {previewConfig && (
+            <PreviewPane type="bundle" id="new" config={previewConfig} />
+          )}
+        </Layout.Section>
+      </Layout>
     </Page>
   );
 }

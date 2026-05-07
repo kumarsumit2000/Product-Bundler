@@ -11,7 +11,7 @@ import {
   InlineStack,
   Text,
 } from "@shopify/polaris";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ProductPicker, type PickedProduct } from "./ProductPicker";
 import { QbTierBuilder, type TierFormValue } from "./QbTierBuilder";
 
@@ -29,6 +29,7 @@ type Props = {
   initialValues?: Partial<QbFormValues>;
   errors?: Record<string, string>;
   submitLabel: string;
+  onValuesChange?: (v: QbFormValues) => void;
 };
 
 const DEFAULTS: QbFormValues = {
@@ -39,10 +40,14 @@ const DEFAULTS: QbFormValues = {
   status: "draft",
 };
 
-export function QbForm({ initialValues, errors, submitLabel }: Props) {
+export function QbForm({ initialValues, errors, submitLabel, onValuesChange }: Props) {
   const [values, setValues] = useState<QbFormValues>({ ...DEFAULTS, ...initialValues });
   const update = <K extends keyof QbFormValues>(k: K, v: QbFormValues[K]) =>
     setValues((s) => ({ ...s, [k]: v }));
+
+  useEffect(() => {
+    onValuesChange?.(values);
+  }, [values, onValuesChange]);
 
   const hasErrors = errors && Object.keys(errors).length > 0;
 
