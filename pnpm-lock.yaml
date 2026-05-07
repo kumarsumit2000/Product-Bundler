@@ -91,7 +91,7 @@ importers:
         specifier: ^4.88.0
         version: 4.88.0(@cloudflare/workers-types@4.20260505.1)
 
-  extensions/theme-app-extension:
+  apps/widget-src:
     devDependencies:
       '@types/node':
         specifier: ^20.0.0

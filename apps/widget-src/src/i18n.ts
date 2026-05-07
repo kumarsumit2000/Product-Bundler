@@ -1,4 +1,4 @@
-import enStrings from "../locales/en.default.json";
+import enStrings from "../../../extensions/theme-app-extension/locales/en.default.json";
 
 type StringTable = Record<string, string>;
 const TABLES: Record<string, StringTable> = { en: enStrings as StringTable };
