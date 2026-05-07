@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { fetchProductDetails, fetchCollectionTopProducts } from "../app/lib/shopify-product-fetch";
+import { fetchProductDetails, fetchCollectionTopProducts, fetchVariantDetails } from "../app/lib/shopify-product-fetch";
 
 const productNodesResponse = {
   data: {
@@ -65,5 +65,36 @@ describe("fetchCollectionTopProducts", () => {
     expect(out.length).toBe(1);
     expect(out[0]?.productId).toBe("gid://shopify/Product/2");
     expect(out[0]?.priceCents).toBe(2400);
+  });
+});
+
+const variantNodesResponse = {
+  data: {
+    nodes: [
+      {
+        __typename: "ProductVariant",
+        id: "gid://shopify/ProductVariant/11",
+        title: "Default Title",
+        image: { url: "https://cdn.example.com/v.jpg" },
+        product: { id: "gid://shopify/Product/1", title: "Snowboard" },
+      },
+    ],
+  },
+};
+
+describe("fetchVariantDetails", () => {
+  it("returns title + image + product title for each requested variant", async () => {
+    const admin = mockAdmin(variantNodesResponse);
+    const out = await fetchVariantDetails(admin, ["gid://shopify/ProductVariant/11"]);
+    expect(out["gid://shopify/ProductVariant/11"]?.variantTitle).toBe("Default Title");
+    expect(out["gid://shopify/ProductVariant/11"]?.productTitle).toBe("Snowboard");
+    expect(out["gid://shopify/ProductVariant/11"]?.image).toBe("https://cdn.example.com/v.jpg");
+  });
+
+  it("returns empty object when variantIds is empty", async () => {
+    const admin = mockAdmin(variantNodesResponse);
+    const out = await fetchVariantDetails(admin, []);
+    expect(out).toEqual({});
+    expect(admin.graphql).not.toHaveBeenCalled();
   });
 });

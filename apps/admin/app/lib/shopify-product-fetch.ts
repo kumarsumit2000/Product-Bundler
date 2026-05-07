@@ -84,6 +84,59 @@ export async function fetchProductDetails(
   return out;
 }
 
+export type VariantDetail = {
+  variantId: string;
+  variantTitle: string;
+  productTitle: string;
+  image: string | null;
+};
+
+export async function fetchVariantDetails(
+  admin: AdminGraphqlClient,
+  variantIds: string[],
+): Promise<Record<string, VariantDetail>> {
+  if (variantIds.length === 0) return {};
+  const res = await admin.graphql(
+    `query Variants($ids: [ID!]!) {
+      nodes(ids: $ids) {
+        ... on ProductVariant {
+          __typename
+          id
+          title
+          image { url }
+          product { id title }
+        }
+      }
+    }`,
+    { variables: { ids: variantIds } },
+  );
+  const data = (await res.json()) as {
+    data: {
+      nodes: Array<
+        | {
+            __typename: "ProductVariant";
+            id: string;
+            title: string;
+            image: { url: string } | null;
+            product: { id: string; title: string };
+          }
+        | null
+      >;
+    };
+  };
+  const out: Record<string, VariantDetail> = {};
+  for (const node of data.data.nodes) {
+    if (!node || node.__typename !== "ProductVariant") continue;
+    out[node.id] = {
+      variantId: node.id,
+      variantTitle: node.title,
+      productTitle: node.product.title,
+      image: node.image?.url ?? null,
+    };
+  }
+  return out;
+}
+
 export async function fetchCollectionTopProducts(
   admin: AdminGraphqlClient,
   collectionId: string,
