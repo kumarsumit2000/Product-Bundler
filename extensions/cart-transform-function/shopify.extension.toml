@@ -1,0 +1,17 @@
+api_version = "2026-04"
+
+[[extensions]]
+name = "Bundler Cart Transform"
+handle = "cart-transform-function"
+type = "function"
+description = "Merges bundle cart lines into a single visual parent line."
+
+  [[extensions.targeting]]
+  target = "cart.transform.run"
+  input_query = "src/run.graphql"
+  export = "run"
+
+  [extensions.build]
+  command = "cargo build --target=wasm32-unknown-unknown --release"
+  path = "target/wasm32-unknown-unknown/release/cart-transform-function.wasm"
+  watch = [ "src/**/*.rs" ]
