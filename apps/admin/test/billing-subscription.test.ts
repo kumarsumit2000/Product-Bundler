@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { createSubscription, cancelSubscription } from "../app/lib/billing/subscription";
+import { createSubscription, cancelSubscription, submitOverageCharge } from "../app/lib/billing/subscription";
 
 type GqlMock = ReturnType<typeof vi.fn>;
 function makeAdmin(graphql: GqlMock) {
@@ -86,5 +86,72 @@ describe("cancelSubscription", () => {
     await expect(
       cancelSubscription(makeAdmin(graphql), "gid://shopify/AppSubscription/999"),
     ).rejects.toThrow(/not found/);
+  });
+});
+
+describe("submitOverageCharge", () => {
+  it("queries activeSubscriptions, finds usage line item, then calls appUsageRecordCreate", async () => {
+    const graphql = vi.fn()
+      .mockResolvedValueOnce({
+        json: async () => ({
+          data: {
+            currentAppInstallation: {
+              activeSubscriptions: [
+                {
+                  id: "gid://shopify/AppSubscription/123",
+                  lineItems: [
+                    { id: "gid://shopify/AppSubscriptionLineItem/r1", plan: { pricingDetails: { __typename: "AppRecurringPricing" } } },
+                    { id: "gid://shopify/AppSubscriptionLineItem/u1", plan: { pricingDetails: { __typename: "AppUsagePricing" } } },
+                  ],
+                },
+              ],
+            },
+          },
+        }),
+      })
+      .mockResolvedValueOnce({
+        json: async () => ({
+          data: { appUsageRecordCreate: { appUsageRecord: { id: "gid://shopify/AppUsageRecord/x" }, userErrors: [] } },
+        }),
+      });
+
+    await submitOverageCharge(makeAdmin(graphql), "gid://shopify/AppSubscription/123", 5, "Order overage: 1 order @ $0.05");
+
+    expect(graphql).toHaveBeenCalledTimes(2);
+    const [, createOpts] = graphql.mock.calls[1]!;
+    expect(createOpts.variables.subscriptionLineItemId).toBe("gid://shopify/AppSubscriptionLineItem/u1");
+    expect(createOpts.variables.price.amount).toBe("0.05");
+    expect(createOpts.variables.description).toBe("Order overage: 1 order @ $0.05");
+  });
+
+  it("does not throw on errors (fire-and-forget) — logs only", async () => {
+    const graphql = vi.fn().mockRejectedValue(new Error("network"));
+    // should resolve, not reject
+    await expect(
+      submitOverageCharge(makeAdmin(graphql), "gid://shopify/AppSubscription/123", 5, "x"),
+    ).resolves.toBeUndefined();
+  });
+
+  it("does not throw when subscription has no usage line", async () => {
+    const graphql = vi.fn().mockResolvedValueOnce({
+      json: async () => ({
+        data: {
+          currentAppInstallation: {
+            activeSubscriptions: [
+              {
+                id: "gid://shopify/AppSubscription/123",
+                lineItems: [
+                  { id: "gid://shopify/AppSubscriptionLineItem/r1", plan: { pricingDetails: { __typename: "AppRecurringPricing" } } },
+                ],
+              },
+            ],
+          },
+        },
+      }),
+    });
+    await expect(
+      submitOverageCharge(makeAdmin(graphql), "gid://shopify/AppSubscription/123", 5, "x"),
+    ).resolves.toBeUndefined();
+    expect(graphql).toHaveBeenCalledOnce(); // didn't proceed to mutation
   });
 });

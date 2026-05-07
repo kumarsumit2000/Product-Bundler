@@ -108,3 +108,82 @@ export async function cancelSubscription(admin: AdminLike, chargeId: string): Pr
     throw new Error(`appSubscriptionCancel failed: ${errors.map((e) => e.message).join("; ")}`);
   }
 }
+
+const ACTIVE_SUBSCRIPTIONS_QUERY = `#graphql
+  query ActiveSubscriptions {
+    currentAppInstallation {
+      activeSubscriptions {
+        id
+        lineItems {
+          id
+          plan { pricingDetails { __typename } }
+        }
+      }
+    }
+  }
+`;
+
+const APP_USAGE_RECORD_CREATE = `#graphql
+  mutation AppUsageRecordCreate(
+    $subscriptionLineItemId: ID!
+    $price: MoneyInput!
+    $description: String!
+  ) {
+    appUsageRecordCreate(
+      subscriptionLineItemId: $subscriptionLineItemId
+      price: $price
+      description: $description
+    ) {
+      appUsageRecord { id }
+      userErrors { field message }
+    }
+  }
+`;
+
+export async function submitOverageCharge(
+  admin: AdminLike,
+  chargeId: string,
+  overageCents: number,
+  description: string,
+): Promise<void> {
+  try {
+    const lookupResp = await admin.graphql(ACTIVE_SUBSCRIPTIONS_QUERY);
+    const lookupBody = (await lookupResp.json()) as {
+      data?: {
+        currentAppInstallation?: {
+          activeSubscriptions: Array<{
+            id: string;
+            lineItems: Array<{ id: string; plan: { pricingDetails: { __typename: string } } }>;
+          }>;
+        };
+      };
+    };
+    const sub = lookupBody.data?.currentAppInstallation?.activeSubscriptions.find((s) => s.id === chargeId);
+    if (!sub) {
+      console.warn(`[billing] submitOverageCharge: subscription ${chargeId} not active; skipping`);
+      return;
+    }
+    const usageLine = sub.lineItems.find((li) => li.plan.pricingDetails.__typename === "AppUsagePricing");
+    if (!usageLine) {
+      console.warn(`[billing] submitOverageCharge: subscription ${chargeId} has no usage line item; skipping`);
+      return;
+    }
+    const amount = (overageCents / 100).toFixed(2);
+    const createResp = await admin.graphql(APP_USAGE_RECORD_CREATE, {
+      variables: {
+        subscriptionLineItemId: usageLine.id,
+        price: { amount, currencyCode: "USD" },
+        description,
+      },
+    });
+    const createBody = (await createResp.json()) as {
+      data?: { appUsageRecordCreate?: { userErrors: Array<{ field: string[]; message: string }> } };
+    };
+    const errors = createBody.data?.appUsageRecordCreate?.userErrors ?? [];
+    if (errors.length > 0) {
+      console.warn(`[billing] appUsageRecordCreate userErrors: ${errors.map((e) => e.message).join("; ")}`);
+    }
+  } catch (err) {
+    console.error("[billing] submitOverageCharge failed", err);
+  }
+}
