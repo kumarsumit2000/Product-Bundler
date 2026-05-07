@@ -25,6 +25,8 @@ fn tier(discount_type: &str, value: f64) -> QbTier {
         discount_value: value,
         label: "L".into(),
         is_most_popular: false,
+        free_gift_variant_id: None,
+        bogo: None,
     }
 }
 

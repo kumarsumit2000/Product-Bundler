@@ -64,4 +64,17 @@ pub struct QbTier {
     pub label: String,
     #[serde(rename = "isMostPopular")]
     pub is_most_popular: bool,
+    #[serde(rename = "freeGiftVariantId", default)]
+    pub free_gift_variant_id: Option<String>,
+    #[serde(default)]
+    pub bogo: Option<BogoConfig>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct BogoConfig {
+    pub mode: String,
+    #[serde(rename = "targetVariantId", default)]
+    pub target_variant_id: Option<String>,
+    #[serde(rename = "bonusQty")]
+    pub bonus_qty: u32,
 }
