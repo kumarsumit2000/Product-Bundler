@@ -1,7 +1,7 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/cloudflare";
 import { json, redirect } from "@remix-run/cloudflare";
-import { useActionData } from "@remix-run/react";
-import { useState } from "react";
+import { useActionData, useFetcher } from "@remix-run/react";
+import { useState, useEffect } from "react";
 import { Page, Layout } from "@shopify/polaris";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
 import { getDb } from "~/db.server";
@@ -13,6 +13,7 @@ import { BundleForm, type BundleFormValues } from "~/components/BundleForm";
 import { PreviewPane } from "~/components/PreviewPane";
 import { buildPreviewBundleConfig, defaultMockProduct, defaultPreviewSettings } from "~/lib/preview-config";
 import type { PickedProduct } from "~/components/ProductPicker";
+import type { CollectionProduct } from "~/lib/shopify-product-fetch";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
@@ -96,6 +97,20 @@ export default function BundleNew() {
 
   const [values, setValues] = useState<BundleFormValues | null>(null);
 
+  const collectionProductsFetcher = useFetcher<{ products: CollectionProduct[] }>();
+
+  const collectionId = values?.collection?.collectionId ?? null;
+
+  useEffect(() => {
+    if (!collectionId) return;
+    collectionProductsFetcher.load(
+      `/api/admin/collection-products/${encodeURIComponent(collectionId)}`
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [collectionId]);
+
+  const fetchedCollectionProducts = collectionProductsFetcher.data?.products ?? null;
+
   const previewConfig = values
     ? buildPreviewBundleConfig({
         shop: "preview",
@@ -127,14 +142,7 @@ export default function BundleNew() {
               : null,
           collectionProducts:
             values.mode === "mix_match" && values.collection
-              ? Array.from({ length: 6 }).map((_, i) => ({
-                  productId: `gid://shopify/Product/preview-${i}`,
-                  variantId: `gid://shopify/ProductVariant/preview-${i}`,
-                  title: `Sample item ${i + 1}`,
-                  image: values.collection?.image ?? null,
-                  available: true,
-                  priceCents: 2400,
-                }))
+              ? fetchedCollectionProducts
               : null,
           discountType: values.discountType,
           discountValue: parseFloat(values.discountValue) || 0,

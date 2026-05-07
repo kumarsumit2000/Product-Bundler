@@ -1,7 +1,7 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/cloudflare";
 import { json, redirect } from "@remix-run/cloudflare";
-import { useActionData, useLoaderData } from "@remix-run/react";
-import { useState } from "react";
+import { useActionData, useLoaderData, useFetcher } from "@remix-run/react";
+import { useState, useEffect } from "react";
 import { Page, Layout } from "@shopify/polaris";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
 import { getDb } from "~/db.server";
@@ -13,6 +13,7 @@ import { BundleForm, type BundleFormValues } from "~/components/BundleForm";
 import { PreviewPane } from "~/components/PreviewPane";
 import { buildPreviewBundleConfig, defaultMockProduct, defaultPreviewSettings } from "~/lib/preview-config";
 import type { PickedProduct } from "~/components/ProductPicker";
+import { fetchCollectionTopProducts, type CollectionProduct } from "~/lib/shopify-product-fetch";
 
 type ProductDetails = { id: string; title: string; image: string | null };
 
@@ -66,11 +67,15 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
   const productDetails = await fetchProductDetails(admin, [...new Set(productIds)]);
 
   let collectionDetails: { id: string; title: string; image: string | null } | null = null;
+  let collectionTopProducts: CollectionProduct[] | null = null;
   if (bundle.mode === "mix_match" && bundle.collectionId) {
-    const cRes = await admin.graphql(
-      `query Collection($id: ID!) { collection(id: $id) { id title image { url } } }`,
-      { variables: { id: bundle.collectionId } },
-    );
+    const [cRes, topProducts] = await Promise.all([
+      admin.graphql(
+        `query Collection($id: ID!) { collection(id: $id) { id title image { url } } }`,
+        { variables: { id: bundle.collectionId } },
+      ),
+      fetchCollectionTopProducts(admin, bundle.collectionId, 6),
+    ]);
     const cData = (await cRes.json()) as {
       data: { collection: { id: string; title: string; image: { url: string } | null } | null };
     };
@@ -81,9 +86,10 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
         image: cData.data.collection.image?.url ?? null,
       };
     }
+    collectionTopProducts = topProducts;
   }
 
-  return json({ bundle, productDetails, collectionDetails });
+  return json({ bundle, productDetails, collectionDetails, collectionTopProducts });
 }
 
 export async function action({
@@ -159,12 +165,28 @@ export async function action({
 }
 
 export default function BundleEdit() {
-  const { bundle, productDetails, collectionDetails } = useLoaderData<typeof loader>();
+  const { bundle, productDetails, collectionDetails, collectionTopProducts } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const errors =
     actionData && "errors" in actionData ? actionData.errors : undefined;
 
   const [values, setValues] = useState<BundleFormValues | null>(null);
+
+  const collectionProductsFetcher = useFetcher<{ products: CollectionProduct[] }>();
+
+  const collectionId = values?.collection?.collectionId ?? null;
+
+  useEffect(() => {
+    if (!collectionId) return;
+    collectionProductsFetcher.load(
+      `/api/admin/collection-products/${encodeURIComponent(collectionId)}`
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [collectionId]);
+
+  // Use fetcher data when available (after collection change), otherwise fall back to loader seed
+  const fetchedCollectionProducts =
+    collectionProductsFetcher.data?.products ?? collectionTopProducts ?? null;
 
   const initial: Partial<BundleFormValues> = {
     name: bundle.name,
@@ -230,14 +252,7 @@ export default function BundleEdit() {
               : null,
           collectionProducts:
             values.mode === "mix_match" && values.collection
-              ? Array.from({ length: 6 }).map((_, i) => ({
-                  productId: `gid://shopify/Product/preview-${i}`,
-                  variantId: `gid://shopify/ProductVariant/preview-${i}`,
-                  title: `Sample item ${i + 1}`,
-                  image: values.collection?.image ?? null,
-                  available: true,
-                  priceCents: 2400,
-                }))
+              ? fetchedCollectionProducts
               : null,
           discountType: values.discountType,
           discountValue: parseFloat(values.discountValue) || 0,
