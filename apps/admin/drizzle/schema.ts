@@ -33,7 +33,11 @@ export type QbTier = {
   label: string;
   isMostPopular: boolean;
   freeGiftVariantId?: string;
-  bogoTargetVariantId?: string;
+  bogo?: {
+    mode: "add_same" | "add_different" | "nth_free";
+    targetVariantId?: string;
+    bonusQty: number;
+  };
 };
 
 export type StyleOverrides = Partial<{
