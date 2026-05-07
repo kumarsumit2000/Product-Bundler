@@ -1,0 +1,6 @@
+api_version = "2026-04"
+
+[[extensions]]
+name = "Bundler Theme Widget"
+handle = "bundler-theme-widget"
+type = "theme"
