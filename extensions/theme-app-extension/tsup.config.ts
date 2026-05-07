@@ -1,7 +1,7 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-  entry: { widget: "assets/widget.ts" },
+  entry: { widget: "src/widget.ts" },
   outDir: "assets",
   format: ["iife"],
   globalName: "Pumper",

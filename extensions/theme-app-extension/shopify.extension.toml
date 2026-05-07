@@ -1,4 +1,5 @@
 api_version = "2026-04"
+uid = "53f1e6b5-5ec9-ba6b-6a21-6da0ca148ee224c42089"
 
 [[extensions]]
 name = "Bundler Theme Widget"
