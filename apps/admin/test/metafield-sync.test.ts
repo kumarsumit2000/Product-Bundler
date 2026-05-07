@@ -151,6 +151,42 @@ describe("syncShopConfig", () => {
     expect(value.bundles[0].targetQty).toBe(3);
   });
 
+  it("includes freeGiftVariantId + bogo in synced QB tier metafield", async () => {
+    await qbRepo.create(setup.db, SHOP, {
+      name: "Q",
+      status: "active",
+      productId: "gid://shopify/Product/1",
+      collectionId: null,
+      tiers: [
+        {
+          qty: 3,
+          discountType: "percentage",
+          discountValue: 10,
+          label: "10% off",
+          isMostPopular: true,
+          freeGiftVariantId: "gid://shopify/ProductVariant/9",
+          bogo: {
+            mode: "add_same",
+            targetVariantId: "gid://shopify/ProductVariant/8",
+            bonusQty: 1,
+          },
+        },
+      ],
+      combinable: false,
+      styleOverrides: null,
+    });
+    const { admin, calls } = makeAdmin();
+    await syncShopConfig(setup.db, admin, SHOP);
+    const setCall = calls.find((c) => c.query.includes("metafieldsSet"));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const value = JSON.parse((setCall!.variables as any).metafields[0]!.value);
+    const tier = value.quantityBreaks[0].tiers[0];
+    expect(tier.freeGiftVariantId).toBe("gid://shopify/ProductVariant/9");
+    expect(tier.bogo.mode).toBe("add_same");
+    expect(tier.bogo.targetVariantId).toBe("gid://shopify/ProductVariant/8");
+    expect(tier.bogo.bonusQty).toBe(1);
+  });
+
   it("throws when JSON exceeds 50KB", async () => {
     await bundleRepo.create(setup.db, SHOP, {
       name: "Big",

@@ -44,8 +44,12 @@ interface SyncConfig {
       discountValue: number;
       label: string;
       isMostPopular: boolean;
-      freeGiftVariantId?: string;
-      bogoTargetVariantId?: string;
+      freeGiftVariantId?: string | null;
+      bogo?: {
+        mode: string;
+        targetVariantId?: string | null;
+        bonusQty: number;
+      } | null;
     }>;
     combinable: boolean;
   }>;
@@ -84,7 +88,15 @@ export async function syncShopConfig(
       name: q.name,
       status: q.status,
       productId: q.productId,
-      tiers: q.tiers,
+      tiers: q.tiers.map((tr) => ({
+        qty: tr.qty,
+        discountType: tr.discountType,
+        discountValue: tr.discountValue,
+        label: tr.label,
+        isMostPopular: tr.isMostPopular,
+        freeGiftVariantId: tr.freeGiftVariantId ?? null,
+        bogo: tr.bogo ?? null,
+      })),
       combinable: q.combinable,
     })),
   };
