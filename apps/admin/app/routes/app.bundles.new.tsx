@@ -1,10 +1,12 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/cloudflare";
 import { json, redirect } from "@remix-run/cloudflare";
-import { useActionData, useFetcher } from "@remix-run/react";
+import { useActionData, useLoaderData, useFetcher } from "@remix-run/react";
 import { useState, useEffect } from "react";
-import { Page, Layout } from "@shopify/polaris";
+import { Page, Layout, Card, EmptyState } from "@shopify/polaris";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
 import { getDb } from "~/db.server";
+import { getUsage } from "~/lib/billing/usage";
+import { canCreateNew } from "~/lib/billing/gating";
 import * as bundleRepo from "~/lib/bundles/repo";
 import { validateBundle } from "~/lib/bundles/validate";
 import { syncShopConfig } from "~/lib/metafield-sync";
@@ -17,8 +19,11 @@ import type { CollectionProduct } from "~/lib/shopify-product-fetch";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
-  await authenticate.admin(request, ctx);
-  return json({});
+  const { session } = await authenticate.admin(request, ctx);
+  const db = getDb(ctx.cloudflare.env.DB);
+  const usage = await getUsage(db, session.shop);
+  const gate = canCreateNew(usage);
+  return json({ gate });
 }
 
 export async function action({ request, context }: ActionFunctionArgs) {
@@ -70,6 +75,12 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
   const db = getDb(ctx.cloudflare.env.DB);
 
+  const usage = await getUsage(db, session.shop);
+  const gate = canCreateNew(usage);
+  if (!gate.allowed) {
+    return json({ errors: { _form: gate.reason }, values: input }, { status: 403 });
+  }
+
   await bundleRepo.create(db, session.shop, {
     ...input,
     status: input.status as "draft" | "active" | "paused",
@@ -91,9 +102,30 @@ export async function action({ request, context }: ActionFunctionArgs) {
 }
 
 export default function BundleNew() {
+  const { gate } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const errors =
     actionData && "errors" in actionData ? actionData.errors : undefined;
+
+  if (!gate.allowed) {
+    return (
+      <Page title="Create bundle" backAction={{ content: "Bundles", url: "/app/bundles" }}>
+        <Layout>
+          <Layout.Section>
+            <Card>
+              <EmptyState
+                heading="Free plan limit reached"
+                action={{ content: "Upgrade to create more", url: "/app/billing" }}
+                image=""
+              >
+                <p>{gate.reason}</p>
+              </EmptyState>
+            </Card>
+          </Layout.Section>
+        </Layout>
+      </Page>
+    );
+  }
 
   const [values, setValues] = useState<BundleFormValues | null>(null);
 
