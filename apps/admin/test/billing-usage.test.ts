@@ -4,7 +4,7 @@ import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { eq } from "drizzle-orm";
 import Database from "better-sqlite3";
 import * as schema from "../drizzle/schema";
-import { lazyResetIfDue, incrementOrderCount } from "../app/lib/billing/usage";
+import { lazyResetIfDue, incrementOrderCount, getUsage } from "../app/lib/billing/usage";
 
 const SHOP = "s.myshopify.com";
 
@@ -231,5 +231,98 @@ describe("incrementOrderCount", () => {
       .get();
     expect(row!.monthlyOrderCount).toBe(1);
     expect(row!.lifetimeOrderCount).toBe(291);
+  });
+});
+
+describe("getUsage", () => {
+  let s: ReturnType<typeof setup>;
+  beforeEach(() => {
+    s = setup();
+  });
+
+  it("returns 0% on a fresh free shop", async () => {
+    s.db.insert(schema.shops).values({
+      id: SHOP,
+      scopes: "",
+      installedAt: new Date(),
+      plan: "free",
+      monthlyOrderCount: 0,
+      lifetimeOrderCount: 0,
+      monthlyOrderResetAt: null,
+    }).run();
+    const u = await getUsage(s.db, SHOP);
+    expect(u.plan).toBe("free");
+    expect(u.percentUsed).toBe(0);
+    expect(u.overOnce).toBe(false);
+    expect(u.isLifetimeCap).toBe(true);
+    expect(u.orderCap).toBe(50);
+    expect(u.resetAt).toBeNull();
+  });
+
+  it("computes percentUsed for free plan from lifetimeOrderCount", async () => {
+    s.db.insert(schema.shops).values({
+      id: SHOP,
+      scopes: "",
+      installedAt: new Date(),
+      plan: "free",
+      monthlyOrderCount: 0,
+      lifetimeOrderCount: 40,
+      monthlyOrderResetAt: null,
+    }).run();
+    const u = await getUsage(s.db, SHOP);
+    expect(u.percentUsed).toBe(80);
+    expect(u.overOnce).toBe(false);
+  });
+
+  it("computes percentUsed for paid plan from monthlyOrderCount", async () => {
+    s.db.insert(schema.shops).values({
+      id: SHOP,
+      scopes: "",
+      installedAt: new Date(),
+      plan: "growth",
+      monthlyOrderCount: 800,
+      lifetimeOrderCount: 5000,
+      monthlyOrderResetAt: new Date("2099-01-01T00:00:00Z"),
+    }).run();
+    const u = await getUsage(s.db, SHOP);
+    expect(u.percentUsed).toBe(80);
+    expect(u.overOnce).toBe(false);
+    expect(u.orderCap).toBe(1000);
+  });
+
+  it("overOnce=true at 100%, percentUsed can exceed 100", async () => {
+    s.db.insert(schema.shops).values({
+      id: SHOP,
+      scopes: "",
+      installedAt: new Date(),
+      plan: "starter",
+      monthlyOrderCount: 450,
+      lifetimeOrderCount: 450,
+      monthlyOrderResetAt: new Date("2099-01-01T00:00:00Z"),
+    }).run();
+    const u = await getUsage(s.db, SHOP);
+    expect(u.percentUsed).toBe(150);
+    expect(u.overOnce).toBe(true);
+  });
+
+  it("overOnce=true exactly at 100%", async () => {
+    s.db.insert(schema.shops).values({
+      id: SHOP,
+      scopes: "",
+      installedAt: new Date(),
+      plan: "starter",
+      monthlyOrderCount: 300,
+      lifetimeOrderCount: 300,
+      monthlyOrderResetAt: new Date("2099-01-01T00:00:00Z"),
+    }).run();
+    const u = await getUsage(s.db, SHOP);
+    expect(u.percentUsed).toBe(100);
+    expect(u.overOnce).toBe(true);
+  });
+
+  it("returns sensible defaults for unknown shop", async () => {
+    const u = await getUsage(s.db, "unknown.myshopify.com");
+    expect(u.plan).toBe("free");
+    expect(u.percentUsed).toBe(0);
   });
 });

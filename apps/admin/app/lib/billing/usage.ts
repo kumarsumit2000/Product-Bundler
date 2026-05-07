@@ -51,3 +51,44 @@ export async function incrementOrderCount(db: DB, shop: string): Promise<Increme
 
   return { overageOrders, isOverFreeCap };
 }
+
+export type UsageSnapshot = {
+  plan: PlanId;
+  monthlyOrderCount: number;
+  lifetimeOrderCount: number;
+  orderCap: number;
+  isLifetimeCap: boolean;
+  percentUsed: number;
+  overOnce: boolean;
+  resetAt: Date | null;
+};
+
+export async function getUsage(db: DB, shop: string): Promise<UsageSnapshot> {
+  const row = (await db.select().from(schema.shops).where(eq(schema.shops.id, shop)).limit(1))[0];
+  if (!row) {
+    return {
+      plan: "free",
+      monthlyOrderCount: 0,
+      lifetimeOrderCount: 0,
+      orderCap: PLANS.free.orderCap,
+      isLifetimeCap: true,
+      percentUsed: 0,
+      overOnce: false,
+      resetAt: null,
+    };
+  }
+  const planId = (row.plan as PlanId) in PLANS ? (row.plan as PlanId) : "free";
+  const plan = PLANS[planId];
+  const usedCount = plan.isLifetimeCap ? row.lifetimeOrderCount : row.monthlyOrderCount;
+  const percentUsed = plan.orderCap > 0 ? Math.floor((usedCount / plan.orderCap) * 100) : 0;
+  return {
+    plan: planId,
+    monthlyOrderCount: row.monthlyOrderCount,
+    lifetimeOrderCount: row.lifetimeOrderCount,
+    orderCap: plan.orderCap,
+    isLifetimeCap: plan.isLifetimeCap,
+    percentUsed,
+    overOnce: percentUsed >= 100,
+    resetAt: row.monthlyOrderResetAt,
+  };
+}
