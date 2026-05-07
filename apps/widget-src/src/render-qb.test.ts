@@ -55,4 +55,52 @@ describe("renderQb", () => {
     renderQb(mount, q, CONFIG);
     expect(mount.innerHTML).toBe("");
   });
+
+  it("renders gift badge when freeGiftVariantId is set + available", () => {
+    const q: QbConfig = { ...QB, tiers: [
+      QB.tiers[0]!,
+      { ...QB.tiers[1]!, freeGiftVariantId: "v9", freeGiftVariantTitle: "Hat", freeGiftAvailable: true },
+      QB.tiers[2]!,
+    ]};
+    renderQb(mount, q, CONFIG);
+    const tierRow = mount.querySelectorAll(".pumper-qb-tier")[1] as HTMLElement;
+    expect(tierRow.textContent ?? "").toMatch(/Free Hat/);
+  });
+
+  it("renders bogo nth_free badge with paidQty hint", () => {
+    const q: QbConfig = { ...QB, tiers: [
+      QB.tiers[0]!,
+      { ...QB.tiers[1]!, qty: 3, bogo: { mode: "nth_free", bonusQty: 1 } as const },
+      QB.tiers[2]!,
+    ]};
+    renderQb(mount, q, CONFIG);
+    const tierRow = mount.querySelectorAll(".pumper-qb-tier")[1] as HTMLElement;
+    expect(tierRow.textContent ?? "").toMatch(/Buy 3, pay for 2/);
+  });
+
+  it("stacks gift + bogo badges when both set on a tier", () => {
+    const q: QbConfig = { ...QB, tiers: [
+      QB.tiers[0]!,
+      {
+        ...QB.tiers[1]!,
+        freeGiftVariantId: "v9", freeGiftVariantTitle: "Hat", freeGiftAvailable: true,
+        bogo: { mode: "add_same", targetVariantId: "v8", bonusQty: 1, targetAvailable: true } as const,
+      },
+      QB.tiers[2]!,
+    ]};
+    renderQb(mount, q, CONFIG);
+    const badges = mount.querySelectorAll(".pumper-qb-gift-badge");
+    expect(badges.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("shows muted unavailable badge when gift is OOS", () => {
+    const q: QbConfig = { ...QB, tiers: [
+      QB.tiers[0]!,
+      { ...QB.tiers[1]!, freeGiftVariantId: "v9", freeGiftVariantTitle: "Hat", freeGiftAvailable: false },
+      QB.tiers[2]!,
+    ]};
+    renderQb(mount, q, CONFIG);
+    const tierRow = mount.querySelectorAll(".pumper-qb-tier")[1] as HTMLElement;
+    expect(tierRow.querySelector(".pumper-qb-gift-badge--unavailable")).not.toBeNull();
+  });
 });

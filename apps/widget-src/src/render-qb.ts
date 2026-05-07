@@ -1,11 +1,49 @@
 import type { QbConfig, QbTier, WidgetConfig } from "./types";
 import { addToCart } from "./add-to-cart";
+import type { CartLineInput } from "./add-to-cart";
 import { emit } from "./analytics";
 import { formatMoney } from "./format";
 import { t } from "./i18n";
 
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+}
+
+function renderGiftBadges(tier: QbTier): string {
+  const badges: string[] = [];
+
+  if (tier.freeGiftVariantId) {
+    if (tier.freeGiftAvailable === false) {
+      badges.push(`<div class="pumper-qb-gift-badge pumper-qb-gift-badge--unavailable">${escapeHtml(t("qb.giftBadgeUnavailable"))}</div>`);
+    } else {
+      badges.push(`<div class="pumper-qb-gift-badge">${escapeHtml(t("qb.giftBadge", { variantTitle: tier.freeGiftVariantTitle ?? "gift" }))}</div>`);
+    }
+  }
+
+  if (tier.bogo) {
+    const b = tier.bogo;
+    if (b.mode === "nth_free") {
+      const paidQty = Math.max(0, tier.qty - b.bonusQty);
+      badges.push(`<div class="pumper-qb-gift-badge">${escapeHtml(t("qb.bogoNthFree", { qty: tier.qty, paidQty }))}</div>`);
+    } else if (b.mode === "add_same") {
+      if (b.targetAvailable === false) {
+        badges.push(`<div class="pumper-qb-gift-badge pumper-qb-gift-badge--unavailable">${escapeHtml(t("qb.giftBadgeUnavailable"))}</div>`);
+      } else {
+        const text = b.bonusQty === 1
+          ? t("qb.bogoSameOne")
+          : t("qb.bogoSameMany", { n: b.bonusQty });
+        badges.push(`<div class="pumper-qb-gift-badge">${escapeHtml(text)}</div>`);
+      }
+    } else if (b.mode === "add_different") {
+      if (b.targetAvailable === false) {
+        badges.push(`<div class="pumper-qb-gift-badge pumper-qb-gift-badge--unavailable">${escapeHtml(t("qb.giftBadgeUnavailable"))}</div>`);
+      } else {
+        badges.push(`<div class="pumper-qb-gift-badge">${escapeHtml(t("qb.bogoDifferent", { variantTitle: b.targetVariantTitle ?? "gift" }))}</div>`);
+      }
+    }
+  }
+
+  return badges.join("");
 }
 
 function tierUnitCents(tier: QbTier, basePriceCents: number): number {
@@ -54,6 +92,7 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
           <div class="pumper-qb-tier-sub">${formatMoney(unitCents, config.settings.currency, config.settings.locale)} each · ${formatMoney(totalCents, config.settings.currency, config.settings.locale)} total</div>
         </div>
         ${savingsBadge}
+        ${renderGiftBadges(tr)}
       </div>
     `;
   }).join("");
@@ -97,7 +136,34 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
         const tr = qb.tiers[selectedIndex]!;
         cta.disabled = true;
         const unitCents = tierUnitCents(tr, variant.priceCents);
-        const result = await addToCart(qb.id, [{ variantId: variant.variantId, qty: tr.qty, bundleId: qb.id }]);
+
+        const lines: CartLineInput[] = [
+          { variantId: variant.variantId, qty: tr.qty, bundleId: qb.id },
+        ];
+
+        if (tr.freeGiftVariantId && tr.freeGiftAvailable !== false) {
+          lines.push({
+            variantId: tr.freeGiftVariantId,
+            qty: 1,
+            bundleId: qb.id,
+            giftBundleId: qb.id,
+          });
+        }
+
+        if (tr.bogo
+            && (tr.bogo.mode === "add_same" || tr.bogo.mode === "add_different")
+            && tr.bogo.targetVariantId
+            && tr.bogo.targetAvailable !== false) {
+          lines.push({
+            variantId: tr.bogo.targetVariantId,
+            qty: tr.bogo.bonusQty,
+            bundleId: qb.id,
+            giftBundleId: qb.id,
+          });
+        }
+        // bogo.mode === "nth_free" → no extra line; Discount Function handles the math.
+
+        const result = await addToCart(qb.id, lines);
         if (!result.ok) {
           cta.disabled = false;
           cta.textContent = t("addToCart.error");
