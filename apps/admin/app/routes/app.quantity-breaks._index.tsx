@@ -23,9 +23,17 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
   const { session } = await authenticate.admin(request, ctx);
   const db = getDb(ctx.cloudflare.env.DB);
+  type UsageResult = Awaited<ReturnType<typeof getUsage>>;
+  const usageFallback: UsageResult = {
+    plan: "free", monthlyOrderCount: 0, lifetimeOrderCount: 0, orderCap: 50,
+    isLifetimeCap: true, percentUsed: 0, overOnce: false, resetAt: null,
+  };
   const [items, usage] = await Promise.all([
     qbRepo.listByShop(db, session.shop),
-    getUsage(db, session.shop),
+    getUsage(db, session.shop).catch((err): UsageResult => {
+      console.error("[qb._index] getUsage failed:", err);
+      return usageFallback;
+    }),
   ]);
   return json({ items, usage });
 }

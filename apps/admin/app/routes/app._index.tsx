@@ -71,6 +71,17 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   type BundleListResult = Awaited<ReturnType<typeof getBundleListForFilter>>;
 
   const kpiFallback: KpisResult = { totalRevenueCents: 0, totalOrders: 0, bundleOrders: 0, revenueSeries: [], ordersSeries: [] };
+  type UsageResult = Awaited<ReturnType<typeof getUsage>>;
+  const usageFallback: UsageResult = {
+    plan: "free",
+    monthlyOrderCount: 0,
+    lifetimeOrderCount: 0,
+    orderCap: 50,
+    isLifetimeCap: true,
+    percentUsed: 0,
+    overOnce: false,
+    resetAt: null,
+  };
   const [kpis, activity, convSales, topBundles, qbTier, bundleList, usage] = await Promise.all([
     getKpis(db, session.shop, range).catch((): KpisResult => kpiFallback),
     getActivitySeries(db, session.shop, range, selectedBundleIds.length > 0 ? selectedBundleIds : undefined).catch((): ActivityResult => []),
@@ -78,7 +89,10 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     getTopBundles(db, session.shop, range).catch((): TopBundlesResult => []),
     getQbTierBreakdown(db, session.shop, range).catch((): QbTierResult => []),
     getBundleListForFilter(db, session.shop).catch((): BundleListResult => []),
-    getUsage(db, session.shop),
+    getUsage(db, session.shop).catch((err): UsageResult => {
+      console.error("[dashboard] getUsage failed:", err);
+      return usageFallback;
+    }),
   ]);
 
   return json({
