@@ -1,0 +1,23 @@
+{
+  "bundle.heading": "Frequently bought together",
+  "bundle.totalLabel": "Total",
+  "bundle.cta": "Add bundle to cart",
+  "bundle.ctaSavings": "Add bundle to cart — Save {savings}",
+  "bundle.unavailable": "1 item out of stock — bundle unavailable",
+  "qb.heading": "Choose your savings",
+  "qb.tierLabel": "Buy {qty}",
+  "qb.savingsBadge": "−{savings}",
+  "qb.cta": "Add {qty} to cart",
+  "qb.ctaSavings": "Add {qty} to cart — Save {savings}",
+  "qb.mostPopular": "MOST POPULAR",
+  "qb.tierUnavailable": "Only {available} left",
+  "mm.heading": "Pick any {target} — Save {discount}",
+  "mm.picked": "{count} of {target} picked",
+  "mm.pickMore": "Pick {n} more",
+  "mm.cta": "Add bundle to cart",
+  "mm.ctaPickMore": "Pick {n} more to unlock {discount}",
+  "mm.notEnoughStock": "Not enough items in stock",
+  "mm.viewAll": "View all ({n})",
+  "addToCart.error": "Couldn't add to cart — please try again.",
+  "addToCart.unavailable": "Sorry, that item is no longer available."
+}
