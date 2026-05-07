@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import Database from "better-sqlite3";
@@ -41,26 +42,27 @@ vi.mock("~/shopify.server", () => ({
       topic: "ORDERS_PAID",
       shop: SHOP,
       payload: JSON.parse(await request.text()),
+      admin: undefined, // not exercised by these tests
     })),
   },
 }));
 
 import { action } from "../app/routes/webhooks.orders.paid";
 
+function makeReq(body: unknown, webhookId: string) {
+  return new Request("https://x/webhooks/orders/paid", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Shopify-Webhook-Id": webhookId,
+    },
+    body: JSON.stringify(body),
+  });
+}
+
 describe("/webhooks/orders/paid action", () => {
   let s: ReturnType<typeof setup>;
   beforeEach(() => { s = setup(); });
-
-  function makeReq(body: unknown, webhookId: string) {
-    return new Request("https://x/webhooks/orders/paid", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Shopify-Webhook-Id": webhookId,
-      },
-      body: JSON.stringify(body),
-    });
-  }
 
   it("attributes revenue when order has _pumper_bundle_id lines", async () => {
     const order = {
@@ -122,5 +124,37 @@ describe("/webhooks/orders/paid action", () => {
     await action({ request: makeReq(order, "wh-4"), context: makeContext(s.db) } as never);
     const rev = s.db.select().from(schema.revenueDaily).all();
     expect(rev[0]!.date).toBe("2026-04-01");
+  });
+});
+
+describe("billing integration in orders/paid", () => {
+  let s: ReturnType<typeof setup>;
+  beforeEach(() => { s = setup(); });
+
+  it("increments lifetimeOrderCount on every paid order", async () => {
+    const order = {
+      processed_at: "2026-05-07T12:00:00Z",
+      line_items: [{
+        price_set: { shop_money: { amount: "20.00", currency_code: "USD" } },
+        quantity: 1,
+        properties: [],
+      }],
+    };
+    await action({ request: makeReq(order, "wh-cnt-1"), context: makeContext(s.db) } as never);
+    const row = s.db.select().from(schema.shops).where(eq(schema.shops.id, SHOP)).get();
+    expect(row!.lifetimeOrderCount).toBe(1);
+    expect(row!.monthlyOrderCount).toBe(1);
+  });
+
+  it("does not double-count on duplicate webhook id", async () => {
+    const order = {
+      processed_at: "2026-05-07T12:00:00Z",
+      line_items: [{ price_set: { shop_money: { amount: "20.00", currency_code: "USD" } }, quantity: 1, properties: [] }],
+    };
+    const ctx = makeContext(s.db);
+    await action({ request: makeReq(order, "wh-dup-cnt"), context: ctx } as never);
+    await action({ request: makeReq(order, "wh-dup-cnt"), context: ctx } as never);
+    const row = s.db.select().from(schema.shops).where(eq(schema.shops.id, SHOP)).get();
+    expect(row!.lifetimeOrderCount).toBe(1);
   });
 });
