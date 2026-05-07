@@ -53,6 +53,7 @@ export default function App() {
           <Link to="/app" rel="home">Dashboard</Link>
           <Link to="/app/bundles">Bundles</Link>
           <Link to="/app/quantity-breaks">Quantity Breaks</Link>
+          <Link to="/app/billing">Billing</Link>
         </NavMenu>
         <Outlet />
       </PolarisAppProvider>
