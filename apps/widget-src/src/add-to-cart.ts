@@ -7,6 +7,12 @@ export async function addToCart(
   lines: CartLine[],
   opts: { timeoutMs?: number } = {},
 ): Promise<AddResult> {
+  // No-op in admin preview iframe: there is no real cart on this origin and
+  // calling /cart/add.js would 404 then surface as "Couldn't add to cart".
+  if (typeof window !== "undefined" && window._pumperPreview) {
+    return { ok: true };
+  }
+
   const timeoutMs = opts.timeoutMs ?? 800;
 
   const drawerWillOpen = new Promise<boolean>((resolve) => {
