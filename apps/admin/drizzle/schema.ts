@@ -56,6 +56,9 @@ export const bundles = sqliteTable("bundles", {
   styleOverrides: text("style_overrides", { mode: "json" }).$type<StyleOverrides | null>(),
   headline: text("headline"),
   ctaLabel: text("cta_label"),
+  mode: text("mode", { enum: ["classic", "mix_match"] }).notNull().default("classic"),
+  collectionId: text("collection_id"),
+  targetQty: integer("target_qty"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 }, (t) => ({
