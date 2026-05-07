@@ -47,20 +47,22 @@ fn run(input: schema::run::Input) -> Result<schema::FunctionRunResult> {
                 Merchandise::ProductVariant(pv) => pv,
                 _ => return None,
             };
+            let bundle_attr = l.attribute().and_then(|a| a.value().map(|v| v.to_string()));
             Some(CartLine {
                 id: l.id().to_string(),
                 product_id: variant.product().id().to_string(),
                 variant_id: Some(variant.id().to_string()),
                 quantity: *l.quantity() as u32,
+                bundle_attr,
             })
         })
         .collect();
 
     let mut discounts: Vec<schema::Discount> = Vec::new();
 
-    // Bundle matching
+    // Classic bundle matching (skip mix_match)
     for bundle in config.bundles.iter()
-        .filter(|b| b.status == "active")
+        .filter(|b| b.status == "active" && b.mode != "mix_match")
     {
         if !matches_combinable(bundle.combinable, want_combinable) {
             continue;
@@ -70,6 +72,22 @@ fn run(input: schema::run::Input) -> Result<schema::FunctionRunResult> {
                 input.cart().lines().iter()
                     .find(|l| l.id() == tid.as_str())
                     .map(|l| l.cost().amount_per_quantity().amount().as_f64())
+            }).sum();
+            let value = discount::compute_bundle_value(bundle, line_subtotal);
+            discounts.push(build_discount(&bundle.name, &target_line_ids, value));
+        }
+    }
+
+    // Mix & Match matching
+    for bundle in config.bundles.iter().filter(|b| b.status == "active" && b.mode == "mix_match") {
+        if !matches_combinable(bundle.combinable, want_combinable) {
+            continue;
+        }
+        if let Some(target_line_ids) = matcher::match_mix_match_bundle(&lines, bundle) {
+            let line_subtotal: f64 = target_line_ids.iter().filter_map(|tid| {
+                input.cart().lines().iter()
+                    .find(|l| l.id() == tid.as_str())
+                    .map(|l| l.cost().amount_per_quantity().amount().as_f64() * (*l.quantity() as f64))
             }).sum();
             let value = discount::compute_bundle_value(bundle, line_subtotal);
             discounts.push(build_discount(&bundle.name, &target_line_ids, value));

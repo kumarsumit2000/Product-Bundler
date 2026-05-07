@@ -3,6 +3,9 @@ query Input {
     lines {
       id
       quantity
+      attribute(key: "_pumper_bundle_id") {
+        value
+      }
       merchandise {
         __typename
         ... on ProductVariant {

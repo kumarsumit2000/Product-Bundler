@@ -1,5 +1,5 @@
 use discount_function::config::{Bundle, BundleProduct, QbTier, QuantityBreak};
-use discount_function::matcher::{match_bundle, match_qb_tier, CartLine};
+use discount_function::matcher::{match_bundle, match_mix_match_bundle, match_qb_tier, CartLine};
 
 fn line(id: &str, product: &str, variant: Option<&str>, qty: u32) -> CartLine {
     CartLine {
@@ -7,6 +7,7 @@ fn line(id: &str, product: &str, variant: Option<&str>, qty: u32) -> CartLine {
         product_id: product.into(),
         variant_id: variant.map(String::from),
         quantity: qty,
+        bundle_attr: None,
     }
 }
 
@@ -21,7 +22,28 @@ fn bundle(products: Vec<BundleProduct>) -> Bundle {
         combinable: true,
         trigger_product_ids: vec![],
         headline: None,
+        mode: "classic".into(),
+        collection_id: None,
+        target_qty: None,
     }
+}
+
+fn line_with_attr(id: &str, product: &str, qty: u32, attr: Option<&str>) -> CartLine {
+    CartLine {
+        id: id.into(),
+        product_id: product.into(),
+        variant_id: None,
+        quantity: qty,
+        bundle_attr: attr.map(String::from),
+    }
+}
+
+fn mm_bundle(target_qty: u32) -> Bundle {
+    let mut b = bundle(vec![]);
+    b.mode = "mix_match".into();
+    b.collection_id = Some("gid://shopify/Collection/1".into());
+    b.target_qty = Some(target_qty);
+    b
 }
 
 fn bp(product: &str, variant: Option<&str>, qty: u32) -> BundleProduct {
@@ -158,4 +180,43 @@ fn match_qb_tier_returns_none_when_qty_below_lowest_tier() {
     };
     let l = line("L", "P1", None, 3);
     assert!(match_qb_tier(&l, &qb).is_none());
+}
+
+#[test]
+fn match_mix_match_returns_targets_when_total_qty_meets_target() {
+    let lines = vec![
+        line_with_attr("L1", "P1", 2, Some("b1")),
+        line_with_attr("L2", "P2", 1, Some("b1")),
+    ];
+    let b = mm_bundle(3);
+    let result = match_mix_match_bundle(&lines, &b);
+    assert_eq!(result, Some(vec!["L1".into(), "L2".into()]));
+}
+
+#[test]
+fn match_mix_match_returns_none_when_total_qty_below_target() {
+    let lines = vec![
+        line_with_attr("L1", "P1", 1, Some("b1")),
+    ];
+    let b = mm_bundle(3);
+    assert!(match_mix_match_bundle(&lines, &b).is_none());
+}
+
+#[test]
+fn match_mix_match_ignores_lines_with_wrong_attr() {
+    let lines = vec![
+        line_with_attr("L1", "P1", 5, Some("other_bundle")),
+        line_with_attr("L2", "P2", 5, None),
+    ];
+    let b = mm_bundle(3);
+    assert!(match_mix_match_bundle(&lines, &b).is_none());
+}
+
+#[test]
+fn match_mix_match_returns_none_for_classic_bundles() {
+    let lines = vec![
+        line_with_attr("L1", "P1", 5, Some("b1")),
+    ];
+    let b = bundle(vec![]); // mode="classic"
+    assert!(match_mix_match_bundle(&lines, &b).is_none());
 }

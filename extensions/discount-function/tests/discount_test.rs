@@ -12,6 +12,9 @@ fn bundle(discount_type: &str, value: f64) -> Bundle {
         combinable: true,
         trigger_product_ids: vec![],
         headline: None,
+        mode: "classic".into(),
+        collection_id: None,
+        target_qty: None,
     }
 }
 

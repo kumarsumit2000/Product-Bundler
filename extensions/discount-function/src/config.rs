@@ -24,7 +24,15 @@ pub struct Bundle {
     pub trigger_product_ids: Vec<String>,
     #[serde(default)]
     pub headline: Option<String>,
+    #[serde(default = "default_mode")]
+    pub mode: String,
+    #[serde(rename = "collectionId", default)]
+    pub collection_id: Option<String>,
+    #[serde(rename = "targetQty", default)]
+    pub target_qty: Option<u32>,
 }
+
+fn default_mode() -> String { "classic".to_string() }
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct BundleProduct {
