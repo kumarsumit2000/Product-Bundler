@@ -22,6 +22,12 @@ const EN: StringTable = {
   "mm.viewAll": "View all ({n})",
   "addToCart.error": "Couldn't add to cart — please try again.",
   "addToCart.unavailable": "Sorry, that item is no longer available.",
+  "qb.giftBadge": "🎁 + Free {variantTitle}",
+  "qb.giftBadgeUnavailable": "🎁 Free gift unavailable — out of stock",
+  "qb.bogoSameOne": "🎁 + 1 free",
+  "qb.bogoSameMany": "🎁 + {n} free",
+  "qb.bogoDifferent": "🎁 + Free {variantTitle}",
+  "qb.bogoNthFree": "🎁 Buy {qty}, pay for {paidQty}",
 };
 
 const TABLES: Record<string, StringTable> = { en: EN };

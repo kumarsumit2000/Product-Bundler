@@ -50,6 +50,16 @@ export type QbTier = {
   label: string;
   isMostPopular: boolean;
   available: boolean;
+  freeGiftVariantId?: string | null;
+  freeGiftVariantTitle?: string | null;
+  freeGiftAvailable?: boolean | null;
+  bogo?: {
+    mode: "add_same" | "add_different" | "nth_free";
+    targetVariantId?: string | null;
+    bonusQty: number;
+    targetVariantTitle?: string | null;
+    targetAvailable?: boolean | null;
+  } | null;
 };
 
 export type QbConfig = {
