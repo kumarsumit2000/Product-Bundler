@@ -13,6 +13,7 @@ import { QbForm, type QbFormValues } from "~/components/QbForm";
 import { PreviewPane } from "~/components/PreviewPane";
 import { buildPreviewQbConfig, defaultPreviewSettings } from "~/lib/preview-config";
 import type { TierFormValue } from "~/components/QbTierBuilder";
+import { fetchVariantDetails } from "~/lib/shopify-product-fetch";
 
 export async function loader({ request, params, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
@@ -39,7 +40,15 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
     }
   }
 
-  return json({ qb, productTitle, productImage });
+  // Collect all variant ids referenced by tier gift/BOGO config
+  const tierVariantIds = new Set<string>();
+  for (const tr of qb.tiers) {
+    if (tr.freeGiftVariantId) tierVariantIds.add(tr.freeGiftVariantId);
+    if (tr.bogo?.targetVariantId) tierVariantIds.add(tr.bogo.targetVariantId);
+  }
+  const tierVariantDetails = await fetchVariantDetails(admin, [...tierVariantIds]);
+
+  return json({ qb, productTitle, productImage, tierVariantDetails });
 }
 
 export async function action({
@@ -61,13 +70,20 @@ export async function action({
     productId: (form.get("productId") as string) || "",
     tiers: tiersRaw.map((t) => ({
       qty: t.qty,
-      discountType: t.discountType as
-        | "percentage"
-        | "flat"
-        | "fixed_per_unit",
+      discountType: t.discountType as "percentage" | "flat" | "fixed_per_unit",
       discountValue: t.discountValue,
       label: t.label,
       isMostPopular: t.isMostPopular,
+      freeGiftVariantId: (t as { freeGiftVariantId?: string | null }).freeGiftVariantId ?? undefined,
+      bogo: (() => {
+        const raw = (t as { bogo?: { mode: "add_same" | "add_different" | "nth_free"; targetVariantId?: string | null; bonusQty: number } | null }).bogo;
+        if (!raw) return undefined;
+        return {
+          mode: raw.mode,
+          targetVariantId: raw.targetVariantId ?? undefined,
+          bonusQty: raw.bonusQty,
+        };
+      })(),
     })),
     combinable: form.get("combinable") === "on",
   };
@@ -97,7 +113,7 @@ export async function action({
 }
 
 export default function QbEdit() {
-  const { qb, productTitle, productImage } = useLoaderData<typeof loader>();
+  const { qb, productTitle, productImage, tierVariantDetails } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const errors =
     actionData && "errors" in actionData ? actionData.errors : undefined;
@@ -121,6 +137,26 @@ export default function QbEdit() {
       discountValue: t.discountValue,
       label: t.label,
       isMostPopular: t.isMostPopular,
+      freeGiftVariant: t.freeGiftVariantId && tierVariantDetails[t.freeGiftVariantId]
+        ? {
+            variantId: t.freeGiftVariantId,
+            productId: "",
+            productTitle: tierVariantDetails[t.freeGiftVariantId]!.productTitle,
+            variantTitle: tierVariantDetails[t.freeGiftVariantId]!.variantTitle,
+            image: tierVariantDetails[t.freeGiftVariantId]!.image ?? undefined,
+          }
+        : null,
+      bogoMode: (t.bogo?.mode ?? "") as "" | "add_same" | "add_different" | "nth_free",
+      bogoTargetVariant: t.bogo?.targetVariantId && tierVariantDetails[t.bogo.targetVariantId]
+        ? {
+            variantId: t.bogo.targetVariantId,
+            productId: "",
+            productTitle: tierVariantDetails[t.bogo.targetVariantId]!.productTitle,
+            variantTitle: tierVariantDetails[t.bogo.targetVariantId]!.variantTitle,
+            image: tierVariantDetails[t.bogo.targetVariantId]!.image ?? undefined,
+          }
+        : null,
+      bogoBonusQty: t.bogo?.bonusQty ?? 1,
     })),
     combinable: qb.combinable,
     status: qb.status as QbFormValues["status"],

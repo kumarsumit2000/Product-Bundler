@@ -35,13 +35,20 @@ export async function action({ request, context }: ActionFunctionArgs) {
     productId: (form.get("productId") as string) || "",
     tiers: tiersRaw.map((t) => ({
       qty: t.qty,
-      discountType: t.discountType as
-        | "percentage"
-        | "flat"
-        | "fixed_per_unit",
+      discountType: t.discountType as "percentage" | "flat" | "fixed_per_unit",
       discountValue: t.discountValue,
       label: t.label,
       isMostPopular: t.isMostPopular,
+      freeGiftVariantId: (t as { freeGiftVariantId?: string | null }).freeGiftVariantId ?? undefined,
+      bogo: (() => {
+        const raw = (t as { bogo?: { mode: "add_same" | "add_different" | "nth_free"; targetVariantId?: string | null; bonusQty: number } | null }).bogo;
+        if (!raw) return undefined;
+        return {
+          mode: raw.mode,
+          targetVariantId: raw.targetVariantId ?? undefined,
+          bonusQty: raw.bonusQty,
+        };
+      })(),
     })),
     combinable: form.get("combinable") === "on",
   };

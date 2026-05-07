@@ -54,7 +54,25 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange }: P
   return (
     <Form method="post">
       <input type="hidden" name="productId" value={values.product[0]?.productId ?? ""} />
-      <input type="hidden" name="tiers" value={JSON.stringify(values.tiers)} />
+      <input
+        type="hidden"
+        name="tiers"
+        value={JSON.stringify(values.tiers.map((t) => ({
+          qty: t.qty,
+          discountType: t.discountType,
+          discountValue: t.discountValue,
+          label: t.label,
+          isMostPopular: t.isMostPopular,
+          freeGiftVariantId: t.freeGiftVariant?.variantId ?? null,
+          bogo: t.bogoMode
+            ? {
+                mode: t.bogoMode,
+                targetVariantId: t.bogoTargetVariant?.variantId ?? null,
+                bonusQty: t.bogoBonusQty ?? 1,
+              }
+            : null,
+        })))}
+      />
 
       <BlockStack gap="500">
         {hasErrors && (
@@ -92,7 +110,11 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange }: P
             <Text as="h2" variant="headingMd">
               2. Tiers
             </Text>
-            <QbTierBuilder tiers={values.tiers} onChange={(t) => update("tiers", t)} />
+            <QbTierBuilder
+              tiers={values.tiers}
+              onChange={(t) => update("tiers", t)}
+              restrictToProductId={values.product[0]?.productId ?? null}
+            />
             {errors?.tiers && <Banner tone="critical">{errors.tiers}</Banner>}
           </BlockStack>
         </Card>
