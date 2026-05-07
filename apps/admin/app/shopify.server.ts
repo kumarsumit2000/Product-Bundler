@@ -48,3 +48,10 @@ export const authenticate = {
     return shopify.authenticate.webhook(request);
   },
 };
+
+export const unauthenticated = {
+  admin: (shop: string, context: AppLoadContext) => {
+    const shopify = createShopifyApp(context);
+    return shopify.unauthenticated.admin(shop);
+  },
+};
