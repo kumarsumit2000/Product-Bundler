@@ -48,12 +48,14 @@ fn run(input: schema::run::Input) -> Result<schema::FunctionRunResult> {
                 _ => return None,
             };
             let bundle_attr = l.attribute().and_then(|a| a.value().map(|v| v.to_string()));
+            let gift_attr = l.gift_attr().and_then(|a| a.value().map(|v| v.to_string()));
             Some(CartLine {
                 id: l.id().to_string(),
                 product_id: variant.product().id().to_string(),
                 variant_id: Some(variant.id().to_string()),
                 quantity: *l.quantity() as u32,
                 bundle_attr,
+                gift_attr,
             })
         })
         .collect();

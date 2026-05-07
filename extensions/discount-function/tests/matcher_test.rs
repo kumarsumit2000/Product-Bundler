@@ -8,6 +8,7 @@ fn line(id: &str, product: &str, variant: Option<&str>, qty: u32) -> CartLine {
         variant_id: variant.map(String::from),
         quantity: qty,
         bundle_attr: None,
+        gift_attr: None,
     }
 }
 
@@ -35,6 +36,7 @@ fn line_with_attr(id: &str, product: &str, qty: u32, attr: Option<&str>) -> Cart
         variant_id: None,
         quantity: qty,
         bundle_attr: attr.map(String::from),
+        gift_attr: None,
     }
 }
 

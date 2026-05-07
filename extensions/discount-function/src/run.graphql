@@ -6,6 +6,7 @@ query Input {
       attribute(key: "_pumper_bundle_id") {
         value
       }
+      giftAttr: attribute(key: "_pumper_gift_id") { value }
       merchandise {
         __typename
         ... on ProductVariant {

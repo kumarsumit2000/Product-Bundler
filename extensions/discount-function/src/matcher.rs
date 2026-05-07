@@ -6,6 +6,7 @@ pub struct CartLine {
     pub variant_id: Option<String>,
     pub quantity: u32,
     pub bundle_attr: Option<String>,
+    pub gift_attr: Option<String>,
 }
 
 /// Returns target cart line IDs if every required product is present in the cart with sufficient quantity.
