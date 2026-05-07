@@ -65,10 +65,13 @@ describe("syncShopConfig", () => {
     await bundleRepo.create(setup.db, SHOP, {
       name: "B",
       status: "active",
+      mode: "classic",
       products: [
         { productId: "gid://shopify/Product/1", variantId: null, qty: 1 },
         { productId: "gid://shopify/Product/2", variantId: null, qty: 1 },
       ],
+      collectionId: null,
+      targetQty: null,
       discountType: "percentage",
       discountValue: 20,
       combinable: false,
@@ -152,10 +155,13 @@ describe("syncShopConfig", () => {
     await bundleRepo.create(setup.db, SHOP, {
       name: "Big",
       status: "active",
+      mode: "classic",
       products: [
         { productId: "gid://shopify/Product/1", variantId: null, qty: 1 },
         { productId: "gid://shopify/Product/2", variantId: null, qty: 1 },
       ],
+      collectionId: null,
+      targetQty: null,
       discountType: "percentage",
       discountValue: 20,
       combinable: false,

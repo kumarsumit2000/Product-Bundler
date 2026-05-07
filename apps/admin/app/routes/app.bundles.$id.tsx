@@ -62,7 +62,25 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
   ];
   const productDetails = await fetchProductDetails(admin, [...new Set(productIds)]);
 
-  return json({ bundle, productDetails });
+  let collectionDetails: { id: string; title: string; image: string | null } | null = null;
+  if (bundle.mode === "mix_match" && bundle.collectionId) {
+    const cRes = await admin.graphql(
+      `query Collection($id: ID!) { collection(id: $id) { id title image { url } } }`,
+      { variables: { id: bundle.collectionId } },
+    );
+    const cData = (await cRes.json()) as {
+      data: { collection: { id: string; title: string; image: { url: string } | null } | null };
+    };
+    if (cData.data.collection) {
+      collectionDetails = {
+        id: cData.data.collection.id,
+        title: cData.data.collection.title,
+        image: cData.data.collection.image?.url ?? null,
+      };
+    }
+  }
+
+  return json({ bundle, productDetails, collectionDetails });
 }
 
 export async function action({
@@ -86,18 +104,27 @@ export async function action({
       ? triggerProducts.map((p) => p.productId)
       : [];
 
+  const mode = ((form.get("mode") as string) || "classic") as "classic" | "mix_match";
+  const collectionIdRaw = (form.get("collectionId") as string) || "";
+  const collectionId = collectionIdRaw || null;
+  const targetQtyRaw = form.get("targetQty") as string;
+  const targetQty = targetQtyRaw ? parseInt(targetQtyRaw, 10) : null;
+
   const input = {
     name: (form.get("name") as string) || "",
     status: (form.get("status") as string) || "draft",
-    products: products.map((p) => ({
+    mode,
+    products: mode === "mix_match" ? [] : products.map((p) => ({
       productId: p.productId,
       variantId: p.variantId,
       qty: p.qty,
     })),
+    collectionId: mode === "mix_match" ? collectionId : null,
+    targetQty: mode === "mix_match" ? targetQty : null,
     discountType: (form.get("discountType") as string) || "percentage",
     discountValue: parseFloat((form.get("discountValue") as string) || "0"),
     combinable: form.get("combinable") === "on",
-    triggerProductIds,
+    triggerProductIds: mode === "mix_match" ? [] : triggerProductIds,
     headline: (form.get("headline") as string) || null,
     ctaLabel: (form.get("ctaLabel") as string) || null,
   };
@@ -116,6 +143,7 @@ export async function action({
       | "percentage"
       | "flat"
       | "fixed_total",
+    mode: input.mode,
   });
 
   await ensureDiscountNodes(admin, db, session.shop);
@@ -128,13 +156,14 @@ export async function action({
 }
 
 export default function BundleEdit() {
-  const { bundle, productDetails } = useLoaderData<typeof loader>();
+  const { bundle, productDetails, collectionDetails } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const errors =
     actionData && "errors" in actionData ? actionData.errors : undefined;
 
   const initial: Partial<BundleFormValues> = {
     name: bundle.name,
+    mode: (bundle.mode ?? "classic") as "classic" | "mix_match",
     products: bundle.products.map((p) => ({
       productId: p.productId,
       variantId: p.variantId,
@@ -142,6 +171,12 @@ export default function BundleEdit() {
       title: productDetails[p.productId]?.title,
       image: productDetails[p.productId]?.image ?? undefined,
     })),
+    collection: collectionDetails ? {
+      collectionId: collectionDetails.id,
+      title: collectionDetails.title,
+      image: collectionDetails.image ?? undefined,
+    } : null,
+    targetQty: bundle.targetQty ? String(bundle.targetQty) : "3",
     discountType: bundle.discountType as BundleFormValues["discountType"],
     discountValue: String(bundle.discountValue),
     combinable: bundle.combinable,
