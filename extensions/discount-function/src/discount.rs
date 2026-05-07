@@ -19,6 +19,12 @@ pub fn compute_bundle_value(bundle: &Bundle, line_subtotal: f64) -> DiscountValu
 }
 
 pub fn compute_qb_tier_value(tier: &QbTier, line_amount_per_unit: f64) -> DiscountValue {
+    if let Some(bogo) = &tier.bogo {
+        if bogo.mode == "nth_free" && bogo.bonus_qty > 0 && bogo.bonus_qty < tier.qty {
+            let pct = (bogo.bonus_qty as f64 / tier.qty as f64) * 100.0;
+            return DiscountValue::Percentage(pct);
+        }
+    }
     match tier.discount_type.as_str() {
         "percentage" => DiscountValue::Percentage(tier.discount_value),
         "flat" => DiscountValue::FixedAmount(tier.discount_value),

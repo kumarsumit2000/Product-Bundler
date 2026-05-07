@@ -1,4 +1,4 @@
-use discount_function::config::{Bundle, QbTier};
+use discount_function::config::{Bundle, QbTier, BogoConfig};
 use discount_function::discount::{compute_bundle_value, compute_qb_tier_value, DiscountValue};
 
 fn bundle(discount_type: &str, value: f64) -> Bundle {
@@ -108,5 +108,71 @@ fn qb_fixed_per_unit_clamps_to_zero() {
     match compute_qb_tier_value(&t, 25.0) {
         DiscountValue::FixedAmount(off) => assert_eq!(off, 0.0),
         _ => panic!("expected FixedAmount"),
+    }
+}
+
+#[test]
+fn nth_free_overrides_tier_discount_to_one_third() {
+    let tier = QbTier {
+        qty: 3,
+        discount_type: "percentage".into(),
+        discount_value: 0.0,
+        label: "".into(),
+        is_most_popular: false,
+        free_gift_variant_id: None,
+        bogo: Some(BogoConfig {
+            mode: "nth_free".into(),
+            target_variant_id: None,
+            bonus_qty: 1,
+        }),
+    };
+    let value = compute_qb_tier_value(&tier, 100.0);
+    match value {
+        DiscountValue::Percentage(p) => assert!((p - (100.0_f64 / 3.0)).abs() < 0.001),
+        _ => panic!("expected percentage"),
+    }
+}
+
+#[test]
+fn nth_free_with_bonus_qty_zero_falls_through() {
+    let tier = QbTier {
+        qty: 3,
+        discount_type: "percentage".into(),
+        discount_value: 25.0,
+        label: "".into(),
+        is_most_popular: false,
+        free_gift_variant_id: None,
+        bogo: Some(BogoConfig {
+            mode: "nth_free".into(),
+            target_variant_id: None,
+            bonus_qty: 0,
+        }),
+    };
+    let value = compute_qb_tier_value(&tier, 100.0);
+    match value {
+        DiscountValue::Percentage(p) => assert!((p - 25.0).abs() < 0.001),
+        _ => panic!("expected percentage"),
+    }
+}
+
+#[test]
+fn add_same_bogo_does_not_override_tier_discount() {
+    let tier = QbTier {
+        qty: 3,
+        discount_type: "percentage".into(),
+        discount_value: 10.0,
+        label: "".into(),
+        is_most_popular: false,
+        free_gift_variant_id: None,
+        bogo: Some(BogoConfig {
+            mode: "add_same".into(),
+            target_variant_id: Some("gid://shopify/ProductVariant/1".into()),
+            bonus_qty: 1,
+        }),
+    };
+    let value = compute_qb_tier_value(&tier, 100.0);
+    match value {
+        DiscountValue::Percentage(p) => assert!((p - 10.0).abs() < 0.001),
+        _ => panic!("expected percentage"),
     }
 }

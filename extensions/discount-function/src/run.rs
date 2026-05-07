@@ -115,6 +115,17 @@ fn run(input: schema::run::Input) -> Result<schema::FunctionRunResult> {
         }
     }
 
+    // Free gift / BOGO add_* lines: 100% off any line tagged with _pumper_gift_id
+    for line in &lines {
+        if line.gift_attr.is_some() {
+            discounts.push(build_discount(
+                "Free gift",
+                &[line.id.clone()],
+                DiscountValue::Percentage(100.0),
+            ));
+        }
+    }
+
     Ok(schema::FunctionRunResult {
         discounts,
         discount_application_strategy: schema::DiscountApplicationStrategy::First,
