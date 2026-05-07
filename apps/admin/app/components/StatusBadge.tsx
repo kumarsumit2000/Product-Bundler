@@ -14,6 +14,16 @@ const LABEL: Record<Status, string> = {
   paused: "Paused",
 };
 
+const PROGRESS: Record<Status, "complete" | "partiallyComplete" | "incomplete"> = {
+  active: "complete",
+  draft: "incomplete",
+  paused: "partiallyComplete",
+};
+
 export function StatusBadge({ status }: { status: Status }) {
-  return <Badge tone={TONE[status]}>{LABEL[status]}</Badge>;
+  return (
+    <Badge tone={TONE[status]} progress={PROGRESS[status]}>
+      {LABEL[status]}
+    </Badge>
+  );
 }
