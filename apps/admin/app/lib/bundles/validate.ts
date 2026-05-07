@@ -10,6 +10,9 @@ export type BundleInput = {
   triggerProductIds: string[];
   headline: string | null;
   ctaLabel: string | null;
+  mode: "classic" | "mix_match";
+  collectionId: string | null;
+  targetQty: number | null;
 };
 
 export type ValidationResult =
@@ -25,17 +28,29 @@ export function validateBundle(input: BundleInput): ValidationResult {
     errors.name = "Name must be 100 characters or less";
   }
 
-  if (!Array.isArray(input.products) || input.products.length < 2) {
-    errors.products = "Bundle must have at least 2 products";
+  if (input.mode === "mix_match") {
+    if (Array.isArray(input.products) && input.products.length > 0) {
+      errors.products = "Mix & Match bundles must not have specific products";
+    }
+    if (!input.collectionId) {
+      errors.collectionId = "Collection is required for Mix & Match";
+    }
+    if (!Number.isInteger(input.targetQty) || (input.targetQty as number) < 2) {
+      errors.targetQty = "Target quantity must be at least 2";
+    }
   } else {
-    for (const p of input.products) {
-      if (!p.productId) {
-        errors.products = "Each product must have a product ID";
-        break;
-      }
-      if (typeof p.qty !== "number" || p.qty < 1 || p.qty > 100) {
-        errors.products = "Quantity must be between 1 and 100";
-        break;
+    if (!Array.isArray(input.products) || input.products.length < 2) {
+      errors.products = "Bundle must have at least 2 products";
+    } else {
+      for (const p of input.products) {
+        if (!p.productId) {
+          errors.products = "Each product must have a product ID";
+          break;
+        }
+        if (typeof p.qty !== "number" || p.qty < 1 || p.qty > 100) {
+          errors.products = "Quantity must be between 1 and 100";
+          break;
+        }
       }
     }
   }

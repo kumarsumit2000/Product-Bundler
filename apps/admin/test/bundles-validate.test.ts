@@ -14,6 +14,9 @@ const VALID: Parameters<typeof validateBundle>[0] = {
   triggerProductIds: [],
   headline: null,
   ctaLabel: null,
+  mode: "classic",
+  collectionId: null,
+  targetQty: null,
 };
 
 describe("validateBundle", () => {
@@ -81,5 +84,84 @@ describe("validateBundle", () => {
     const r = validateBundle({ ...VALID, status: "weird" as never });
     expect(r.valid).toBe(false);
     if (!r.valid) expect(r.errors.status).toBeDefined();
+  });
+
+  it("accepts a valid mix_match bundle", () => {
+    const r = validateBundle({
+      ...VALID,
+      products: [],
+      mode: "mix_match",
+      collectionId: "gid://shopify/Collection/1",
+      targetQty: 3,
+    });
+    expect(r).toEqual({ valid: true });
+  });
+
+  it("rejects mix_match without collectionId", () => {
+    const r = validateBundle({
+      ...VALID,
+      products: [],
+      mode: "mix_match",
+      collectionId: null,
+      targetQty: 3,
+    });
+    expect(r.valid).toBe(false);
+    if (!r.valid) expect(r.errors.collectionId).toBeDefined();
+  });
+
+  it("rejects mix_match with targetQty below 2", () => {
+    const r = validateBundle({
+      ...VALID,
+      products: [],
+      mode: "mix_match",
+      collectionId: "gid://shopify/Collection/1",
+      targetQty: 1,
+    });
+    expect(r.valid).toBe(false);
+    if (!r.valid) expect(r.errors.targetQty).toBeDefined();
+  });
+
+  it("rejects mix_match with non-empty products", () => {
+    const r = validateBundle({
+      ...VALID,
+      mode: "mix_match",
+      collectionId: "gid://shopify/Collection/1",
+      targetQty: 3,
+    });
+    expect(r.valid).toBe(false);
+    if (!r.valid) expect(r.errors.products).toBeDefined();
+  });
+
+  it("rejects classic with empty products", () => {
+    const r = validateBundle({
+      ...VALID,
+      products: [],
+      mode: "classic",
+    });
+    expect(r.valid).toBe(false);
+  });
+
+  it("rejects mix_match with NaN targetQty", () => {
+    const r = validateBundle({
+      ...VALID,
+      products: [],
+      mode: "mix_match",
+      collectionId: "gid://shopify/Collection/1",
+      targetQty: Number.NaN,
+    });
+    expect(r.valid).toBe(false);
+    if (!r.valid) expect(r.errors.targetQty).toBeDefined();
+  });
+
+  it("rejects mix_match with null targetQty", () => {
+    const r = validateBundle({
+      ...VALID,
+      products: [],
+      mode: "mix_match",
+      collectionId: "gid://shopify/Collection/1",
+      targetQty: null,
+    });
+    expect(r.valid).toBe(false);
+    if (!r.valid) expect(r.errors.targetQty).toBeDefined();
   });
 });
