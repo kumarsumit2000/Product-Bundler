@@ -88,3 +88,23 @@ export async function createSubscription(
   }
   return { confirmationUrl: out.confirmationUrl, chargeId: out.appSubscription.id };
 }
+
+const APP_SUBSCRIPTION_CANCEL = `#graphql
+  mutation AppSubscriptionCancel($id: ID!) {
+    appSubscriptionCancel(id: $id) {
+      appSubscription { id status }
+      userErrors { field message }
+    }
+  }
+`;
+
+export async function cancelSubscription(admin: AdminLike, chargeId: string): Promise<void> {
+  const resp = await admin.graphql(APP_SUBSCRIPTION_CANCEL, { variables: { id: chargeId } });
+  const body = (await resp.json()) as {
+    data?: { appSubscriptionCancel?: { userErrors: Array<{ field: string[]; message: string }> } };
+  };
+  const errors = body.data?.appSubscriptionCancel?.userErrors ?? [];
+  if (errors.length > 0) {
+    throw new Error(`appSubscriptionCancel failed: ${errors.map((e) => e.message).join("; ")}`);
+  }
+}

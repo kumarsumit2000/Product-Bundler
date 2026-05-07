@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { createSubscription } from "../app/lib/billing/subscription";
+import { createSubscription, cancelSubscription } from "../app/lib/billing/subscription";
 
 type GqlMock = ReturnType<typeof vi.fn>;
 function makeAdmin(graphql: GqlMock) {
@@ -61,5 +61,30 @@ describe("createSubscription", () => {
     await expect(
       createSubscription(makeAdmin(graphql), "s.myshopify.com", "growth", "https://app.example/cb"),
     ).rejects.toThrow(/not configured/);
+  });
+});
+
+describe("cancelSubscription", () => {
+  it("calls appSubscriptionCancel with the chargeId", async () => {
+    const graphql = vi.fn().mockResolvedValue({
+      json: async () => ({
+        data: { appSubscriptionCancel: { appSubscription: { id: "gid://shopify/AppSubscription/123", status: "CANCELLED" }, userErrors: [] } },
+      }),
+    });
+    await cancelSubscription(makeAdmin(graphql), "gid://shopify/AppSubscription/123");
+    expect(graphql).toHaveBeenCalledOnce();
+    const [, opts] = graphql.mock.calls[0]!;
+    expect(opts.variables.id).toBe("gid://shopify/AppSubscription/123");
+  });
+
+  it("throws when userErrors present", async () => {
+    const graphql = vi.fn().mockResolvedValue({
+      json: async () => ({
+        data: { appSubscriptionCancel: { appSubscription: null, userErrors: [{ field: ["id"], message: "Subscription not found" }] } },
+      }),
+    });
+    await expect(
+      cancelSubscription(makeAdmin(graphql), "gid://shopify/AppSubscription/999"),
+    ).rejects.toThrow(/not found/);
   });
 });
