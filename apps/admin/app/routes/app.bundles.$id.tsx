@@ -266,7 +266,11 @@ export default function BundleEdit() {
         </Layout.Section>
         <Layout.Section variant="oneThird">
           {previewConfig && (
-            <PreviewPane type="bundle" id={bundle.id} config={previewConfig} />
+            <PreviewPane
+              type={values?.mode === "mix_match" ? "mix_match" : "bundle"}
+              id={bundle.id}
+              config={previewConfig}
+            />
           )}
         </Layout.Section>
       </Layout>

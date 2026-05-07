@@ -162,7 +162,11 @@ export default function BundleNew() {
         </Layout.Section>
         <Layout.Section variant="oneThird">
           {previewConfig && (
-            <PreviewPane type="bundle" id="new" config={previewConfig} />
+            <PreviewPane
+              type={values?.mode === "mix_match" ? "mix_match" : "bundle"}
+              id="new"
+              config={previewConfig}
+            />
           )}
         </Layout.Section>
       </Layout>
