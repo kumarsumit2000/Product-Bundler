@@ -14,14 +14,19 @@ import {
 import { useState } from "react";
 import { ProductPicker, type PickedProduct } from "./ProductPicker";
 import { DiscountValueInput } from "./DiscountValueInput";
+import { CollectionPicker, type PickedCollection } from "./CollectionPicker";
 
 type DiscountType = "percentage" | "flat" | "fixed_total";
 type Status = "draft" | "active" | "paused";
 type TriggerMode = "same_as_members" | "specific";
+type Mode = "classic" | "mix_match";
 
 export type BundleFormValues = {
   name: string;
+  mode: Mode;
   products: PickedProduct[];
+  collection: PickedCollection | null;
+  targetQty: string;
   discountType: DiscountType;
   discountValue: string;
   combinable: boolean;
@@ -40,7 +45,10 @@ type Props = {
 
 const DEFAULTS: BundleFormValues = {
   name: "",
+  mode: "classic",
   products: [],
+  collection: null,
+  targetQty: "3",
   discountType: "percentage",
   discountValue: "10",
   combinable: false,
@@ -63,6 +71,9 @@ export function BundleForm({ initialValues, errors, submitLabel }: Props) {
     <Form method="post">
       <input type="hidden" name="products" value={JSON.stringify(values.products)} />
       <input type="hidden" name="triggerProducts" value={JSON.stringify(values.triggerProducts)} />
+      <input type="hidden" name="mode" value={values.mode} />
+      <input type="hidden" name="collectionId" value={values.collection?.collectionId ?? ""} />
+      <input type="hidden" name="targetQty" value={values.targetQty} />
 
       <BlockStack gap="500">
         {hasErrors && (
@@ -73,8 +84,24 @@ export function BundleForm({ initialValues, errors, submitLabel }: Props) {
 
         <Card>
           <BlockStack gap="400">
+            <Text as="h2" variant="headingMd">Bundle type</Text>
+            <ChoiceList
+              title="Type"
+              titleHidden
+              choices={[
+                { label: "Classic — pick specific products to bundle together", value: "classic" },
+                { label: "Mix & Match — let customers pick N items from a collection", value: "mix_match" },
+              ]}
+              selected={[values.mode]}
+              onChange={(s) => update("mode", s[0] as Mode)}
+            />
+          </BlockStack>
+        </Card>
+
+        <Card>
+          <BlockStack gap="400">
             <Text as="h2" variant="headingMd">
-              1. Products in this bundle
+              1. {values.mode === "mix_match" ? "Collection & target" : "Products in this bundle"}
             </Text>
             <TextField
               label="Bundle name"
@@ -85,12 +112,33 @@ export function BundleForm({ initialValues, errors, submitLabel }: Props) {
               autoComplete="off"
               maxLength={100}
             />
-            <ProductPicker
-              products={values.products}
-              onChange={(p) => update("products", p)}
-              multiple
-            />
-            {errors?.products && <Banner tone="critical">{errors.products}</Banner>}
+            {values.mode === "classic" ? (
+              <>
+                <ProductPicker
+                  products={values.products}
+                  onChange={(p) => update("products", p)}
+                  multiple
+                />
+                {errors?.products && <Banner tone="critical">{errors.products}</Banner>}
+              </>
+            ) : (
+              <>
+                <CollectionPicker
+                  collection={values.collection}
+                  onChange={(c) => update("collection", c)}
+                />
+                {errors?.collectionId && <Banner tone="critical">{errors.collectionId}</Banner>}
+                <TextField
+                  label="Customer must pick this many items"
+                  type="number"
+                  min={2}
+                  value={values.targetQty}
+                  onChange={(v) => update("targetQty", v)}
+                  error={errors?.targetQty}
+                  autoComplete="off"
+                />
+              </>
+            )}
           </BlockStack>
         </Card>
 
@@ -126,35 +174,37 @@ export function BundleForm({ initialValues, errors, submitLabel }: Props) {
           </BlockStack>
         </Card>
 
-        <Card>
-          <BlockStack gap="400">
-            <Text as="h2" variant="headingMd">
-              3. Trigger products
-            </Text>
-            <Text as="p" variant="bodyMd">
-              Choose which product pages show this bundle.
-            </Text>
-            <ChoiceList
-              title="Trigger mode"
-              titleHidden
-              choices={[
-                { label: "Same as bundle members", value: "same_as_members" },
-                { label: "Specific products", value: "specific" },
-              ]}
-              selected={[values.triggerMode]}
-              onChange={(s) => update("triggerMode", s[0] as TriggerMode)}
-              name="triggerMode"
-            />
-            {values.triggerMode === "specific" && (
-              <ProductPicker
-                products={values.triggerProducts}
-                onChange={(p) => update("triggerProducts", p)}
-                multiple
-                showQty={false}
+        {values.mode === "classic" && (
+          <Card>
+            <BlockStack gap="400">
+              <Text as="h2" variant="headingMd">
+                3. Trigger products
+              </Text>
+              <Text as="p" variant="bodyMd">
+                Choose which product pages show this bundle.
+              </Text>
+              <ChoiceList
+                title="Trigger mode"
+                titleHidden
+                choices={[
+                  { label: "Same as bundle members", value: "same_as_members" },
+                  { label: "Specific products", value: "specific" },
+                ]}
+                selected={[values.triggerMode]}
+                onChange={(s) => update("triggerMode", s[0] as TriggerMode)}
+                name="triggerMode"
               />
-            )}
-          </BlockStack>
-        </Card>
+              {values.triggerMode === "specific" && (
+                <ProductPicker
+                  products={values.triggerProducts}
+                  onChange={(p) => update("triggerProducts", p)}
+                  multiple
+                  showQty={false}
+                />
+              )}
+            </BlockStack>
+          </Card>
+        )}
 
         <Card>
           <BlockStack gap="400">
