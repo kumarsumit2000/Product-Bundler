@@ -1,10 +1,11 @@
 import type { LoaderFunctionArgs } from "@remix-run/cloudflare";
-import { authenticate, type AppLoadContext } from "~/shopify.server";
+import { type AppLoadContext } from "~/shopify.server";
 
-export async function loader({ request, context, params }: LoaderFunctionArgs) {
+// Public route: serves a generic widget preview iframe shell.
+// Real config arrives via postMessage from the authenticated parent edit page;
+// this HTML doc has no merchant data and no session is required.
+export async function loader({ context, params }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
-  await authenticate.admin(request, ctx);
-
   const type = String(params.type ?? "bundle");
   if (!["bundle", "qb", "mix_match"].includes(type)) {
     return new Response("Bad type", { status: 400 });

@@ -30,7 +30,7 @@ export function PreviewPane({ type, id, config }: Props) {
         <Text as="h3" variant="headingSm">Live preview</Text>
         <iframe
           ref={iframeRef}
-          src={`/app/preview/${type}/${encodeURIComponent(id)}`}
+          src={`/preview/${type}/${encodeURIComponent(id)}`}
           style={{ width: "100%", height: "560px", border: "1px solid #e3e3e3", borderRadius: 8 }}
           title="Widget preview"
         />

@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && pnpm run copy:to-admin",
+    "copy:to-admin": "cp ../../extensions/theme-app-extension/assets/widget.js ../admin/public/widget.js && cp ../../extensions/theme-app-extension/assets/widget.css ../admin/public/widget.css",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
