@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real, index, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, index, uniqueIndex, primaryKey } from "drizzle-orm/sqlite-core";
 
 export const shops = sqliteTable("shops", {
   id: text("id").primaryKey(),
@@ -108,3 +108,51 @@ export type NewBundle = typeof bundles.$inferInsert;
 export type QuantityBreak = typeof quantityBreaks.$inferSelect;
 export type NewQuantityBreak = typeof quantityBreaks.$inferInsert;
 export type ShopSettings = typeof shopSettings.$inferSelect;
+
+export const events = sqliteTable("events", {
+  id: text("id").primaryKey(),
+  shopId: text("shop_id").notNull().references(() => shops.id, { onDelete: "cascade" }),
+  type: text("type", { enum: ["widget_impression", "widget_click", "add_to_cart"] }).notNull(),
+  widgetType: text("widget_type", { enum: ["bundle", "qb", "mix_match"] }).notNull(),
+  widgetId: text("widget_id").notNull(),
+  productId: text("product_id"),
+  tierQty: integer("tier_qty"),
+  valueCents: integer("value_cents").notNull().default(0),
+  ts: integer("ts").notNull(),
+}, (t) => ({
+  shopTsIdx: index("events_shop_ts_idx").on(t.shopId, t.ts),
+  shopWidgetTsIdx: index("events_shop_widget_ts_idx").on(t.shopId, t.widgetId, t.ts),
+}));
+
+export const revenueDaily = sqliteTable("revenue_daily", {
+  shopId: text("shop_id").notNull().references(() => shops.id, { onDelete: "cascade" }),
+  date: text("date").notNull(),
+  totalRevenueCents: integer("total_revenue_cents").notNull().default(0),
+  totalOrders: integer("total_orders").notNull().default(0),
+  bundleRevenueCents: integer("bundle_revenue_cents").notNull().default(0),
+  bundleOrders: integer("bundle_orders").notNull().default(0),
+  qbRevenueCents: integer("qb_revenue_cents").notNull().default(0),
+  qbOrders: integer("qb_orders").notNull().default(0),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.shopId, t.date] }),
+}));
+
+export const bundleDaily = sqliteTable("bundle_daily", {
+  shopId: text("shop_id").notNull().references(() => shops.id, { onDelete: "cascade" }),
+  date: text("date").notNull(),
+  bundleId: text("bundle_id").notNull(),
+  widgetType: text("widget_type", { enum: ["bundle", "qb", "mix_match"] }).notNull(),
+  applicationCount: integer("application_count").notNull().default(0),
+  revenueCents: integer("revenue_cents").notNull().default(0),
+  orders: integer("orders").notNull().default(0),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.shopId, t.date, t.bundleId] }),
+  shopDateIdx: index("bundle_daily_shop_date_idx").on(t.shopId, t.date),
+}));
+
+export type Event = typeof events.$inferSelect;
+export type NewEvent = typeof events.$inferInsert;
+export type RevenueDaily = typeof revenueDaily.$inferSelect;
+export type NewRevenueDaily = typeof revenueDaily.$inferInsert;
+export type BundleDaily = typeof bundleDaily.$inferSelect;
+export type NewBundleDaily = typeof bundleDaily.$inferInsert;
