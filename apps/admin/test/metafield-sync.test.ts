@@ -122,6 +122,32 @@ describe("syncShopConfig", () => {
     expect(rows[0]!.shopifyShopGid).toBe(SHOP_GID);
   });
 
+  it("includes mix_match mode + collectionId + targetQty in synced metafield", async () => {
+    await bundleRepo.create(setup.db, SHOP, {
+      name: "MM",
+      status: "active",
+      products: [],
+      discountType: "percentage",
+      discountValue: 20,
+      combinable: false,
+      triggerProductIds: [],
+      styleOverrides: null,
+      headline: null,
+      ctaLabel: null,
+      mode: "mix_match",
+      collectionId: "gid://shopify/Collection/9",
+      targetQty: 3,
+    });
+    const { admin, calls } = makeAdmin();
+    await syncShopConfig(setup.db, admin, SHOP);
+    const setCall = calls.find((c) => c.query.includes("metafieldsSet"));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const value = JSON.parse((setCall!.variables as any).metafields[0]!.value);
+    expect(value.bundles[0].mode).toBe("mix_match");
+    expect(value.bundles[0].collectionId).toBe("gid://shopify/Collection/9");
+    expect(value.bundles[0].targetQty).toBe(3);
+  });
+
   it("throws when JSON exceeds 50KB", async () => {
     await bundleRepo.create(setup.db, SHOP, {
       name: "Big",

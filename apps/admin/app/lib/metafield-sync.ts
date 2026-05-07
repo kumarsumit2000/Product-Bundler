@@ -18,11 +18,14 @@ interface SyncConfig {
     id: string;
     name: string;
     status: string;
+    mode: "classic" | "mix_match";
     products: Array<{
       productId: string;
       variantId: string | null;
       qty: number;
     }>;
+    collectionId: string | null;
+    targetQty: number | null;
     discountType: string;
     discountValue: number;
     combinable: boolean;
@@ -65,7 +68,10 @@ export async function syncShopConfig(
       id: b.id,
       name: b.name,
       status: b.status,
+      mode: b.mode,
       products: b.products,
+      collectionId: b.collectionId ?? null,
+      targetQty: b.targetQty ?? null,
       discountType: b.discountType,
       discountValue: b.discountValue,
       combinable: b.combinable,
