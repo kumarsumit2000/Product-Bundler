@@ -69,24 +69,29 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
   let collectionDetails: { id: string; title: string; image: string | null } | null = null;
   let collectionTopProducts: CollectionProduct[] | null = null;
   if (bundle.mode === "mix_match" && bundle.collectionId) {
-    const [cRes, topProducts] = await Promise.all([
-      admin.graphql(
-        `query Collection($id: ID!) { collection(id: $id) { id title image { url } } }`,
-        { variables: { id: bundle.collectionId } },
-      ),
-      fetchCollectionTopProducts(admin, bundle.collectionId, 6),
-    ]);
-    const cData = (await cRes.json()) as {
-      data: { collection: { id: string; title: string; image: { url: string } | null } | null };
-    };
-    if (cData.data.collection) {
-      collectionDetails = {
-        id: cData.data.collection.id,
-        title: cData.data.collection.title,
-        image: cData.data.collection.image?.url ?? null,
+    try {
+      const [cRes, topProducts] = await Promise.all([
+        admin.graphql(
+          `query Collection($id: ID!) { collection(id: $id) { id title image { url } } }`,
+          { variables: { id: bundle.collectionId } },
+        ),
+        fetchCollectionTopProducts(admin, bundle.collectionId, 6).catch(() => [] as CollectionProduct[]),
+      ]);
+      const cData = (await cRes.json()) as {
+        data?: { collection: { id: string; title: string; image: { url: string } | null } | null };
       };
+      if (cData.data?.collection) {
+        collectionDetails = {
+          id: cData.data.collection.id,
+          title: cData.data.collection.title,
+          image: cData.data.collection.image?.url ?? null,
+        };
+      }
+      collectionTopProducts = topProducts;
+    } catch {
+      // Don't crash the edit page on a Shopify Admin hiccup; preview will load via the client fetcher.
+      collectionTopProducts = [];
     }
-    collectionTopProducts = topProducts;
   }
 
   return json({ bundle, productDetails, collectionDetails, collectionTopProducts });

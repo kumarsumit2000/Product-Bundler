@@ -89,10 +89,12 @@ export async function fetchCollectionTopProducts(
   collectionId: string,
   limit: number,
 ): Promise<CollectionProduct[]> {
+  // Default sort works for both manual and automated/smart collections.
+  // sortKey: MANUAL is rejected for smart collections, so we omit it.
   const res = await admin.graphql(
     `query Collection($id: ID!, $first: Int!) {
       collection(id: $id) {
-        products(first: $first, sortKey: MANUAL) {
+        products(first: $first) {
           nodes {
             id
             title
@@ -107,7 +109,7 @@ export async function fetchCollectionTopProducts(
     { variables: { id: collectionId, first: limit } },
   );
   const data = (await res.json()) as {
-    data: {
+    data?: {
       collection: {
         products: {
           nodes: Array<{
@@ -119,8 +121,12 @@ export async function fetchCollectionTopProducts(
         };
       } | null;
     };
+    errors?: Array<{ message: string }>;
   };
-  const products = data.data.collection?.products.nodes ?? [];
+  if (data.errors && data.errors.length > 0) {
+    return [];
+  }
+  const products = data.data?.collection?.products.nodes ?? [];
   return products.map((p) => {
     const v = p.variants.nodes[0];
     return {
