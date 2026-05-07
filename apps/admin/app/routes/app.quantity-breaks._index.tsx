@@ -9,7 +9,7 @@ import {
   Text,
   Link,
   Button,
-  InlineStack,
+  BlockStack,
   useIndexResourceState,
 } from "@shopify/polaris";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
@@ -133,12 +133,12 @@ export default function QbsIndex() {
       onClick={() => navigate(`/app/quantity-breaks/${q.id}`)}
     >
       <IndexTable.Cell>
-        <InlineStack gap="200" blockAlign="center" wrap={false}>
+        <BlockStack gap="100" inlineAlign="start">
           <Link url={`/app/quantity-breaks/${q.id}`} monochrome removeUnderline>
             {q.name}
           </Link>
           <StatusBadge status={q.status as "draft" | "active" | "paused"} />
-        </InlineStack>
+        </BlockStack>
       </IndexTable.Cell>
       <IndexTable.Cell>
         {q.tiers.length} tier{q.tiers.length === 1 ? "" : "s"}

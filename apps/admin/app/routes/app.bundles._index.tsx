@@ -9,7 +9,7 @@ import {
   Text,
   Link,
   Button,
-  InlineStack,
+  BlockStack,
   useIndexResourceState,
 } from "@shopify/polaris";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
@@ -135,12 +135,12 @@ export default function BundlesIndex() {
       onClick={() => navigate(`/app/bundles/${b.id}`)}
     >
       <IndexTable.Cell>
-        <InlineStack gap="200" blockAlign="center" wrap={false}>
+        <BlockStack gap="100" inlineAlign="start">
           <Link url={`/app/bundles/${b.id}`} monochrome removeUnderline>
             {b.name}
           </Link>
           <StatusBadge status={b.status as "draft" | "active" | "paused"} />
-        </InlineStack>
+        </BlockStack>
       </IndexTable.Cell>
       <IndexTable.Cell>{summarizeDiscount(b)}</IndexTable.Cell>
       <IndexTable.Cell>
