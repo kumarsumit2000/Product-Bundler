@@ -45,7 +45,7 @@ export async function fetchProductDetails(
           title
           featuredImage { url }
           variants(first: 50) {
-            nodes { id title availableForSale price { amount } }
+            nodes { id title availableForSale price }
           }
         }
       }
@@ -60,7 +60,7 @@ export async function fetchProductDetails(
             id: string;
             title: string;
             featuredImage: { url: string } | null;
-            variants: { nodes: Array<{ id: string; title: string; availableForSale: boolean; price: { amount: string } }> };
+            variants: { nodes: Array<{ id: string; title: string; availableForSale: boolean; price: string }> };
           }
         | null
       >;
@@ -77,7 +77,7 @@ export async function fetchProductDetails(
         variantId: v.id,
         title: v.title,
         available: v.availableForSale,
-        priceCents: dollarsStrToCents(v.price.amount),
+        priceCents: dollarsStrToCents(v.price),
       })),
     };
   }
@@ -100,7 +100,7 @@ export async function fetchCollectionTopProducts(
             title
             featuredImage { url }
             variants(first: 1) {
-              nodes { id availableForSale price { amount } }
+              nodes { id availableForSale price }
             }
           }
         }
@@ -116,7 +116,7 @@ export async function fetchCollectionTopProducts(
             id: string;
             title: string;
             featuredImage: { url: string } | null;
-            variants: { nodes: Array<{ id: string; availableForSale: boolean; price: { amount: string } }> };
+            variants: { nodes: Array<{ id: string; availableForSale: boolean; price: string }> };
           }>;
         };
       } | null;
@@ -135,7 +135,7 @@ export async function fetchCollectionTopProducts(
       title: p.title,
       image: p.featuredImage?.url ?? null,
       available: v?.availableForSale ?? false,
-      priceCents: v ? dollarsStrToCents(v.price.amount) : 0,
+      priceCents: v ? dollarsStrToCents(v.price) : 0,
     };
   });
 }

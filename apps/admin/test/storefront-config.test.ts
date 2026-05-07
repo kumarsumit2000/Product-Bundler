@@ -43,7 +43,7 @@ describe("buildStorefrontConfig", () => {
           id: "gid://shopify/Product/1",
           title: "P1",
           featuredImage: { url: "img1" },
-          variants: { nodes: [{ id: "gid://shopify/ProductVariant/11", title: "Default", availableForSale: true, price: { amount: "100.00" } }] },
+          variants: { nodes: [{ id: "gid://shopify/ProductVariant/11", title: "Default", availableForSale: true, price: "100.00" }] },
         }],
       },
     });
@@ -84,7 +84,7 @@ describe("buildStorefrontConfig", () => {
     const adminGraphql = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({
         data: { collection: { products: { nodes: [
-          { id: "gid://shopify/Product/9", title: "Tee", featuredImage: { url: "img" }, variants: { nodes: [{ id: "v9", availableForSale: true, price: { amount: "24.00" } }] } },
+          { id: "gid://shopify/Product/9", title: "Tee", featuredImage: { url: "img" }, variants: { nodes: [{ id: "v9", availableForSale: true, price: "24.00" }] } },
         ]}}},
       }), { status: 200, headers: { "Content-Type": "application/json" } }));
     const admin = { graphql: adminGraphql };

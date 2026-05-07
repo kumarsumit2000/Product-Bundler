@@ -10,7 +10,7 @@ const productNodesResponse = {
         title: "Snowboard",
         featuredImage: { url: "https://cdn.example.com/snowboard.jpg" },
         variants: { nodes: [
-          { id: "gid://shopify/ProductVariant/11", title: "Default", availableForSale: true, price: { amount: "729.95" } },
+          { id: "gid://shopify/ProductVariant/11", title: "Default", availableForSale: true, price: "729.95" },
         ]},
       },
     ],
@@ -26,7 +26,7 @@ const collectionResponse = {
           title: "Tee",
           featuredImage: { url: "https://cdn.example.com/tee.jpg" },
           variants: { nodes: [
-            { id: "gid://shopify/ProductVariant/22", title: "Default", availableForSale: true, price: { amount: "24.00" } },
+            { id: "gid://shopify/ProductVariant/22", title: "Default", availableForSale: true, price: "24.00" },
           ]},
         },
       ]},
