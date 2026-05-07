@@ -34,7 +34,7 @@ describe("createSubscription", () => {
     expect(graphql).toHaveBeenCalledOnce();
     const [, opts] = graphql.mock.calls[0]!;
     expect(opts.variables.name).toBe("Starter");
-    expect(opts.variables.test).toBe(true); // dev store testing
+    expect(opts.variables.test).toBe(false); // production-safe default
     expect(opts.variables.trialDays).toBe(7);
     expect(opts.variables.returnUrl).toBe("https://app.example/billing/callback");
     expect(opts.variables.lineItems).toHaveLength(2);
@@ -61,6 +61,31 @@ describe("createSubscription", () => {
     await expect(
       createSubscription(makeAdmin(graphql), "s.myshopify.com", "growth", "https://app.example/cb"),
     ).rejects.toThrow(/not configured/);
+  });
+
+  it("propagates test: true when caller passes it via options", async () => {
+    const graphql = vi.fn().mockResolvedValue({
+      json: async () => ({
+        data: {
+          appSubscriptionCreate: {
+            appSubscription: { id: "gid://shopify/AppSubscription/456" },
+            confirmationUrl: "https://shopify.example/confirm/dev",
+            userErrors: [],
+          },
+        },
+      }),
+    });
+
+    await createSubscription(
+      makeAdmin(graphql),
+      "s.myshopify.com",
+      "starter",
+      "https://x",
+      { test: true },
+    );
+
+    const [, opts] = graphql.mock.calls[0]!;
+    expect(opts.variables.test).toBe(true);
   });
 });
 

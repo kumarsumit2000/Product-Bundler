@@ -67,12 +67,18 @@ export async function action({ request, context }: ActionFunctionArgs) {
     return redirect("/app/billing");
   }
 
+  // Cancel existing paid subscription before creating a new one (paid → paid transition)
+  if (shopRow.shopifyChargeId && currentPlan !== "free") {
+    await cancelSubscription(admin as never, shopRow.shopifyChargeId);
+  }
+
   const returnUrl = `${ctx.cloudflare.env.SHOPIFY_APP_URL}/app/billing/callback`;
   const { confirmationUrl, chargeId } = await createSubscription(
     admin as never,
     session.shop,
     targetPlan,
     returnUrl,
+    { test: false },
   );
   await db
     .update(schema.shops)

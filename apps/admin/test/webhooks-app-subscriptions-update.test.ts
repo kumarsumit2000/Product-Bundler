@@ -113,6 +113,32 @@ describe("webhooks.app-subscriptions.update", () => {
     expect(row!.shopifyChargeId).toBe("gid://shopify/X");
   });
 
+  it("ACTIVE renewal (same plan + same chargeId) is no-op for state", async () => {
+    // Setup shop already on starter with known counter state
+    s.db.update(schema.shops).set({
+      plan: "starter",
+      shopifyChargeId: "gid://shopify/AppSubscription/abc",
+      planActivatedAt: new Date("2026-04-01T00:00:00Z"),
+      trialEndsAt: null,
+      monthlyOrderResetAt: new Date("2026-05-01T00:00:00Z"),
+      monthlyOrderCount: 150,
+    }).where(eq(schema.shops.id, SHOP)).run();
+
+    const payload = {
+      app_subscription: {
+        admin_graphql_api_id: "gid://shopify/AppSubscription/abc",
+        name: "Starter",
+        status: "ACTIVE",
+        trial_days: 7,
+        line_items: [],
+      },
+    };
+    await action({ request: makeReq(payload, "wh-renewal"), context: makeContext(s.db) } as never);
+    const row = s.db.select().from(schema.shops).where(eq(schema.shops.id, SHOP)).get();
+    expect(row!.monthlyOrderCount).toBe(150); // counter NOT reset
+    expect(row!.monthlyOrderResetAt!.toISOString()).toBe("2026-05-01T00:00:00.000Z"); // unchanged
+  });
+
   it("idempotent — same webhook id processed once", async () => {
     const payload = {
       app_subscription: {

@@ -36,6 +36,7 @@ export async function createSubscription(
   shop: string,
   planId: Exclude<PlanId, "free">,
   returnUrl: string,
+  options: { test?: boolean } = {},
 ): Promise<{ confirmationUrl: string; chargeId: string }> {
   const plan = PLANS[planId];
   const baseAmount = (plan.priceCents / 100).toFixed(2);
@@ -45,8 +46,7 @@ export async function createSubscription(
     name: plan.name,
     returnUrl,
     trialDays: plan.trialDays,
-    // Set true for dev stores; Shopify ignores on production stores.
-    test: true,
+    test: options.test ?? false,
     lineItems: [
       {
         plan: {

@@ -45,17 +45,32 @@ export async function action({ request, context }: ActionFunctionArgs) {
   if (sub.status === "ACTIVE") {
     const planId = planIdFromName(sub.name);
     const trialDays = sub.trial_days ?? 0;
-    await db
-      .update(schema.shops)
-      .set({
-        plan: planId,
-        shopifyChargeId: sub.admin_graphql_api_id,
-        planActivatedAt: now,
-        trialEndsAt: trialDays > 0 ? new Date(now.getTime() + trialDays * 86_400_000) : null,
-        monthlyOrderResetAt: new Date(now.getTime() + THIRTY_DAYS_MS),
-        monthlyOrderCount: 0,
-      })
-      .where(eq(schema.shops.id, shop));
+
+    // Read current state to detect renewal (same plan + same chargeId = no state change needed)
+    const existing = (
+      await db.select().from(schema.shops).where(eq(schema.shops.id, shop)).limit(1)
+    )[0];
+    const isRenewal =
+      existing &&
+      existing.plan === planId &&
+      existing.shopifyChargeId === sub.admin_graphql_api_id;
+
+    if (isRenewal) {
+      // Renewal — no state change. Shopify fires ACTIVE ~every 30 days.
+      console.log(`[billing] subscription renewed for ${shop} (${planId})`);
+    } else {
+      await db
+        .update(schema.shops)
+        .set({
+          plan: planId,
+          shopifyChargeId: sub.admin_graphql_api_id,
+          planActivatedAt: now,
+          trialEndsAt: trialDays > 0 ? new Date(now.getTime() + trialDays * 86_400_000) : null,
+          monthlyOrderResetAt: new Date(now.getTime() + THIRTY_DAYS_MS),
+          monthlyOrderCount: 0,
+        })
+        .where(eq(schema.shops.id, shop));
+    }
   } else if (
     sub.status === "CANCELLED" ||
     sub.status === "EXPIRED" ||
