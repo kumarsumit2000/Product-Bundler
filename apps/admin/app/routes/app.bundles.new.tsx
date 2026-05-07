@@ -104,7 +104,7 @@ export default function BundleNew() {
   useEffect(() => {
     if (!collectionId) return;
     collectionProductsFetcher.load(
-      `/api/admin/collection-products/${encodeURIComponent(collectionId)}`
+      `/api/admin/collection-products?id=${encodeURIComponent(collectionId)}`
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [collectionId]);
