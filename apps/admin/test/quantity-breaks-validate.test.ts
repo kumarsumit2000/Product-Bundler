@@ -73,4 +73,67 @@ describe("validateQb", () => {
     const r = validateQb({ ...VALID, status: "weird" as never });
     expect(r.valid).toBe(false);
   });
+
+  it("accepts a tier with a free gift variant", () => {
+    const r = validateQb({
+      ...VALID,
+      tiers: [
+        { ...VALID.tiers[0]!, freeGiftVariantId: "gid://shopify/ProductVariant/1" },
+      ],
+    });
+    expect(r).toEqual({ valid: true });
+  });
+
+  it("accepts a tier with bogo add_same + targetVariantId + bonusQty", () => {
+    const r = validateQb({
+      ...VALID,
+      tiers: [
+        { ...VALID.tiers[0]!, bogo: { mode: "add_same", targetVariantId: "gid://shopify/ProductVariant/1", bonusQty: 1 } },
+      ],
+    });
+    expect(r).toEqual({ valid: true });
+  });
+
+  it("accepts a tier with bogo nth_free where bonusQty < qty", () => {
+    const r = validateQb({
+      ...VALID,
+      tiers: [
+        { ...VALID.tiers[0]!, qty: 3, bogo: { mode: "nth_free", bonusQty: 1 } },
+      ],
+    });
+    expect(r).toEqual({ valid: true });
+  });
+
+  it("rejects bogo add_same without a targetVariantId", () => {
+    const r = validateQb({
+      ...VALID,
+      tiers: [
+        { ...VALID.tiers[0]!, bogo: { mode: "add_same", bonusQty: 1 } },
+      ],
+    });
+    expect(r.valid).toBe(false);
+    if (!r.valid) expect(r.errors.tiers).toBeDefined();
+  });
+
+  it("rejects bogo nth_free with bonusQty >= qty", () => {
+    const r = validateQb({
+      ...VALID,
+      tiers: [
+        { ...VALID.tiers[0]!, qty: 2, bogo: { mode: "nth_free", bonusQty: 2 } },
+      ],
+    });
+    expect(r.valid).toBe(false);
+    if (!r.valid) expect(r.errors.tiers).toBeDefined();
+  });
+
+  it("rejects bogo with bonusQty < 1", () => {
+    const r = validateQb({
+      ...VALID,
+      tiers: [
+        { ...VALID.tiers[0]!, bogo: { mode: "add_same", targetVariantId: "gid://shopify/ProductVariant/1", bonusQty: 0 } },
+      ],
+    });
+    expect(r.valid).toBe(false);
+    if (!r.valid) expect(r.errors.tiers).toBeDefined();
+  });
 });
