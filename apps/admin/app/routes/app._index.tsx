@@ -1,7 +1,8 @@
 import type { LoaderFunctionArgs } from "@remix-run/cloudflare";
 import { json } from "@remix-run/cloudflare";
 import { useLoaderData, useSearchParams } from "@remix-run/react";
-import { Page, BlockStack, Grid, InlineStack } from "@shopify/polaris";
+import { useEffect, useState } from "react";
+import { Page, BlockStack, Grid, InlineStack, SkeletonBodyText } from "@shopify/polaris";
 import { PolarisVizProvider } from "@shopify/polaris-viz";
 import "@shopify/polaris-viz/build/esm/styles.css";
 import { eq } from "drizzle-orm";
@@ -112,6 +113,10 @@ function formatMoney(cents: number, currency: string, locale: string) {
 export default function Dashboard() {
   const { currency, locale, rangeParam, selectedBundleIds, kpis, activity, convSales, topBundles, qbTier, bundleList, usage } = useLoaderData<typeof loader>();
   const [searchParams, setSearchParams] = useSearchParams();
+  // Polaris-Viz reads `window` at module load — SSR would throw ReferenceError.
+  // Render skeleton on the server, swap to live charts once mounted on the client.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   const setRange = (range: DateRangeValue) => {
     const next = new URLSearchParams(searchParams);
@@ -127,6 +132,16 @@ export default function Dashboard() {
   };
 
   const aov = kpis.totalOrders > 0 ? kpis.totalRevenueCents / kpis.totalOrders : 0;
+
+  if (!mounted) {
+    return (
+      <Page title="Analytics">
+        <BlockStack gap="500">
+          <SkeletonBodyText lines={6} />
+        </BlockStack>
+      </Page>
+    );
+  }
 
   return (
     <PolarisVizProvider>
