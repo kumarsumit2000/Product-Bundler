@@ -70,6 +70,48 @@ describe("buildStorefrontConfig", () => {
     expect(cfg.bundles.length).toBe(0);
   });
 
+  it("enriches QB tier with freeGiftAvailable + bogo.targetAvailable", async () => {
+    db.insert(schema.quantityBreaks).values({
+      id: "q1", shopId: SHOP, name: "Q",
+      status: "active",
+      productId: "gid://shopify/Product/1",
+      collectionId: null,
+      tiers: [{
+        qty: 3, discountType: "percentage", discountValue: 10,
+        label: "10% off", isMostPopular: true,
+        freeGiftVariantId: "gid://shopify/ProductVariant/9",
+        bogo: { mode: "add_same", targetVariantId: "gid://shopify/ProductVariant/8", bonusQty: 1 },
+      }],
+      combinable: false, styleOverrides: null,
+      createdAt: new Date(), updatedAt: new Date(),
+    }).run();
+
+    // First call: fetchProductDetails for QB main product (gid://shopify/Product/1)
+    // Second call: VariantsAvailable query for [gift variant 9, bogo target 8]
+    const adminGraphql = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: { nodes: [{
+          __typename: "Product",
+          id: "gid://shopify/Product/1",
+          title: "Snowboard",
+          featuredImage: { url: "img" },
+          variants: { nodes: [{ id: "gid://shopify/ProductVariant/1", title: "Default", availableForSale: true, price: "100.00" }] },
+        }]},
+      }), { status: 200, headers: { "Content-Type": "application/json" } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: { nodes: [
+          { __typename: "ProductVariant", id: "gid://shopify/ProductVariant/9", availableForSale: true },
+          { __typename: "ProductVariant", id: "gid://shopify/ProductVariant/8", availableForSale: false },
+        ]},
+      }), { status: 200, headers: { "Content-Type": "application/json" } }));
+    const admin = { graphql: adminGraphql };
+
+    const cfg = await buildStorefrontConfig(db, admin, SHOP);
+    const tier = cfg.quantityBreaks[0]!.tiers[0]!;
+    expect(tier.freeGiftAvailable).toBe(true);
+    expect(tier.bogo!.targetAvailable).toBe(false);
+  });
+
   it("includes mix_match collectionProducts in payload", async () => {
     db.insert(schema.bundles).values({
       id: "mm1", shopId: SHOP, name: "MM", status: "active",

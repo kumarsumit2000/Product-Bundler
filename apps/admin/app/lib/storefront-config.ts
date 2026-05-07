@@ -49,6 +49,39 @@ export async function buildStorefrontConfig(
 
   const productMap = await fetchProductDetails(admin, [...allProductIds]);
 
+  // Collect all gift / BOGO target variant ids referenced by any QB tier
+  const tierVariantIds = new Set<string>();
+  for (const q of qbs) {
+    for (const tr of q.tiers) {
+      if (tr.freeGiftVariantId) tierVariantIds.add(tr.freeGiftVariantId);
+      if (tr.bogo?.targetVariantId) tierVariantIds.add(tr.bogo.targetVariantId);
+    }
+  }
+
+  const variantAvailability: Record<string, boolean> = {};
+  if (tierVariantIds.size > 0) {
+    const res = await admin.graphql(
+      `query VariantsAvailable($ids: [ID!]!) {
+        nodes(ids: $ids) {
+          ... on ProductVariant {
+            __typename
+            id
+            availableForSale
+          }
+        }
+      }`,
+      { variables: { ids: [...tierVariantIds] } },
+    );
+    const data = (await res.json()) as {
+      data: { nodes: Array<{ __typename: string; id: string; availableForSale: boolean } | null> };
+    };
+    for (const node of data.data.nodes) {
+      if (node && node.__typename === "ProductVariant") {
+        variantAvailability[node.id] = node.availableForSale;
+      }
+    }
+  }
+
   // Fetch collection products for mix_match bundles
   const collectionMap: Record<string, Awaited<ReturnType<typeof fetchCollectionTopProducts>>> = {};
   for (const b of bundles) {
@@ -88,6 +121,20 @@ export async function buildStorefrontConfig(
       label: tr.label,
       isMostPopular: tr.isMostPopular,
       available: variants.some((v) => v.available),
+      freeGiftVariantId: tr.freeGiftVariantId ?? null,
+      freeGiftAvailable: tr.freeGiftVariantId
+        ? (variantAvailability[tr.freeGiftVariantId] ?? false)
+        : null,
+      bogo: tr.bogo
+        ? {
+            mode: tr.bogo.mode,
+            targetVariantId: tr.bogo.targetVariantId ?? null,
+            bonusQty: tr.bogo.bonusQty,
+            targetAvailable: tr.bogo.targetVariantId
+              ? (variantAvailability[tr.bogo.targetVariantId] ?? false)
+              : null,
+          }
+        : null,
     }));
     return {
       id: q.id,
