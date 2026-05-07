@@ -73,7 +73,7 @@ export function renderBundle(mount: HTMLElement, bundle: BundleConfig, config: W
       emit("widget_click", { widgetType: "bundle", widgetId: bundle.id, productId: bundle.products[0]?.productId ?? "" });
       const result = await addToCart(bundle.id, bundle.products
         .filter((p) => p.variantId)
-        .map((p) => ({ variantId: p.variantId!, qty: p.qty })));
+        .map((p) => ({ variantId: p.variantId!, qty: p.qty, bundleId: bundle.id })));
       if (!result.ok) {
         cta.disabled = false;
         cta.textContent = t("addToCart.error");

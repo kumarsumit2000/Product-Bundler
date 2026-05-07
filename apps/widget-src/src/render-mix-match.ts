@@ -114,7 +114,7 @@ export function renderMixMatch(mount: HTMLElement, bundle: BundleConfig, config:
         const lines = Array.from(selected)
           .map((i) => allItems[i]!)
           .filter((p) => p.variantId)
-          .map((p) => ({ variantId: p.variantId!, qty: 1 }));
+          .map((p) => ({ variantId: p.variantId!, qty: 1, bundleId: bundle.id }));
         const valueCents = Array.from(selected).reduce((s, i) => s + allItems[i]!.priceCents, 0);
         const result = await addToCart(bundle.id, lines);
         if (!result.ok) {

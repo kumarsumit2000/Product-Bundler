@@ -97,7 +97,7 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
         const tr = qb.tiers[selectedIndex]!;
         cta.disabled = true;
         const unitCents = tierUnitCents(tr, variant.priceCents);
-        const result = await addToCart(qb.id, [{ variantId: variant.variantId, qty: tr.qty }]);
+        const result = await addToCart(qb.id, [{ variantId: variant.variantId, qty: tr.qty, bundleId: qb.id }]);
         if (!result.ok) {
           cta.disabled = false;
           cta.textContent = t("addToCart.error");

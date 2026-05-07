@@ -1,10 +1,15 @@
-import type { CartLine } from "./types";
+export type CartLineInput = {
+  variantId: string;
+  qty: number;
+  bundleId?: string;
+  giftBundleId?: string;
+};
 
 export type AddResult = { ok: true } | { ok: false; error: string };
 
 export async function addToCart(
   bundleId: string,
-  lines: CartLine[],
+  lines: CartLineInput[],
   opts: { timeoutMs?: number } = {},
 ): Promise<AddResult> {
   // No-op in admin preview iframe: there is no real cart on this origin and
@@ -29,11 +34,16 @@ export async function addToCart(
       method: "POST",
       headers: { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest" },
       body: JSON.stringify({
-        items: lines.map((l) => ({
-          id: l.variantId,
-          quantity: l.qty,
-          properties: { _pumper_bundle_id: bundleId },
-        })),
+        items: lines.map((l) => {
+          const properties: Record<string, string> = {};
+          if (l.bundleId) properties._pumper_bundle_id = l.bundleId;
+          if (l.giftBundleId) properties._pumper_gift_id = l.giftBundleId;
+          return {
+            id: l.variantId,
+            quantity: l.qty,
+            properties,
+          };
+        }),
       }),
     });
   } catch (e) {
