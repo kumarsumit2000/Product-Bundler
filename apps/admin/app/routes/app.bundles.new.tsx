@@ -107,6 +107,20 @@ export default function BundleNew() {
   const errors =
     actionData && "errors" in actionData ? actionData.errors : undefined;
 
+  const [values, setValues] = useState<BundleFormValues | null>(null);
+
+  const collectionProductsFetcher = useFetcher<{ products: CollectionProduct[] }>();
+
+  const collectionId = values?.collection?.collectionId ?? null;
+
+  useEffect(() => {
+    if (!collectionId) return;
+    collectionProductsFetcher.load(
+      `/api/admin/collection-products?id=${encodeURIComponent(collectionId)}`
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [collectionId]);
+
   if (!gate.allowed) {
     return (
       <Page title="Create bundle" backAction={{ content: "Bundles", url: "/app/bundles" }}>
@@ -126,20 +140,6 @@ export default function BundleNew() {
       </Page>
     );
   }
-
-  const [values, setValues] = useState<BundleFormValues | null>(null);
-
-  const collectionProductsFetcher = useFetcher<{ products: CollectionProduct[] }>();
-
-  const collectionId = values?.collection?.collectionId ?? null;
-
-  useEffect(() => {
-    if (!collectionId) return;
-    collectionProductsFetcher.load(
-      `/api/admin/collection-products?id=${encodeURIComponent(collectionId)}`
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [collectionId]);
 
   const fetchedCollectionProducts = collectionProductsFetcher.data?.products ?? null;
 

@@ -96,6 +96,8 @@ export default function QbNew() {
   const errors =
     actionData && "errors" in actionData ? actionData.errors : undefined;
 
+  const [values, setValues] = useState<QbFormValues | null>(null);
+
   if (!gate.allowed) {
     return (
       <Page title="Create quantity break" backAction={{ content: "Quantity Breaks", url: "/app/quantity-breaks" }}>
@@ -115,8 +117,6 @@ export default function QbNew() {
       </Page>
     );
   }
-
-  const [values, setValues] = useState<QbFormValues | null>(null);
 
   const previewConfig = values
     ? buildPreviewQbConfig({
