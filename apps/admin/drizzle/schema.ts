@@ -16,6 +16,9 @@ export const shops = sqliteTable("shops", {
   currency: text("currency").notNull().default("USD"),
   primaryLocale: text("primary_locale").notNull().default("en"),
   attributedRevenueCents: integer("attributed_revenue_cents").notNull().default(0),
+  monthlyOrderCount: integer("monthly_order_count").notNull().default(0),
+  lifetimeOrderCount: integer("lifetime_order_count").notNull().default(0),
+  monthlyOrderResetAt: integer("monthly_order_reset_at", { mode: "timestamp" }),
 });
 
 export type BundleProduct = {
