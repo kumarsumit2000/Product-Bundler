@@ -4,7 +4,7 @@ import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { eq } from "drizzle-orm";
 import Database from "better-sqlite3";
 import * as schema from "../drizzle/schema";
-import { lazyResetIfDue } from "../app/lib/billing/usage";
+import { lazyResetIfDue, incrementOrderCount } from "../app/lib/billing/usage";
 
 const SHOP = "s.myshopify.com";
 
@@ -94,5 +94,142 @@ describe("lazyResetIfDue", () => {
       .where(eq(schema.shops.id, SHOP))
       .get();
     expect(row!.monthlyOrderCount).toBe(100); // untouched
+  });
+});
+
+describe("incrementOrderCount", () => {
+  let s: ReturnType<typeof setup>;
+  beforeEach(() => {
+    s = setup();
+  });
+
+  it("increments both counters on free plan; never returns overage", async () => {
+    s.db
+      .insert(schema.shops)
+      .values({
+        id: SHOP,
+        scopes: "",
+        installedAt: new Date(),
+        plan: "free",
+        monthlyOrderCount: 0,
+        lifetimeOrderCount: 49,
+        monthlyOrderResetAt: null,
+      })
+      .run();
+    const result = await incrementOrderCount(s.db, SHOP);
+    expect(result.overageOrders).toBe(0);
+    expect(result.isOverFreeCap).toBe(false);
+    const row = s.db
+      .select()
+      .from(schema.shops)
+      .where(eq(schema.shops.id, SHOP))
+      .get();
+    expect(row!.monthlyOrderCount).toBe(1);
+    expect(row!.lifetimeOrderCount).toBe(50);
+  });
+
+  it("returns isOverFreeCap=true when free shop crosses 50", async () => {
+    s.db
+      .insert(schema.shops)
+      .values({
+        id: SHOP,
+        scopes: "",
+        installedAt: new Date(),
+        plan: "free",
+        monthlyOrderCount: 0,
+        lifetimeOrderCount: 50,
+        monthlyOrderResetAt: null,
+      })
+      .run();
+    const result = await incrementOrderCount(s.db, SHOP);
+    expect(result.isOverFreeCap).toBe(true);
+    expect(result.overageOrders).toBe(0); // no overage on free
+  });
+
+  it("returns overageOrders=0 when paid shop is below cap", async () => {
+    s.db
+      .insert(schema.shops)
+      .values({
+        id: SHOP,
+        scopes: "",
+        installedAt: new Date(),
+        plan: "starter",
+        monthlyOrderCount: 100,
+        lifetimeOrderCount: 100,
+        monthlyOrderResetAt: new Date("2099-01-01T00:00:00Z"),
+      })
+      .run();
+    const result = await incrementOrderCount(s.db, SHOP);
+    expect(result.overageOrders).toBe(0);
+    const row = s.db
+      .select()
+      .from(schema.shops)
+      .where(eq(schema.shops.id, SHOP))
+      .get();
+    expect(row!.monthlyOrderCount).toBe(101);
+  });
+
+  it("returns overageOrders=1 the moment paid shop crosses cap", async () => {
+    s.db
+      .insert(schema.shops)
+      .values({
+        id: SHOP,
+        scopes: "",
+        installedAt: new Date(),
+        plan: "starter",
+        monthlyOrderCount: 300,
+        lifetimeOrderCount: 300,
+        monthlyOrderResetAt: new Date("2099-01-01T00:00:00Z"),
+      })
+      .run();
+    const result = await incrementOrderCount(s.db, SHOP);
+    expect(result.overageOrders).toBe(1);
+    const row = s.db
+      .select()
+      .from(schema.shops)
+      .where(eq(schema.shops.id, SHOP))
+      .get();
+    expect(row!.monthlyOrderCount).toBe(301);
+  });
+
+  it("returns overageOrders=1 even when already over cap (each over-cap order bills)", async () => {
+    s.db
+      .insert(schema.shops)
+      .values({
+        id: SHOP,
+        scopes: "",
+        installedAt: new Date(),
+        plan: "starter",
+        monthlyOrderCount: 350,
+        lifetimeOrderCount: 350,
+        monthlyOrderResetAt: new Date("2099-01-01T00:00:00Z"),
+      })
+      .run();
+    const result = await incrementOrderCount(s.db, SHOP);
+    expect(result.overageOrders).toBe(1);
+  });
+
+  it("triggers lazy reset before incrementing", async () => {
+    s.db
+      .insert(schema.shops)
+      .values({
+        id: SHOP,
+        scopes: "",
+        installedAt: new Date(),
+        plan: "starter",
+        monthlyOrderCount: 290,
+        lifetimeOrderCount: 290,
+        monthlyOrderResetAt: new Date("2020-01-01T00:00:00Z"), // way in the past
+      })
+      .run();
+    const result = await incrementOrderCount(s.db, SHOP);
+    expect(result.overageOrders).toBe(0); // counter reset to 0, then ++ to 1, under cap
+    const row = s.db
+      .select()
+      .from(schema.shops)
+      .where(eq(schema.shops.id, SHOP))
+      .get();
+    expect(row!.monthlyOrderCount).toBe(1);
+    expect(row!.lifetimeOrderCount).toBe(291);
   });
 });
