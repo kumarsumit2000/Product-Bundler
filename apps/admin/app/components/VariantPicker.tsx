@@ -21,18 +21,34 @@ export function VariantPicker({ variant, onChange, restrictToProductId }: Props)
   const shopify = useAppBridge();
 
   const open = useCallback(async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = await (shopify as any).resourcePicker({
-      type: "product-variant",
-      multiple: false,
-      selectionIds: variant ? [{ id: variant.variantId }] : [],
-    });
-    if (!result?.selection || result.selection.length === 0) return;
-    const first = result.selection[0] as {
+    let result: unknown;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      result = await (shopify as any).resourcePicker({
+        type: "product-variant",
+        multiple: false,
+        selectionIds: variant ? [{ id: variant.variantId }] : [],
+      });
+    } catch (err) {
+      // eslint-disable-next-line no-console, @typescript-eslint/no-explicit-any
+      console.error("[VariantPicker] resourcePicker threw:", err);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (shopify as any).toast?.show?.("Variant picker failed to open. Try again.", { isError: true });
+      return;
+    }
+    if (!result) return;
+    // App Bridge V4 may return either an array directly OR { selection: [...] }
+    // depending on call shape. Handle both.
+    type PickedRaw = {
       id: string;
       title?: string;
       product?: { id: string; title?: string; images?: Array<{ originalSrc?: string }> };
     };
+    const arr: PickedRaw[] = Array.isArray(result)
+      ? (result as PickedRaw[])
+      : ((result as { selection?: PickedRaw[] }).selection ?? []);
+    if (arr.length === 0) return;
+    const first = arr[0]!;
     if (restrictToProductId && first.product?.id !== restrictToProductId) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (shopify as any).toast?.show?.("Pick a variant of the QB's product.", { isError: true });
