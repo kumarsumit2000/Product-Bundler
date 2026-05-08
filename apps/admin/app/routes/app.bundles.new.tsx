@@ -91,6 +91,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
       | "fixed_total",
     mode: input.mode,
     styleOverrides: null,
+    textOverrides: null,
   });
 
   await ensureDiscountNodes(admin, db, session.shop);

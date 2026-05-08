@@ -26,6 +26,9 @@ const NEW_QB_INPUT = {
   ],
   combinable: false,
   styleOverrides: null,
+  textOverrides: null,
+  headline: null,
+  ctaLabel: null,
 };
 
 describe("quantity-breaks repo", () => {

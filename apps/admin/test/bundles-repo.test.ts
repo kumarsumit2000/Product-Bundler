@@ -27,6 +27,7 @@ const NEW_BUNDLE_INPUT = {
   combinable: false,
   triggerProductIds: [],
   styleOverrides: null,
+  textOverrides: null,
   headline: null,
   ctaLabel: null,
   mode: "classic" as const,

@@ -80,6 +80,9 @@ export async function action({ request, context }: ActionFunctionArgs) {
     tiers: input.tiers,
     combinable: input.combinable,
     styleOverrides: null,
+    textOverrides: null,
+    headline: null,
+    ctaLabel: null,
   });
 
   await ensureDiscountNodes(admin, db, session.shop);

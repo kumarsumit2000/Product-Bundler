@@ -77,6 +77,7 @@ describe("syncShopConfig", () => {
       combinable: false,
       triggerProductIds: [],
       styleOverrides: null,
+      textOverrides: null,
       headline: null,
       ctaLabel: null,
     });
@@ -106,6 +107,9 @@ describe("syncShopConfig", () => {
       ],
       combinable: false,
       styleOverrides: null,
+      textOverrides: null,
+      headline: null,
+      ctaLabel: null,
     });
     const { admin, calls } = makeAdmin();
     await syncShopConfig(setup.db, admin, SHOP);
@@ -135,6 +139,7 @@ describe("syncShopConfig", () => {
       combinable: false,
       triggerProductIds: [],
       styleOverrides: null,
+      textOverrides: null,
       headline: null,
       ctaLabel: null,
       mode: "mix_match",
@@ -174,6 +179,9 @@ describe("syncShopConfig", () => {
       ],
       combinable: false,
       styleOverrides: null,
+      textOverrides: null,
+      headline: null,
+      ctaLabel: null,
     });
     const { admin, calls } = makeAdmin();
     await syncShopConfig(setup.db, admin, SHOP);
@@ -203,6 +211,7 @@ describe("syncShopConfig", () => {
       combinable: false,
       triggerProductIds: [],
       styleOverrides: null,
+      textOverrides: null,
       headline: "x".repeat(60_000),
       ctaLabel: null,
     });

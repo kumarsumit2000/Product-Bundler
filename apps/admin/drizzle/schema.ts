@@ -50,6 +50,14 @@ export type StyleOverrides = Partial<{
   borderRadius: number;
 }>;
 
+export type BundleTextKey = "bundle.totalLabel" | "bundle.savingsBadge";
+export type QbTextKey =
+  | "qb.tierLabel"
+  | "qb.savingsBadge"
+  | "qb.mostPopular"
+  | "qb.giftBadge";
+export type TextOverrides = Partial<Record<string, string>>;
+
 export const bundles = sqliteTable("bundles", {
   id: text("id").primaryKey(),
   shopId: text("shop_id").notNull().references(() => shops.id, { onDelete: "cascade" }),
@@ -61,6 +69,7 @@ export const bundles = sqliteTable("bundles", {
   combinable: integer("combinable", { mode: "boolean" }).notNull().default(false),
   triggerProductIds: text("trigger_product_ids", { mode: "json" }).$type<string[]>().notNull(),
   styleOverrides: text("style_overrides", { mode: "json" }).$type<StyleOverrides | null>(),
+  textOverrides: text("text_overrides", { mode: "json" }).$type<TextOverrides | null>(),
   headline: text("headline"),
   ctaLabel: text("cta_label"),
   mode: text("mode", { enum: ["classic", "mix_match"] }).notNull().default("classic"),
@@ -83,6 +92,9 @@ export const quantityBreaks = sqliteTable("quantity_breaks", {
   tiers: text("tiers", { mode: "json" }).$type<QbTier[]>().notNull(),
   combinable: integer("combinable", { mode: "boolean" }).notNull().default(false),
   styleOverrides: text("style_overrides", { mode: "json" }).$type<StyleOverrides | null>(),
+  textOverrides: text("text_overrides", { mode: "json" }).$type<TextOverrides | null>(),
+  headline: text("headline"),
+  ctaLabel: text("cta_label"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 }, (t) => ({
