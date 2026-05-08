@@ -84,4 +84,14 @@ describe("addToCart", () => {
     expect(body.items[0].quantity).toBe(3);
     expect(body.items[1].quantity).toBe(2);
   });
+
+  it("does not redirect when upcart:opened event fires (drawer-specific)", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("{}", { status: 200, headers: { "Content-Type": "application/json" } })));
+    Object.defineProperty(window, "location", { value: { href: "" }, writable: true });
+    const promise = addToCart("b1", [{ variantId: "v1", qty: 1, bundleId: "b1" }], { timeoutMs: 50 });
+    document.dispatchEvent(new CustomEvent("upcart:opened"));
+    const result = await promise;
+    expect(result.ok).toBe(true);
+    expect(window.location.href).toBe("");
+  });
 });

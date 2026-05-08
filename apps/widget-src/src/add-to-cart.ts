@@ -1,3 +1,5 @@
+import { notifyCartDrawer, DRAWER_OPEN_EVENTS } from "./cart-drawer-bridge";
+
 export type CartLineInput = {
   variantId: string;
   qty: number;
@@ -25,6 +27,9 @@ export async function addToCart(
     const onChange = () => { if (!done) { done = true; resolve(true); } };
     document.addEventListener("cart:refresh", onChange, { once: true });
     document.addEventListener("cart:update", onChange, { once: true });
+    for (const ev of DRAWER_OPEN_EVENTS) {
+      document.addEventListener(ev, onChange, { once: true });
+    }
     setTimeout(() => { if (!done) { done = true; resolve(false); } }, timeoutMs);
   });
 
@@ -61,9 +66,15 @@ export async function addToCart(
     return { ok: false, error: errMsg };
   }
 
+  // Drawer-specific events / imperative API calls fire BEFORE we await drawerWillOpen.
+  // notifyCartDrawer deliberately does NOT dispatch cart:refresh — that's dispatched
+  // post-await for cart-counter widgets and as a fallthrough for drawers that listen
+  // to it but missed our drawer-specific signals.
+  notifyCartDrawer();
+
   const drawerOpened = await drawerWillOpen;
 
-  // Notify other page components (cart drawers, counters) regardless of outcome
+  // Generic cart events for cart-counter widgets and drawers that only listen here.
   document.dispatchEvent(new CustomEvent("cart:refresh"));
   document.dispatchEvent(new CustomEvent("cart:update"));
 
