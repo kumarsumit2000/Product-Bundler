@@ -129,16 +129,18 @@ export default function QbsIndex() {
           url: "/app/quantity-breaks/new",
         }}
       >
-        <UsageBanner usage={usage} />
-        <Card>
-          <BlockStack gap="300" inlineAlign="center">
-            <Text as="h2" variant="headingMd">No quantity breaks yet</Text>
-            <Text as="p" tone="subdued">
-              Set tiered pricing on a single product so customers save when they buy more.
-            </Text>
-            <Button variant="primary" url="/app/quantity-breaks/new">Create quantity break</Button>
-          </BlockStack>
-        </Card>
+        <BlockStack gap="400">
+          <UsageBanner usage={usage} />
+          <Card>
+            <BlockStack gap="300" inlineAlign="center">
+              <Text as="h2" variant="headingMd">No quantity breaks yet</Text>
+              <Text as="p" tone="subdued">
+                Set tiered pricing on a single product so customers save when they buy more.
+              </Text>
+              <Button variant="primary" url="/app/quantity-breaks/new">Create quantity break</Button>
+            </BlockStack>
+          </Card>
+        </BlockStack>
       </Page>
     );
   }
@@ -179,28 +181,30 @@ export default function QbsIndex() {
         url: "/app/quantity-breaks/new",
       }}
     >
-      <UsageBanner usage={usage} />
-      <Card padding="0">
-        <IndexTable
-          itemCount={items.length}
-          headings={[
-            { title: "Name" },
-            { title: "Status" },
-            { title: "Tiers" },
-            { title: "Updated" },
-            { title: "" },
-          ]}
-          selectedItemsCount={
-            allResourcesSelected ? "All" : selectedResources.length
-          }
-          onSelectionChange={handleSelectionChange}
-          promotedBulkActions={[
-            { content: "Delete", onAction: onBulkDelete },
-          ]}
-        >
-          {rowMarkup}
-        </IndexTable>
-      </Card>
+      <BlockStack gap="400">
+        <UsageBanner usage={usage} />
+        <Card padding="0">
+          <IndexTable
+            itemCount={items.length}
+            headings={[
+              { title: "Name" },
+              { title: "Status" },
+              { title: "Tiers" },
+              { title: "Updated" },
+              { title: "" },
+            ]}
+            selectedItemsCount={
+              allResourcesSelected ? "All" : selectedResources.length
+            }
+            onSelectionChange={handleSelectionChange}
+            promotedBulkActions={[
+              { content: "Delete", onAction: onBulkDelete },
+            ]}
+          >
+            {rowMarkup}
+          </IndexTable>
+        </Card>
+      </BlockStack>
       <ConfirmModal
         open={deleteTarget !== null}
         title={deleteTarget === "bulk" ? "Delete quantity breaks?" : `Delete quantity break "${deleteTarget?.name ?? ""}"?`}

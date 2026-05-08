@@ -1,4 +1,4 @@
-import { Card, Text, BlockStack } from "@shopify/polaris";
+import { Card, Text, BlockStack, Box } from "@shopify/polaris";
 import { useEffect, useRef } from "react";
 
 type Props = {
@@ -28,12 +28,14 @@ export function PreviewPane({ type, id, config }: Props) {
     <Card>
       <BlockStack gap="200">
         <Text as="h3" variant="headingSm">Live preview</Text>
-        <iframe
-          ref={iframeRef}
-          src={`/preview/${type}/${encodeURIComponent(id)}`}
-          style={{ width: "100%", height: "560px", border: "1px solid #e3e3e3", borderRadius: 8 }}
-          title="Widget preview"
-        />
+        <Box borderWidth="025" borderColor="border" borderRadius="200" overflowX="hidden" overflowY="hidden">
+          <iframe
+            ref={iframeRef}
+            src={`/preview/${type}/${encodeURIComponent(id)}`}
+            style={{ width: "100%", height: "560px", border: "none", display: "block" }}
+            title="Widget preview"
+          />
+        </Box>
       </BlockStack>
     </Card>
   );

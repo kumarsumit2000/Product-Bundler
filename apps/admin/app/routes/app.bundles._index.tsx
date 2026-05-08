@@ -135,16 +135,18 @@ export default function BundlesIndex() {
         title="Bundles"
         primaryAction={{ content: "Create bundle", url: "/app/bundles/new" }}
       >
-        <UsageBanner usage={usage} />
-        <Card>
-          <BlockStack gap="300" inlineAlign="center">
-            <Text as="h2" variant="headingMd">No bundles yet</Text>
-            <Text as="p" tone="subdued">
-              Group products together with a discount that applies at checkout.
-            </Text>
-            <Button variant="primary" url="/app/bundles/new">Create bundle</Button>
-          </BlockStack>
-        </Card>
+        <BlockStack gap="400">
+          <UsageBanner usage={usage} />
+          <Card>
+            <BlockStack gap="300" inlineAlign="center">
+              <Text as="h2" variant="headingMd">No bundles yet</Text>
+              <Text as="p" tone="subdued">
+                Group products together with a discount that applies at checkout.
+              </Text>
+              <Button variant="primary" url="/app/bundles/new">Create bundle</Button>
+            </BlockStack>
+          </Card>
+        </BlockStack>
       </Page>
     );
   }
@@ -180,28 +182,30 @@ export default function BundlesIndex() {
       title="Bundles"
       primaryAction={{ content: "Create bundle", url: "/app/bundles/new" }}
     >
-      <UsageBanner usage={usage} />
-      <Card padding="0">
-        <IndexTable
-          itemCount={bundles.length}
-          headings={[
-            { title: "Name" },
-            { title: "Status" },
-            { title: "Discount" },
-            { title: "Updated" },
-            { title: "" },
-          ]}
-          selectedItemsCount={
-            allResourcesSelected ? "All" : selectedResources.length
-          }
-          onSelectionChange={handleSelectionChange}
-          promotedBulkActions={[
-            { content: "Delete", onAction: onBulkDelete },
-          ]}
-        >
-          {rowMarkup}
-        </IndexTable>
-      </Card>
+      <BlockStack gap="400">
+        <UsageBanner usage={usage} />
+        <Card padding="0">
+          <IndexTable
+            itemCount={bundles.length}
+            headings={[
+              { title: "Name" },
+              { title: "Status" },
+              { title: "Discount" },
+              { title: "Updated" },
+              { title: "" },
+            ]}
+            selectedItemsCount={
+              allResourcesSelected ? "All" : selectedResources.length
+            }
+            onSelectionChange={handleSelectionChange}
+            promotedBulkActions={[
+              { content: "Delete", onAction: onBulkDelete },
+            ]}
+          >
+            {rowMarkup}
+          </IndexTable>
+        </Card>
+      </BlockStack>
       <ConfirmModal
         open={deleteTarget !== null}
         title={deleteTarget === "bulk" ? "Delete bundles?" : `Delete bundle "${deleteTarget?.name ?? ""}"?`}

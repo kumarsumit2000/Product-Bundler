@@ -194,9 +194,9 @@ export default function BillingPage() {
         </InlineGrid>
 
         <Banner tone="info">
-          <p>
+          <Text as="p">
             Charges appear on your Shopify invoice. 7-day free trial on first paid subscription.
-          </p>
+          </Text>
         </Banner>
       </BlockStack>
     </Page>

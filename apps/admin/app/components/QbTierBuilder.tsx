@@ -1,4 +1,5 @@
-import { Button, BlockStack, InlineStack, TextField, Select, Checkbox, Text } from "@shopify/polaris";
+import { Button, BlockStack, InlineStack, TextField, Select, Checkbox, Text, Collapsible, Box } from "@shopify/polaris";
+import { useState } from "react";
 import { VariantPicker, type PickedVariant } from "./VariantPicker";
 
 export type TierFormValue = {
@@ -19,6 +20,20 @@ type Props = {
   maxTiers?: number;
   restrictToProductId?: string | null;
 };
+
+function AdvancedSection({ id, children }: { id: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Box paddingInlineStart="200">
+      <Button variant="plain" onClick={() => setOpen(o => !o)} disclosure={open ? "up" : "down"}>
+        Advanced
+      </Button>
+      <Collapsible open={open} id={`advanced-${id}`}>
+        {children}
+      </Collapsible>
+    </Box>
+  );
+}
 
 const DEFAULT_TIER: TierFormValue = {
   qty: 1,
@@ -60,7 +75,7 @@ export function QbTierBuilder({ tiers, onChange, maxTiers = 10, restrictToProduc
       {tiers.map((tier, i) => (
         <BlockStack key={i} gap="200">
           <InlineStack gap="200" blockAlign="end">
-            <div style={{ width: 80 }}>
+            <Box minWidth="5rem">
               <TextField
                 label="Qty"
                 type="number"
@@ -69,8 +84,8 @@ export function QbTierBuilder({ tiers, onChange, maxTiers = 10, restrictToProduc
                 autoComplete="off"
                 min={1}
               />
-            </div>
-            <div style={{ width: 160 }}>
+            </Box>
+            <Box minWidth="10rem">
               <Select
                 label="Discount type"
                 options={[
@@ -85,8 +100,8 @@ export function QbTierBuilder({ tiers, onChange, maxTiers = 10, restrictToProduc
                   }
                 }}
               />
-            </div>
-            <div style={{ width: 100 }}>
+            </Box>
+            <Box minWidth="6.25rem">
               <TextField
                 label="Value"
                 type="number"
@@ -96,7 +111,7 @@ export function QbTierBuilder({ tiers, onChange, maxTiers = 10, restrictToProduc
                 min={0}
                 step={0.01}
               />
-            </div>
+            </Box>
             <div style={{ flex: 1 }}>
               <TextField
                 label="Label"
@@ -115,13 +130,7 @@ export function QbTierBuilder({ tiers, onChange, maxTiers = 10, restrictToProduc
               Remove
             </Button>
           </InlineStack>
-          <details
-            open={!!(tier.freeGiftVariant || tier.bogoMode)}
-            style={{ paddingLeft: 8 }}
-          >
-            <summary style={{ cursor: "pointer", fontSize: 13, color: "#5C5F62" }}>
-              + Free gift / BOGO
-            </summary>
+          <AdvancedSection id={String(i)}>
             <BlockStack gap="300" inlineAlign="stretch">
               <BlockStack gap="100">
                 <Text as="h4" variant="headingSm">Free gift</Text>
@@ -199,7 +208,7 @@ export function QbTierBuilder({ tiers, onChange, maxTiers = 10, restrictToProduc
                 )}
               </BlockStack>
             </BlockStack>
-          </details>
+          </AdvancedSection>
         </BlockStack>
       ))}
       <Button onClick={addTier} disabled={tiers.length >= maxTiers}>

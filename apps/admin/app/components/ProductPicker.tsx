@@ -1,4 +1,4 @@
-import { Button, BlockStack, InlineStack, Text, Thumbnail, TextField } from "@shopify/polaris";
+import { Button, BlockStack, InlineStack, Text, Thumbnail, TextField, Box } from "@shopify/polaris";
 import { ImageIcon } from "@shopify/polaris-icons";
 import { useCallback } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
@@ -68,7 +68,7 @@ export function ProductPicker({
             {p.title ?? p.productId}
           </Text>
           {showQty && (
-            <div style={{ width: 80 }}>
+            <Box minWidth="5rem">
               <TextField
                 label="Qty"
                 labelHidden
@@ -79,7 +79,7 @@ export function ProductPicker({
                 min={1}
                 max={100}
               />
-            </div>
+            </Box>
           )}
           <Button onClick={() => handleRemove(p.productId)} tone="critical" variant="plain">
             Remove
