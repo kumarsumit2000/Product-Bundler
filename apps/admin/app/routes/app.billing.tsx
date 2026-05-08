@@ -109,11 +109,13 @@ export default function BillingPage() {
 
   // When the action returns a confirmationUrl from Shopify, navigate the TOP
   // window (not this iframe). Shopify's billing confirmation page refuses to
-  // render inside an embedded-admin iframe.
+  // render inside an embedded-admin iframe. window.open(url, '_top') uses the
+  // browser's navigation policy and works even cross-origin (vs setting
+  // window.top.location which is blocked by same-origin policy).
   useEffect(() => {
     const url = fetcher.data?.confirmationUrl;
-    if (url && typeof window !== "undefined" && window.top) {
-      window.top.location.href = url;
+    if (url && typeof window !== "undefined") {
+      window.open(url, "_top");
     } else if (fetcher.state === "idle" && fetcher.data && fetcher.data.confirmationUrl === null) {
       // Plan downgraded to free — soft-reload this page so loader re-runs.
       window.location.reload();
