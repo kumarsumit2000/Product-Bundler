@@ -219,3 +219,25 @@ export function useSavedToast(): void {
 | Toast helper depends on `window.shopify.toast.show` which is App Bridge V4 runtime API; may not exist in test/SSR | Optional chaining (`w.shopify?.toast?.show`); test mocks the window global |
 | Sentence-case search-and-replace catches a string we shouldn't change | Search is deliberately scoped per file with explicit list of files in §5; manual review of each diff before commit |
 | `Polaris-icons` import for `ImageIcon` adds ~1KB to admin bundle | Negligible — admin bundle is already 200KB+ and not user-facing on storefront |
+
+---
+
+## 10. Manual QA execution log
+
+To be completed after deploy:
+
+- [ ] Single-bundle delete shows modal, loading state during action, closes on success
+- [ ] Bulk-QB delete shows modal, loading state during action, closes on success
+- [ ] Create bundle → list shows toast `<Bundle name> saved`
+- [ ] Edit QB + save → toast `<QB name> saved`
+- [ ] Cancel button on bundle form → returns to list without full-page reload
+- [ ] Cancel button on QB form → returns to list without full-page reload
+- [ ] Bundles list with zero items → renders Card+BlockStack empty state cleanly (no broken-image placeholder, no EmptyState)
+- [ ] QB list with zero items → same
+- [ ] ProductPicker / VariantPicker / CollectionPicker with no image source → shows `ImageIcon` placeholder, not blank grey square
+- [ ] Billing page → "Current plan" disabled button reads "You are on this plan" via screen reader
+- [ ] Bundles list and QB list → visible `gap="400"` between UsageBanner and IndexTable card
+- [ ] Nav and page titles → "Quantity breaks" (sentence case); Dashboard title aligned
+- [ ] QB edit page with existing free gift / BOGO → Advanced section auto-opens
+
+If any item fails: open a follow-up task with specific repro steps.
