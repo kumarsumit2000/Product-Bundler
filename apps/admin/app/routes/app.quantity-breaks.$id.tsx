@@ -203,7 +203,7 @@ export default function QbEdit() {
     <Page
       title={qb.name}
       backAction={{
-        content: "Quantity Breaks",
+        content: "Quantity breaks",
         url: "/app/quantity-breaks",
       }}
     >

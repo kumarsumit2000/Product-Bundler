@@ -100,7 +100,7 @@ export default function QbNew() {
 
   if (!gate.allowed) {
     return (
-      <Page title="Create quantity break" backAction={{ content: "Quantity Breaks", url: "/app/quantity-breaks" }}>
+      <Page title="Create quantity break" backAction={{ content: "Quantity breaks", url: "/app/quantity-breaks" }}>
         <Layout>
           <Layout.Section>
             <Card>
@@ -158,7 +158,7 @@ export default function QbNew() {
     <Page
       title="Create quantity break"
       backAction={{
-        content: "Quantity Breaks",
+        content: "Quantity breaks",
         url: "/app/quantity-breaks",
       }}
     >

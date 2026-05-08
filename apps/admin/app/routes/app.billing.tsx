@@ -165,7 +165,7 @@ export default function BillingPage() {
                     <Text as="p">• Analytics dashboard</Text>
                   </BlockStack>
                   {isCurrent ? (
-                    <Button disabled>Current plan</Button>
+                    <Button disabled accessibilityLabel="You are on this plan">Current plan</Button>
                   ) : isFreeDowngrade ? (
                     <Button
                       tone="critical"

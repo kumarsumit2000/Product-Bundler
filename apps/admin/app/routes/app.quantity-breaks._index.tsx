@@ -123,7 +123,7 @@ export default function QbsIndex() {
   if (items.length === 0) {
     return (
       <Page
-        title="Quantity Breaks"
+        title="Quantity breaks"
         primaryAction={{
           content: "Create quantity break",
           url: "/app/quantity-breaks/new",
@@ -175,7 +175,7 @@ export default function QbsIndex() {
 
   return (
     <Page
-      title="Quantity Breaks"
+      title="Quantity breaks"
       primaryAction={{
         content: "Create quantity break",
         url: "/app/quantity-breaks/new",

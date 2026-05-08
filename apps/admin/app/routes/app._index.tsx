@@ -135,7 +135,7 @@ export default function Dashboard() {
 
   if (!mounted) {
     return (
-      <Page title="Analytics">
+      <Page title="Dashboard">
         <BlockStack gap="500">
           <SkeletonBodyText lines={6} />
         </BlockStack>
@@ -145,7 +145,7 @@ export default function Dashboard() {
 
   return (
     <PolarisVizProvider>
-      <Page title="Analytics">
+      <Page title="Dashboard">
         <BlockStack gap="500">
           <UsageBanner usage={usage} />
           <InlineStack align="end">
