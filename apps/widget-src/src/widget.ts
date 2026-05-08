@@ -1,5 +1,6 @@
 import type { WidgetConfig, WidgetType } from "./types";
 import { matchBundle, matchQb, matchMixMatch } from "./match";
+import { lookupBundle, lookupQb, lookupMixMatch } from "./lookup";
 import { renderBundle } from "./render-bundle";
 import { renderQb } from "./render-qb";
 import { renderMixMatch } from "./render-mix-match";
@@ -51,6 +52,49 @@ function applyCssVars(target: HTMLElement, cfg: WidgetConfig): void {
   target.style.setProperty("--pumper-font", s.fontFamily);
 }
 
+type ShortcodeKind = "bundle" | "qb" | "mix";
+type ShortcodeSpec = { kind: ShortcodeKind; selector: string; attr: string };
+
+const SHORTCODES: ShortcodeSpec[] = [
+  { kind: "bundle", selector: "[data-pumper-bundle]:not([data-pumper-rendered])",    attr: "data-pumper-bundle"    },
+  { kind: "qb",     selector: "[data-pumper-qb]:not([data-pumper-rendered])",        attr: "data-pumper-qb"        },
+  { kind: "mix",    selector: "[data-pumper-mix-match]:not([data-pumper-rendered])", attr: "data-pumper-mix-match" },
+];
+
+function renderShortcode(el: HTMLElement, kind: ShortcodeKind, id: string, cfg: WidgetConfig): void {
+  applyCssVars(el, cfg);
+  if (kind === "bundle") {
+    const b = lookupBundle(cfg, id);
+    if (!b) { el.innerHTML = ""; el.style.minHeight = ""; el.dataset.pumperRendered = "1"; return; }
+    renderBundle(el, b, cfg);
+    el.dataset.pumperRendered = "1";
+    return;
+  }
+  if (kind === "qb") {
+    const q = lookupQb(cfg, id);
+    if (!q) { el.innerHTML = ""; el.style.minHeight = ""; el.dataset.pumperRendered = "1"; return; }
+    renderQb(el, q, cfg);
+    el.dataset.pumperRendered = "1";
+    return;
+  }
+  // kind === "mix"
+  const m = lookupMixMatch(cfg, id);
+  if (!m) { el.innerHTML = ""; el.style.minHeight = ""; el.dataset.pumperRendered = "1"; return; }
+  renderMixMatch(el, m, cfg);
+  el.dataset.pumperRendered = "1";
+}
+
+function collectShortcodes(): Array<{ el: HTMLElement; kind: ShortcodeKind; id: string }> {
+  const out: Array<{ el: HTMLElement; kind: ShortcodeKind; id: string }> = [];
+  for (const spec of SHORTCODES) {
+    document.querySelectorAll<HTMLElement>(spec.selector).forEach((el) => {
+      const id = el.getAttribute(spec.attr);
+      if (id) out.push({ el, kind: spec.kind, id });
+    });
+  }
+  return out;
+}
+
 function renderMount(mount: HTMLElement, cfg: WidgetConfig): void {
   const type = mount.dataset.pumperType as WidgetType | undefined;
   const productId = toGid(mount.dataset.productId ?? "");
@@ -77,12 +121,14 @@ function renderMount(mount: HTMLElement, cfg: WidgetConfig): void {
 
 export async function initWidget(): Promise<void> {
   const mounts = Array.from(document.querySelectorAll<HTMLElement>(".pumper-mount:not([data-pumper-rendered])"));
-  if (mounts.length === 0) return;
+  const shortcodes = collectShortcodes();
+  if (mounts.length === 0 && shortcodes.length === 0) return;
 
   const apiBase = (window._pumperConfig?.apiBase) ?? "https://bundler.deepseatools.in/api/storefront";
   const shopFromGlobal = window._pumperConfig?.shop;
-  const shopFromMount = mounts[0]!.dataset.shop;
-  const shop = shopFromGlobal ?? shopFromMount ?? "";
+  const shopFromMount = mounts[0]?.dataset.shop;
+  const shopFromPreview = window._pumperPreview ? window._pumperPreviewConfig?.shop : undefined;
+  const shop = shopFromGlobal ?? shopFromMount ?? shopFromPreview ?? "";
   if (!shop) return;
 
   configureAnalytics({ apiBase, shop });
@@ -95,19 +141,21 @@ export async function initWidget(): Promise<void> {
       console.warn("[pumper] config unreachable", e);
     }
     mounts.forEach((m) => { m.innerHTML = ""; m.style.minHeight = ""; });
+    shortcodes.forEach((s) => { s.el.innerHTML = ""; s.el.style.minHeight = ""; });
     return;
   }
 
   setLocale(cfg.settings.locale ?? "en");
 
   for (const m of mounts) renderMount(m, cfg);
+  for (const sc of shortcodes) renderShortcode(sc.el, sc.kind, sc.id, cfg);
 
   startObserver(cfg);
 
   // Expose re-render hook for preview iframe
   window._pumperRerender = () => {
     cachedConfig = null;
-    document.querySelectorAll<HTMLElement>(".pumper-mount").forEach((m) => {
+    document.querySelectorAll<HTMLElement>(".pumper-mount, [data-pumper-bundle], [data-pumper-qb], [data-pumper-mix-match]").forEach((m) => {
       m.removeAttribute("data-pumper-rendered");
     });
     void initWidget();
@@ -122,6 +170,9 @@ function startObserver(cfg: WidgetConfig): void {
     document.querySelectorAll<HTMLElement>(".pumper-mount:not([data-pumper-rendered])").forEach((m) => {
       renderMount(m, cachedConfig ?? cfg);
     });
+    for (const sc of collectShortcodes()) {
+      renderShortcode(sc.el, sc.kind, sc.id, cachedConfig ?? cfg);
+    }
   };
   const obs = new MutationObserver(() => {
     // Throttle via requestIdleCallback (or setTimeout fallback)
