@@ -1,4 +1,5 @@
 import { Button, BlockStack, InlineStack, Text, Thumbnail } from "@shopify/polaris";
+import { ImageIcon } from "@shopify/polaris-icons";
 import { useCallback } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
 
@@ -70,7 +71,7 @@ export function VariantPicker({ variant, onChange, restrictToProductId }: Props)
   return (
     <BlockStack gap="200">
       <InlineStack gap="300" blockAlign="center">
-        <Thumbnail source={variant.image ?? ""} alt={variant.variantTitle} size="small" />
+        <Thumbnail source={variant.image ?? ImageIcon} alt={variant.variantTitle} size="small" />
         <Text as="span" variant="bodyMd">
           {variant.productTitle} — {variant.variantTitle}
         </Text>

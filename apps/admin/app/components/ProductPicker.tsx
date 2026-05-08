@@ -1,4 +1,5 @@
 import { Button, BlockStack, InlineStack, Text, Thumbnail, TextField } from "@shopify/polaris";
+import { ImageIcon } from "@shopify/polaris-icons";
 import { useCallback } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
 
@@ -62,7 +63,7 @@ export function ProductPicker({
     <BlockStack gap="300">
       {products.map((p) => (
         <InlineStack key={p.productId} gap="300" blockAlign="center">
-          <Thumbnail source={p.image ?? ""} alt={p.title ?? ""} />
+          <Thumbnail source={p.image ?? ImageIcon} alt={p.title ?? ""} />
           <Text as="span" variant="bodyMd">
             {p.title ?? p.productId}
           </Text>

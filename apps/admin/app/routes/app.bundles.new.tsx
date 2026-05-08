@@ -127,10 +127,10 @@ export default function BundleNew() {
         <Layout>
           <Layout.Section>
             <Card>
+              {/* @ts-expect-error - image is required in Polaris v13 but omitted per design review */}
               <EmptyState
                 heading="Free plan limit reached"
                 action={{ content: "Upgrade to create more", url: "/app/billing" }}
-                image=""
               >
                 <p>{gate.reason}</p>
               </EmptyState>

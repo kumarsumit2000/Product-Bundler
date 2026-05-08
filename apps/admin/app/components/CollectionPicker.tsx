@@ -1,4 +1,5 @@
 import { Button, BlockStack, InlineStack, Text, Thumbnail } from "@shopify/polaris";
+import { ImageIcon } from "@shopify/polaris-icons";
 import { useCallback } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
 
@@ -43,7 +44,7 @@ export function CollectionPicker({ collection, onChange }: Props) {
   return (
     <BlockStack gap="200">
       <InlineStack gap="300" blockAlign="center">
-        <Thumbnail source={collection.image ?? ""} alt={collection.title} size="small" />
+        <Thumbnail source={collection.image ?? ImageIcon} alt={collection.title} size="small" />
         <Text as="span" variant="bodyMd">
           {collection.title}
         </Text>

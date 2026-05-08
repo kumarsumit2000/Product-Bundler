@@ -135,10 +135,10 @@ export default function BundlesIndex() {
       >
         <UsageBanner usage={usage} />
         <Card>
+          {/* @ts-expect-error - image is required in Polaris v13 but omitted per design review */}
           <EmptyState
             heading="No bundles yet"
             action={{ content: "Create bundle", url: "/app/bundles/new" }}
-            image=""
           >
             <Text as="p">
               Group products together with a discount that applies at checkout.

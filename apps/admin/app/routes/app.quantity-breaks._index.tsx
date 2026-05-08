@@ -129,13 +129,13 @@ export default function QbsIndex() {
       >
         <UsageBanner usage={usage} />
         <Card>
+          {/* @ts-expect-error - image is required in Polaris v13 but omitted per design review */}
           <EmptyState
             heading="No quantity breaks yet"
             action={{
               content: "Create quantity break",
               url: "/app/quantity-breaks/new",
             }}
-            image=""
           >
             <Text as="p">
               Set tiered pricing on a single product so customers save when
