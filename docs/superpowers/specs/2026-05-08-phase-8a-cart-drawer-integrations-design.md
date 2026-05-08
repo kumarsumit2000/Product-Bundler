@@ -64,6 +64,10 @@ const ADAPTERS: DrawerAdapter[] = [
 ];
 
 export function notifyCartDrawer(): void {
+  // Deliberately does NOT dispatch cart:refresh / cart:update — those are
+  // dispatched by add-to-cart.ts AFTER awaiting drawerWillOpen, which itself
+  // listens for cart:refresh. Dispatching here would resolve the promise
+  // immediately and break the /cart fallback for stock themes.
   for (const a of ADAPTERS) {
     try { a.refresh(); } catch { /* no adapter should ever throw; swallow if it does */ }
   }
@@ -101,10 +105,20 @@ const drawerWillOpen = new Promise<boolean>((resolve) => {
   setTimeout(() => { if (!done) { done = true; resolve(false); } }, timeoutMs);
 });
 
-// ... after existing dispatches:
+// Pre-await: drawer-specific events / imperative APIs.
+notifyCartDrawer();
+
+const drawerOpened = await drawerWillOpen;
+
+// Post-await: generic cart events for cart-counter widgets and drawers
+// that listen here. Order preserves the original behavior so the existing
+// /cart redirect fallback for stock themes still works.
 document.dispatchEvent(new CustomEvent("cart:refresh"));
 document.dispatchEvent(new CustomEvent("cart:update"));
-notifyCartDrawer();
+
+if (!drawerOpened) {
+  window.location.href = "/cart";
+}
 ```
 
 The 800ms timeout + `/cart` redirect fallback stays untouched.
@@ -132,7 +146,7 @@ Verifies `DRAWER_OPEN_EVENTS` is wired into `drawerWillOpen`.
 ## 8. Out of scope (deferred)
 
 - Real-store QA on each drawer — deferred to a manual gate (Phase 8.A.QA, separate task). The unit tests assert *we* call the documented API correctly; whether the documented API still works against the live drawer's current version is a manual check.
-- Drawer-not-detected fallback regression — there is a pre-existing bug where `/cart` redirect never fires for stock themes (because we dispatch `cart:refresh` ourselves, which our own `drawerWillOpen` listener treats as drawer-opened). Flagged for a separate follow-up; this sub-project doesn't change that behavior.
+- (No latent fallback bug. Earlier draft of this spec claimed there was one — re-reading the original add-to-cart.ts confirms generic `cart:refresh` is dispatched AFTER awaiting `drawerWillOpen`, so our own dispatch can't race with the listener. We preserve that ordering.)
 - i18n inside cart drawer integrations — drawers render their own UI, not ours; nothing to translate.
 
 ## 9. Risks
