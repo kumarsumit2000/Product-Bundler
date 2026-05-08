@@ -16,6 +16,7 @@ import { PreviewPane } from "~/components/PreviewPane";
 import { buildPreviewBundleConfig, defaultMockProduct, defaultPreviewSettings } from "~/lib/preview-config";
 import type { PickedProduct } from "~/components/ProductPicker";
 import type { CollectionProduct } from "~/lib/shopify-product-fetch";
+import { EmbedCodeCard } from "~/components/EmbedCodeCard";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
@@ -23,7 +24,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const db = getDb(ctx.cloudflare.env.DB);
   const usage = await getUsage(db, session.shop);
   const gate = canCreateNew(usage);
-  return json({ gate });
+  return json({ gate, plan: usage.plan });
 }
 
 export async function action({ request, context }: ActionFunctionArgs) {
@@ -81,7 +82,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     return json({ errors: { _form: gate.reason }, values: input }, { status: 403 });
   }
 
-  await bundleRepo.create(db, session.shop, {
+  const created = await bundleRepo.create(db, session.shop, {
     ...input,
     status: input.status as "draft" | "active" | "paused",
     discountType: input.discountType as
@@ -98,11 +99,11 @@ export async function action({ request, context }: ActionFunctionArgs) {
     `config:${session.shop}`
   );
 
-  return redirect("/app/bundles?saved=" + encodeURIComponent(input.name));
+  return redirect(`/app/bundles/${created.id}?saved=${encodeURIComponent(input.name)}`);
 }
 
 export default function BundleNew() {
-  const { gate } = useLoaderData<typeof loader>();
+  const { gate, plan } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const errors =
     actionData && "errors" in actionData ? actionData.errors : undefined;
@@ -206,6 +207,9 @@ export default function BundleNew() {
               config={previewConfig}
             />
           )}
+        </Layout.Section>
+        <Layout.Section>
+          <EmbedCodeCard plan={plan} />
         </Layout.Section>
       </Layout>
     </Page>

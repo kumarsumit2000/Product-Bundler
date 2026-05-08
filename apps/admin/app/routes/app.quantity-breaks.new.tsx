@@ -15,6 +15,7 @@ import { QbForm, type QbFormValues } from "~/components/QbForm";
 import { PreviewPane } from "~/components/PreviewPane";
 import { buildPreviewQbConfig, defaultPreviewSettings } from "~/lib/preview-config";
 import type { TierFormValue } from "~/components/QbTierBuilder";
+import { EmbedCodeCard } from "~/components/EmbedCodeCard";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
@@ -22,7 +23,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const db = getDb(ctx.cloudflare.env.DB);
   const usage = await getUsage(db, session.shop);
   const gate = canCreateNew(usage);
-  return json({ gate });
+  return json({ gate, plan: usage.plan });
 }
 
 export async function action({ request, context }: ActionFunctionArgs) {
@@ -71,7 +72,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     return json({ errors: { _form: gate.reason } }, { status: 403 });
   }
 
-  await qbRepo.create(db, session.shop, {
+  const created = await qbRepo.create(db, session.shop, {
     name: input.name,
     status: input.status as "draft" | "active" | "paused",
     productId: input.productId,
@@ -87,11 +88,11 @@ export async function action({ request, context }: ActionFunctionArgs) {
     `config:${session.shop}`
   );
 
-  return redirect("/app/quantity-breaks?saved=" + encodeURIComponent(input.name));
+  return redirect(`/app/quantity-breaks/${created.id}?saved=${encodeURIComponent(input.name)}`);
 }
 
 export default function QbNew() {
-  const { gate } = useLoaderData<typeof loader>();
+  const { gate, plan } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const errors =
     actionData && "errors" in actionData ? actionData.errors : undefined;
@@ -174,6 +175,9 @@ export default function QbNew() {
           {previewConfig && (
             <PreviewPane type="qb" id="new" config={previewConfig} />
           )}
+        </Layout.Section>
+        <Layout.Section>
+          <EmbedCodeCard plan={plan} />
         </Layout.Section>
       </Layout>
     </Page>

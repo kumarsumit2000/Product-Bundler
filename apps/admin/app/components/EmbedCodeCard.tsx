@@ -1,9 +1,56 @@
-import { Card, BlockStack, InlineStack, Text, TextField, Button } from "@shopify/polaris";
+import { Card, BlockStack, InlineStack, Text, TextField, Button, Badge } from "@shopify/polaris";
+import { Link } from "@remix-run/react";
 import { useState } from "react";
 
-type Props = { snippet: string };
+type Props = {
+  plan: "free" | "starter" | "growth" | "unlimited";
+  // Present on edit pages. Absent on create pages — renders a "available after save" hint.
+  snippet?: string;
+};
 
-export function EmbedCodeCard({ snippet }: Props) {
+export function EmbedCodeCard({ plan, snippet }: Props) {
+  if (plan === "free") {
+    return (
+      <Card>
+        <BlockStack gap="200">
+          <InlineStack gap="200" blockAlign="center">
+            <Text as="h2" variant="headingMd">Embed code</Text>
+            <Badge tone="info">Paid plans</Badge>
+          </InlineStack>
+          <Text as="p" tone="subdued">
+            Want to display this on your homepage, blog post, or any other page?
+            Embed codes let you paste this widget anywhere your theme accepts HTML.
+            Available on Starter, Growth, and Unlimited plans.
+          </Text>
+          <InlineStack align="end">
+            <Link to="/app/billing">
+              <Button variant="primary">Upgrade to use embed codes</Button>
+            </Link>
+          </InlineStack>
+        </BlockStack>
+      </Card>
+    );
+  }
+
+  if (!snippet) {
+    return (
+      <Card>
+        <BlockStack gap="200">
+          <Text as="h2" variant="headingMd">Embed code</Text>
+          <Text as="p" tone="subdued">
+            After you save, you&apos;ll get an embed code that lets you display this
+            widget anywhere your theme accepts HTML — homepage, blog post, custom page,
+            or a page builder&apos;s HTML element.
+          </Text>
+        </BlockStack>
+      </Card>
+    );
+  }
+
+  return <EmbedCodeCardWithSnippet snippet={snippet} />;
+}
+
+function EmbedCodeCardWithSnippet({ snippet }: { snippet: string }) {
   const [copied, setCopied] = useState(false);
   const onCopy = async () => {
     try {

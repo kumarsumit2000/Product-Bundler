@@ -15,6 +15,8 @@ import { EmbedCodeCard } from "~/components/EmbedCodeCard";
 import { buildPreviewQbConfig, defaultPreviewSettings } from "~/lib/preview-config";
 import type { TierFormValue } from "~/components/QbTierBuilder";
 import { fetchVariantDetails } from "~/lib/shopify-product-fetch";
+import { getUsage } from "~/lib/billing/usage";
+import { useSavedToast } from "~/lib/toast";
 
 export async function loader({ request, params, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
@@ -49,7 +51,8 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
   }
   const tierVariantDetails = await fetchVariantDetails(admin, [...tierVariantIds]);
 
-  return json({ qb, productTitle, productImage, tierVariantDetails });
+  const usage = await getUsage(db, session.shop);
+  return json({ qb, productTitle, productImage, tierVariantDetails, plan: usage.plan });
 }
 
 export async function action({
@@ -110,11 +113,12 @@ export async function action({
     `config:${session.shop}`
   );
 
-  return redirect("/app/quantity-breaks?saved=" + encodeURIComponent(input.name));
+  return redirect(`/app/quantity-breaks/${params.id!}?saved=${encodeURIComponent(input.name)}`);
 }
 
 export default function QbEdit() {
-  const { qb, productTitle, productImage, tierVariantDetails } = useLoaderData<typeof loader>();
+  const { qb, productTitle, productImage, tierVariantDetails, plan } = useLoaderData<typeof loader>();
+  useSavedToast();
   const actionData = useActionData<typeof action>();
   const snippet = `<div data-pumper-qb="${qb.id}"></div>`;
   const errors =
@@ -224,7 +228,7 @@ export default function QbEdit() {
           )}
         </Layout.Section>
         <Layout.Section>
-          <EmbedCodeCard snippet={snippet} />
+          <EmbedCodeCard plan={plan} snippet={snippet} />
         </Layout.Section>
       </Layout>
     </Page>

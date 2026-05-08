@@ -12,6 +12,8 @@ import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { BundleForm, type BundleFormValues } from "~/components/BundleForm";
 import { PreviewPane } from "~/components/PreviewPane";
 import { EmbedCodeCard } from "~/components/EmbedCodeCard";
+import { getUsage } from "~/lib/billing/usage";
+import { useSavedToast } from "~/lib/toast";
 import { buildPreviewBundleConfig, defaultMockProduct, defaultPreviewSettings } from "~/lib/preview-config";
 import type { PickedProduct } from "~/components/ProductPicker";
 import { fetchCollectionTopProducts, type CollectionProduct } from "~/lib/shopify-product-fetch";
@@ -95,7 +97,8 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
     }
   }
 
-  return json({ bundle, productDetails, collectionDetails, collectionTopProducts });
+  const usage = await getUsage(db, session.shop);
+  return json({ bundle, productDetails, collectionDetails, collectionTopProducts, plan: usage.plan });
 }
 
 export async function action({
@@ -167,11 +170,12 @@ export async function action({
     `config:${session.shop}`
   );
 
-  return redirect("/app/bundles?saved=" + encodeURIComponent(input.name));
+  return redirect(`/app/bundles/${params.id!}?saved=${encodeURIComponent(input.name)}`);
 }
 
 export default function BundleEdit() {
-  const { bundle, productDetails, collectionDetails, collectionTopProducts } = useLoaderData<typeof loader>();
+  const { bundle, productDetails, collectionDetails, collectionTopProducts, plan } = useLoaderData<typeof loader>();
+  useSavedToast();
   const actionData = useActionData<typeof action>();
   const snippet = bundle.mode === "mix_match"
     ? `<div data-pumper-mix-match="${bundle.id}"></div>`
@@ -298,7 +302,7 @@ export default function BundleEdit() {
           )}
         </Layout.Section>
         <Layout.Section>
-          <EmbedCodeCard snippet={snippet} />
+          <EmbedCodeCard plan={plan} snippet={snippet} />
         </Layout.Section>
       </Layout>
     </Page>
