@@ -1,6 +1,7 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/cloudflare";
-import { json, redirect } from "@remix-run/cloudflare";
+import { json } from "@remix-run/cloudflare";
 import { useFetcher, useLoaderData } from "@remix-run/react";
+import { useEffect } from "react";
 import {
   Page,
   Card,
@@ -64,7 +65,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
       .update(schema.shops)
       .set({ plan: "free", shopifyChargeId: null, trialEndsAt: null, monthlyOrderResetAt: null })
       .where(eq(schema.shops.id, session.shop));
-    return redirect("/app/billing");
+    return json({ confirmationUrl: null as string | null });
   }
 
   // Cancel existing paid subscription before creating a new one (paid → paid transition)
@@ -94,14 +95,30 @@ export async function action({ request, context }: ActionFunctionArgs) {
     .update(schema.shops)
     .set({ shopifyChargeId: chargeId })
     .where(eq(schema.shops.id, session.shop));
-  return redirect(confirmationUrl);
+  // Return the URL so the client can navigate the TOP window (not this iframe).
+  // Shopify's billing confirmation page sets frame-ancestors and refuses to
+  // render inside our embedded admin iframe.
+  return json({ confirmationUrl });
 }
 
 export default function BillingPage() {
   const { plan, usage, trialEndsAt } = useLoaderData<typeof loader>();
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<{ confirmationUrl: string | null }>();
   const isSubmitting = fetcher.state !== "idle";
   const currentPlan = PLANS[plan];
+
+  // When the action returns a confirmationUrl from Shopify, navigate the TOP
+  // window (not this iframe). Shopify's billing confirmation page refuses to
+  // render inside an embedded-admin iframe.
+  useEffect(() => {
+    const url = fetcher.data?.confirmationUrl;
+    if (url && typeof window !== "undefined" && window.top) {
+      window.top.location.href = url;
+    } else if (fetcher.state === "idle" && fetcher.data && fetcher.data.confirmationUrl === null) {
+      // Plan downgraded to free — soft-reload this page so loader re-runs.
+      window.location.reload();
+    }
+  }, [fetcher.state, fetcher.data]);
 
   const trialDaysLeft = trialEndsAt
     ? Math.max(0, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / 86_400_000))
