@@ -1,5 +1,18 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { addToCart } from "./add-to-cart";
+import { addToCart, toCartVariantId } from "./add-to-cart";
+
+describe("toCartVariantId", () => {
+  it("strips gid://shopify/ProductVariant/ prefix to return the numeric id", () => {
+    expect(toCartVariantId("gid://shopify/ProductVariant/12345")).toBe("12345");
+    expect(toCartVariantId("gid://shopify/ProductVariant/9876543210")).toBe("9876543210");
+  });
+  it("passes through already-numeric ids unchanged (defensive)", () => {
+    expect(toCartVariantId("12345")).toBe("12345");
+  });
+  it("passes through unrecognized formats unchanged", () => {
+    expect(toCartVariantId("not-a-gid")).toBe("not-a-gid");
+  });
+});
 
 describe("addToCart", () => {
   beforeEach(() => {
@@ -7,7 +20,7 @@ describe("addToCart", () => {
     vi.unstubAllGlobals();
   });
 
-  it("posts to /cart/add.js with line items + _pumper_bundle_id", async () => {
+  it("posts to /cart/add.js with line items + _pumper_bundle_id; strips gid prefix from variantId", async () => {
     const f = vi.fn().mockResolvedValue(new Response(JSON.stringify({}), { status: 200, headers: { "Content-Type": "application/json" } }));
     vi.stubGlobal("fetch", f);
     // Fake redirect target so we don't actually navigate in jsdom
@@ -23,6 +36,9 @@ describe("addToCart", () => {
     expect(url).toBe("/cart/add.js");
     const body = JSON.parse((init as RequestInit).body as string);
     expect(body.items.length).toBe(2);
+    // /cart/add.js requires numeric variant ids
+    expect(body.items[0].id).toBe("1");
+    expect(body.items[1].id).toBe("2");
     expect(body.items[0].properties._pumper_bundle_id).toBe("b1");
     expect(body.items[0].quantity).toBe(1);
     expect(body.items[1].quantity).toBe(2);

@@ -9,6 +9,14 @@ export type CartLineInput = {
 
 export type AddResult = { ok: true } | { ok: false; error: string };
 
+// Shopify's /cart/add.js endpoint requires the numeric variant id, not the
+// gid://shopify/ProductVariant/<n> form. Variants stored in our config are
+// GIDs (from Admin API); strip down before submitting to the storefront cart.
+export function toCartVariantId(variantId: string): string {
+  const m = variantId.match(/\/ProductVariant\/(\d+)/);
+  return m ? m[1]! : variantId;
+}
+
 export async function addToCart(
   bundleId: string,
   lines: CartLineInput[],
@@ -44,7 +52,7 @@ export async function addToCart(
           if (l.bundleId) properties._pumper_bundle_id = l.bundleId;
           if (l.giftBundleId) properties._pumper_gift_id = l.giftBundleId;
           return {
-            id: l.variantId,
+            id: toCartVariantId(l.variantId),
             quantity: l.qty,
             properties,
           };
