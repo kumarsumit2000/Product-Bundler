@@ -72,13 +72,23 @@ export async function action({ request, context }: ActionFunctionArgs) {
     await cancelSubscription(admin as never, shopRow.shopifyChargeId);
   }
 
+  // Partner development stores require test: true on subscriptions; real stores
+  // get real charges with test: false. Detect via shop.plan.partnerDevelopment.
+  const planResp = await admin.graphql(`#graphql
+    query ShopPlan { shop { plan { partnerDevelopment } } }
+  `);
+  const planBody = (await planResp.json()) as {
+    data?: { shop?: { plan?: { partnerDevelopment?: boolean } } };
+  };
+  const isDev = planBody.data?.shop?.plan?.partnerDevelopment ?? false;
+
   const returnUrl = `${ctx.cloudflare.env.SHOPIFY_APP_URL}/app/billing/callback`;
   const { confirmationUrl, chargeId } = await createSubscription(
     admin as never,
     session.shop,
     targetPlan,
     returnUrl,
-    { test: false },
+    { test: isDev },
   );
   await db
     .update(schema.shops)

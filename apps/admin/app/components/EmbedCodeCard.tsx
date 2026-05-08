@@ -1,5 +1,4 @@
 import { Card, BlockStack, InlineStack, Text, TextField, Button, Badge } from "@shopify/polaris";
-import { Link } from "@remix-run/react";
 import { useState } from "react";
 
 type Props = {
@@ -23,9 +22,7 @@ export function EmbedCodeCard({ plan, snippet }: Props) {
             Available on Starter, Growth, and Unlimited plans.
           </Text>
           <InlineStack align="end">
-            <Link to="/app/billing">
-              <Button variant="primary">Upgrade to use embed codes</Button>
-            </Link>
+            <Button variant="primary" url="/app/billing">Upgrade to use embed codes</Button>
           </InlineStack>
         </BlockStack>
       </Card>
