@@ -67,7 +67,23 @@ export async function createSubscription(
     ],
   };
 
-  const resp = await admin.graphql(APP_SUBSCRIPTION_CREATE, { variables });
+  let resp: Awaited<ReturnType<typeof admin.graphql>>;
+  try {
+    resp = await admin.graphql(APP_SUBSCRIPTION_CREATE, { variables });
+  } catch (caught) {
+    if (caught instanceof Response) {
+      let bodyText = "<unreadable>";
+      try { bodyText = await caught.clone().text(); } catch { /* swallow */ }
+      console.error("[createSubscription] admin.graphql threw Response", {
+        status: caught.status,
+        statusText: caught.statusText,
+        body: bodyText.slice(0, 1000),
+      });
+    } else {
+      console.error("[createSubscription] admin.graphql threw non-Response", { caught: String(caught) });
+    }
+    throw caught;
+  }
   const body = (await resp.json()) as {
     data?: {
       appSubscriptionCreate?: {

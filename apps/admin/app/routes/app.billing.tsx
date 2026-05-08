@@ -19,7 +19,6 @@ import { authenticate, type AppLoadContext } from "~/shopify.server";
 import { getDb, schema } from "~/db.server";
 import { PLANS, type PlanId, isPaidPlan } from "~/lib/billing/plans";
 import { getUsage } from "~/lib/billing/usage";
-import { createSubscription, cancelSubscription } from "~/lib/billing/subscription";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
@@ -41,7 +40,14 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 
 export async function action({ request, context }: ActionFunctionArgs) {
   const ctx = context as AppLoadContext;
-  const { session, admin } = await authenticate.admin(request, ctx);
+  const result = await authenticate.admin(request, ctx) as unknown as {
+    session: { shop: string };
+    billing: {
+      request: (opts: { plan: string; isTest: boolean; returnUrl: string }) => Promise<never>;
+      cancel: (opts: { subscriptionId: string; isTest: boolean; prorate?: boolean }) => Promise<unknown>;
+    };
+  };
+  const { session, billing } = result;
   const db = getDb(ctx.cloudflare.env.DB);
 
   const form = await request.formData();
@@ -59,7 +65,11 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
   if (targetPlan === "free") {
     if (shopRow.shopifyChargeId) {
-      await cancelSubscription(admin as never, shopRow.shopifyChargeId);
+      try {
+        await billing.cancel({ subscriptionId: shopRow.shopifyChargeId, isTest: true, prorate: true });
+      } catch {
+        // Best-effort cancel; the merchant can manually cancel via Shopify if this fails.
+      }
     }
     await db
       .update(schema.shops)
@@ -70,35 +80,30 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
   // Cancel existing paid subscription before creating a new one (paid → paid transition)
   if (shopRow.shopifyChargeId && currentPlan !== "free") {
-    await cancelSubscription(admin as never, shopRow.shopifyChargeId);
+    try {
+      await billing.cancel({ subscriptionId: shopRow.shopifyChargeId, isTest: true, prorate: true });
+    } catch {
+      // Best-effort cancel.
+    }
   }
 
-  // Partner development stores require test: true on subscriptions; real stores
-  // get real charges with test: false. Detect via shop.plan.partnerDevelopment.
-  const planResp = await admin.graphql(`#graphql
-    query ShopPlan { shop { plan { partnerDevelopment } } }
-  `);
-  const planBody = (await planResp.json()) as {
-    data?: { shop?: { plan?: { partnerDevelopment?: boolean } } };
+  // SDK's billing.request() handles managed-install state and the Billing API
+  // policy gates that direct admin.graphql calls trip on. It throws a redirect
+  // Response that React Router serves as a top-window navigation.
+  const planNameMap: Record<Exclude<PlanId, "free">, "Starter" | "Growth" | "Unlimited"> = {
+    starter: "Starter",
+    growth: "Growth",
+    unlimited: "Unlimited",
   };
-  const isDev = planBody.data?.shop?.plan?.partnerDevelopment ?? false;
-
   const returnUrl = `${ctx.cloudflare.env.SHOPIFY_APP_URL}/app/billing/callback`;
-  const { confirmationUrl, chargeId } = await createSubscription(
-    admin as never,
-    session.shop,
-    targetPlan,
+  await billing.request({
+    plan: planNameMap[targetPlan],
+    isTest: true, // flip to false when launching publicly with real charges
     returnUrl,
-    { test: isDev },
-  );
-  await db
-    .update(schema.shops)
-    .set({ shopifyChargeId: chargeId })
-    .where(eq(schema.shops.id, session.shop));
-  // Return the URL so the client can navigate the TOP window (not this iframe).
-  // Shopify's billing confirmation page sets frame-ancestors and refuses to
-  // render inside our embedded admin iframe.
-  return json({ confirmationUrl });
+  });
+
+  // Unreachable in normal flow — billing.request always throws.
+  return json({ error: "Unexpected: billing.request returned" }, { status: 500 });
 }
 
 export default function BillingPage() {
@@ -109,9 +114,9 @@ export default function BillingPage() {
 
   // When the action returns a confirmationUrl from Shopify, navigate the TOP
   // window (not this iframe). Shopify's billing confirmation page refuses to
-  // render inside an embedded-admin iframe. window.open(url, '_top') uses the
-  // browser's navigation policy and works even cross-origin (vs setting
-  // window.top.location which is blocked by same-origin policy).
+  // render inside an embedded-admin iframe. window.open(url, '_top') uses
+  // navigation policy (allowed cross-origin) vs setting window.top.location
+  // (blocked by same-origin policy).
   useEffect(() => {
     const url = fetcher.data?.confirmationUrl;
     if (url && typeof window !== "undefined") {

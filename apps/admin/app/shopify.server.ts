@@ -2,9 +2,45 @@ import "@shopify/shopify-app-remix/adapters/node";
 import {
   ApiVersion,
   AppDistribution,
+  BillingInterval,
   shopifyApp,
 } from "@shopify/shopify-app-remix/server";
 import { KvSessionStorage } from "./session-storage.server";
+
+// Plan definitions for the Shopify-app-remix billing helper. Names must match
+// what we pass to billing.request({ plan: <name> }) in the action.
+export const BILLING_PLANS = {
+  Starter: {
+    lineItems: [
+      {
+        amount: 19,
+        currencyCode: "USD",
+        interval: BillingInterval.Every30Days as const,
+      },
+    ],
+    trialDays: 7,
+  },
+  Growth: {
+    lineItems: [
+      {
+        amount: 49,
+        currencyCode: "USD",
+        interval: BillingInterval.Every30Days as const,
+      },
+    ],
+    trialDays: 7,
+  },
+  Unlimited: {
+    lineItems: [
+      {
+        amount: 99,
+        currencyCode: "USD",
+        interval: BillingInterval.Every30Days as const,
+      },
+    ],
+    trialDays: 7,
+  },
+};
 
 export type AppLoadContext = {
   cloudflare: {
@@ -35,6 +71,11 @@ export function createShopifyApp(context: AppLoadContext) {
     authPathPrefix: "/auth",
     sessionStorage: new KvSessionStorage(env.SESSIONS, env.DATABASE_ENCRYPTION_KEY),
     distribution: AppDistribution.AppStore,
+    // Use OAuth token exchange (Shopify managed install) instead of auth-code OAuth.
+    // Required for public-distributed apps and avoids the stale-access-token 403s
+    // that hit when sessions persist across distribution / install state changes.
+    future: { unstable_newEmbeddedAuthStrategy: true },
+    billing: BILLING_PLANS,
   });
 }
 
