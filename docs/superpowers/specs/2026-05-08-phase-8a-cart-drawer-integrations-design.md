@@ -157,3 +157,20 @@ Verifies `DRAWER_OPEN_EVENTS` is wired into `drawerWillOpen`.
 | Adapter throws (e.g. drawer's imperative API throws unexpectedly) | `try/catch` around each `refresh()` call in the loop swallows it; other adapters still fire |
 | Customer has 2+ drawers installed (rare) | All adapters fire; whichever drawer opens first resolves `drawerWillOpen`. No conflict. |
 | `DRAWER_OPEN_EVENTS` listeners cause memory leak if user navigates before they fire | Each is `{ once: true }`; removed on first fire OR garbage-collected with the page navigation |
+
+---
+
+## 10. Manual QA checklist (Phase 8.A.QA — separate task)
+
+For each drawer below, real-store verification requires installing the drawer on `deepseatools.myshopify.com`, creating a bundle/QB on a test product, then clicking add-to-cart. Pass criterion: drawer opens and shows the new line item without redirecting to `/cart`.
+
+- [ ] Slide Cart Drawer (Aurora Native)
+- [ ] Upcart (CartKit)
+- [ ] qikify Slide Cart
+- [ ] Monster Cart (Webrex)
+- [ ] AMP Slider Cart (Hulk)
+- [ ] Opus Cart
+- [ ] Releasit COD (verify upsell form refreshes after add; no drawer to "open")
+- [ ] EasyCOD (same — verify form refreshes)
+
+If any drawer fails: open its app's developer docs, find the actual current refresh-event name or imperative API, update the corresponding entry in `apps/widget-src/src/cart-drawer-bridge.ts`, rebuild widget. One-line fix per drawer.
