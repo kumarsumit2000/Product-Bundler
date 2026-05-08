@@ -56,7 +56,7 @@ export type QbTextKey =
   | "qb.savingsBadge"
   | "qb.mostPopular"
   | "qb.giftBadge";
-export type TextOverrides = Partial<Record<string, string>>;
+export type TextOverrides = Partial<Record<BundleTextKey | QbTextKey, string>>;
 
 export const bundles = sqliteTable("bundles", {
   id: text("id").primaryKey(),
