@@ -21,8 +21,8 @@ type Props = {
   restrictToProductId?: string | null;
 };
 
-function AdvancedSection({ id, children }: { id: string; children: React.ReactNode }) {
-  const [open, setOpen] = useState(false);
+function AdvancedSection({ id, initialOpen, children }: { id: string; initialOpen?: boolean; children: React.ReactNode }) {
+  const [open, setOpen] = useState(!!initialOpen);
   return (
     <Box paddingInlineStart="200">
       <Button variant="plain" onClick={() => setOpen(o => !o)} disclosure={open ? "up" : "down"}>
@@ -130,7 +130,7 @@ export function QbTierBuilder({ tiers, onChange, maxTiers = 10, restrictToProduc
               Remove
             </Button>
           </InlineStack>
-          <AdvancedSection id={String(i)}>
+          <AdvancedSection id={String(i)} initialOpen={!!(tier.freeGiftVariant || tier.bogoMode)}>
             <BlockStack gap="300" inlineAlign="stretch">
               <BlockStack gap="100">
                 <Text as="h4" variant="headingSm">Free gift</Text>
