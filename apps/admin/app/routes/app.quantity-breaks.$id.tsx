@@ -11,6 +11,7 @@ import { syncShopConfig } from "~/lib/metafield-sync";
 import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { QbForm, type QbFormValues } from "~/components/QbForm";
 import { PreviewPane } from "~/components/PreviewPane";
+import { EmbedCodeCard } from "~/components/EmbedCodeCard";
 import { buildPreviewQbConfig, defaultPreviewSettings } from "~/lib/preview-config";
 import type { TierFormValue } from "~/components/QbTierBuilder";
 import { fetchVariantDetails } from "~/lib/shopify-product-fetch";
@@ -115,6 +116,7 @@ export async function action({
 export default function QbEdit() {
   const { qb, productTitle, productImage, tierVariantDetails } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
+  const snippet = `<div data-pumper-qb="${qb.id}"></div>`;
   const errors =
     actionData && "errors" in actionData ? actionData.errors : undefined;
 
@@ -220,6 +222,9 @@ export default function QbEdit() {
           {previewConfig && (
             <PreviewPane type="qb" id={qb.id} config={previewConfig} />
           )}
+        </Layout.Section>
+        <Layout.Section>
+          <EmbedCodeCard snippet={snippet} />
         </Layout.Section>
       </Layout>
     </Page>

@@ -11,6 +11,7 @@ import { syncShopConfig } from "~/lib/metafield-sync";
 import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { BundleForm, type BundleFormValues } from "~/components/BundleForm";
 import { PreviewPane } from "~/components/PreviewPane";
+import { EmbedCodeCard } from "~/components/EmbedCodeCard";
 import { buildPreviewBundleConfig, defaultMockProduct, defaultPreviewSettings } from "~/lib/preview-config";
 import type { PickedProduct } from "~/components/ProductPicker";
 import { fetchCollectionTopProducts, type CollectionProduct } from "~/lib/shopify-product-fetch";
@@ -172,6 +173,9 @@ export async function action({
 export default function BundleEdit() {
   const { bundle, productDetails, collectionDetails, collectionTopProducts } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
+  const snippet = bundle.mode === "mix_match"
+    ? `<div data-pumper-mix-match="${bundle.id}"></div>`
+    : `<div data-pumper-bundle="${bundle.id}"></div>`;
   const errors =
     actionData && "errors" in actionData ? actionData.errors : undefined;
 
@@ -292,6 +296,9 @@ export default function BundleEdit() {
               config={previewConfig}
             />
           )}
+        </Layout.Section>
+        <Layout.Section>
+          <EmbedCodeCard snippet={snippet} />
         </Layout.Section>
       </Layout>
     </Page>
