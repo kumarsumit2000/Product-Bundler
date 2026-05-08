@@ -1,4 +1,4 @@
-import { Form } from "@remix-run/react";
+import { Form, useNavigation, useNavigate } from "@remix-run/react";
 import {
   BlockStack,
   Box,
@@ -62,6 +62,9 @@ const DEFAULTS: BundleFormValues = {
 
 export function BundleForm({ initialValues, errors, submitLabel, onValuesChange }: Props) {
   const [values, setValues] = useState<BundleFormValues>({ ...DEFAULTS, ...initialValues });
+  const navigation = useNavigation();
+  const isSubmitting = navigation.state === "submitting";
+  const navigate = useNavigate();
 
   const update = <K extends keyof BundleFormValues>(key: K, val: BundleFormValues[K]) =>
     setValues((v) => ({ ...v, [key]: val }));
@@ -82,7 +85,7 @@ export function BundleForm({ initialValues, errors, submitLabel, onValuesChange 
 
       <BlockStack gap="500">
         {hasErrors && (
-          <Banner tone="critical" title="Fix these issues to save the bundle">
+          <Banner tone="critical" title="Fix these issues to save">
             <Text as="p">{Object.values(errors!).join(" • ")}</Text>
           </Banner>
         )}
@@ -250,8 +253,8 @@ export function BundleForm({ initialValues, errors, submitLabel, onValuesChange 
 
         <Box paddingBlockEnd="600">
           <InlineStack align="end" gap="300">
-            <Button url="/app/bundles">Cancel</Button>
-            <Button submit variant="primary">
+            <Button onClick={() => navigate("/app/bundles")}>Cancel</Button>
+            <Button submit variant="primary" loading={isSubmitting}>
               {submitLabel}
             </Button>
           </InlineStack>

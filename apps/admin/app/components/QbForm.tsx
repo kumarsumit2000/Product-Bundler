@@ -1,4 +1,4 @@
-import { Form } from "@remix-run/react";
+import { Form, useNavigation, useNavigate } from "@remix-run/react";
 import {
   BlockStack,
   Box,
@@ -42,6 +42,9 @@ const DEFAULTS: QbFormValues = {
 
 export function QbForm({ initialValues, errors, submitLabel, onValuesChange }: Props) {
   const [values, setValues] = useState<QbFormValues>({ ...DEFAULTS, ...initialValues });
+  const navigation = useNavigation();
+  const isSubmitting = navigation.state === "submitting";
+  const navigate = useNavigate();
   const update = <K extends keyof QbFormValues>(k: K, v: QbFormValues[K]) =>
     setValues((s) => ({ ...s, [k]: v }));
 
@@ -146,8 +149,8 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange }: P
 
         <Box paddingBlockEnd="600">
           <InlineStack align="end" gap="300">
-            <Button url="/app/quantity-breaks">Cancel</Button>
-            <Button submit variant="primary">
+            <Button onClick={() => navigate("/app/quantity-breaks")}>Cancel</Button>
+            <Button submit variant="primary" loading={isSubmitting}>
               {submitLabel}
             </Button>
           </InlineStack>
