@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import {
   Page,
   Card,
-  EmptyState,
+  BlockStack,
   IndexTable,
   Text,
   Link,
@@ -135,15 +135,13 @@ export default function BundlesIndex() {
       >
         <UsageBanner usage={usage} />
         <Card>
-          {/* @ts-expect-error - image is required in Polaris v13 but omitted per design review */}
-          <EmptyState
-            heading="No bundles yet"
-            action={{ content: "Create bundle", url: "/app/bundles/new" }}
-          >
-            <Text as="p">
+          <BlockStack gap="300" inlineAlign="center">
+            <Text as="h2" variant="headingMd">No bundles yet</Text>
+            <Text as="p" tone="subdued">
               Group products together with a discount that applies at checkout.
             </Text>
-          </EmptyState>
+            <Button variant="primary" url="/app/bundles/new">Create bundle</Button>
+          </BlockStack>
         </Card>
       </Page>
     );

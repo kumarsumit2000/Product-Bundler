@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import {
   Page,
   Card,
-  EmptyState,
+  BlockStack,
   IndexTable,
   Text,
   Link,
@@ -129,19 +129,13 @@ export default function QbsIndex() {
       >
         <UsageBanner usage={usage} />
         <Card>
-          {/* @ts-expect-error - image is required in Polaris v13 but omitted per design review */}
-          <EmptyState
-            heading="No quantity breaks yet"
-            action={{
-              content: "Create quantity break",
-              url: "/app/quantity-breaks/new",
-            }}
-          >
-            <Text as="p">
-              Set tiered pricing on a single product so customers save when
-              they buy more.
+          <BlockStack gap="300" inlineAlign="center">
+            <Text as="h2" variant="headingMd">No quantity breaks yet</Text>
+            <Text as="p" tone="subdued">
+              Set tiered pricing on a single product so customers save when they buy more.
             </Text>
-          </EmptyState>
+            <Button variant="primary" url="/app/quantity-breaks/new">Create quantity break</Button>
+          </BlockStack>
         </Card>
       </Page>
     );

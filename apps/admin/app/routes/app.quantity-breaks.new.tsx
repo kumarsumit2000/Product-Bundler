@@ -2,7 +2,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/cloudfla
 import { json, redirect } from "@remix-run/cloudflare";
 import { useActionData, useLoaderData } from "@remix-run/react";
 import { useState } from "react";
-import { Page, Layout, Card, EmptyState } from "@shopify/polaris";
+import { Page, Layout, Card, BlockStack, Text, Button } from "@shopify/polaris";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
 import { getDb } from "~/db.server";
 import { getUsage } from "~/lib/billing/usage";
@@ -104,13 +104,11 @@ export default function QbNew() {
         <Layout>
           <Layout.Section>
             <Card>
-              {/* @ts-expect-error - image is required in Polaris v13 but omitted per design review */}
-              <EmptyState
-                heading="Free plan limit reached"
-                action={{ content: "Upgrade to create more", url: "/app/billing" }}
-              >
-                <p>{gate.reason}</p>
-              </EmptyState>
+              <BlockStack gap="300" inlineAlign="center">
+                <Text as="h2" variant="headingMd">Free plan limit reached</Text>
+                <Text as="p" tone="subdued">{gate.reason}</Text>
+                <Button variant="primary" url="/app/billing">Upgrade to create more</Button>
+              </BlockStack>
             </Card>
           </Layout.Section>
         </Layout>
