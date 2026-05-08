@@ -1,6 +1,7 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/cloudflare";
 import { json, redirect } from "@remix-run/cloudflare";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
+import { useEffect, useState } from "react";
 import {
   Page,
   Card,
@@ -18,6 +19,7 @@ import { syncShopConfig } from "~/lib/metafield-sync";
 import { StatusBadge } from "~/components/StatusBadge";
 import { getUsage } from "~/lib/billing/usage";
 import { UsageBanner } from "~/components/UsageBanner";
+import { ConfirmModal } from "~/components/ConfirmModal";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
@@ -74,23 +76,19 @@ function summarizeDiscount(b: {
   return `Fixed $${b.discountValue.toFixed(2)}`;
 }
 
-function DeleteRowButton({ id, name }: { id: string; name: string }) {
-  const fetcher = useFetcher();
-  const isDeleting = fetcher.state !== "idle";
-
+function DeleteRowButton({ id, name, onDelete }: { id: string; name: string; onDelete: (id: string, name: string) => void }) {
   return (
-    <Button
-      variant="plain"
-      tone="critical"
-      loading={isDeleting}
-      onClick={() => {
-        if (confirm(`Delete bundle "${name}"? This cannot be undone.`)) {
-          fetcher.submit({ _action: "delete", id }, { method: "post" });
-        }
-      }}
-    >
-      Delete
-    </Button>
+    // Wrap in a div so we can stopPropagation on the native click event,
+    // preventing IndexTable.Row's onClick (navigate) from firing.
+    <div onClick={(e) => e.stopPropagation()}>
+      <Button
+        variant="plain"
+        tone="critical"
+        onClick={() => onDelete(id, name)}
+      >
+        Delete
+      </Button>
+    </div>
   );
 }
 
@@ -102,20 +100,32 @@ export default function BundlesIndex() {
   const { selectedResources, allResourcesSelected, handleSelectionChange, clearSelection } =
     useIndexResourceState(bundles as { id: string }[], { resourceIDResolver });
 
-  const bulkDelete = () => {
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | "bulk" | null>(null);
+  const [inFlight, setInFlight] = useState(false);
+
+  useEffect(() => {
+    if (inFlight && fetcher.state === "idle") {
+      setDeleteTarget(null);
+      setInFlight(false);
+    }
+  }, [fetcher.state, inFlight]);
+
+  const onRowDelete = (id: string, name: string) => setDeleteTarget({ id, name });
+  const onBulkDelete = () => {
     if (selectedResources.length === 0) return;
-    if (
-      confirm(
-        `Delete ${selectedResources.length} bundle${selectedResources.length === 1 ? "" : "s"}? This cannot be undone.`,
-      )
-    ) {
-      fetcher.submit(
-        { _action: "delete-bulk", ids: JSON.stringify(selectedResources) },
-        { method: "post" },
-      );
+    setDeleteTarget("bulk");
+  };
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+    setInFlight(true);
+    if (deleteTarget === "bulk") {
+      fetcher.submit({ _action: "delete-bulk", ids: JSON.stringify(selectedResources) }, { method: "post" });
       clearSelection();
+    } else {
+      fetcher.submit({ _action: "delete", id: deleteTarget.id }, { method: "post" });
     }
   };
+  const closeModal = () => { if (!inFlight) setDeleteTarget(null); };
 
   if (bundles.length === 0) {
     return (
@@ -160,7 +170,7 @@ export default function BundlesIndex() {
         {new Date(b.updatedAt).toLocaleDateString()}
       </IndexTable.Cell>
       <IndexTable.Cell>
-        <DeleteRowButton id={b.id} name={b.name} />
+        <DeleteRowButton id={b.id} name={b.name} onDelete={onRowDelete} />
       </IndexTable.Cell>
     </IndexTable.Row>
   ));
@@ -186,12 +196,22 @@ export default function BundlesIndex() {
           }
           onSelectionChange={handleSelectionChange}
           promotedBulkActions={[
-            { content: "Delete", onAction: bulkDelete },
+            { content: "Delete", onAction: onBulkDelete },
           ]}
         >
           {rowMarkup}
         </IndexTable>
       </Card>
+      <ConfirmModal
+        open={deleteTarget !== null}
+        title={deleteTarget === "bulk" ? "Delete bundles?" : `Delete bundle "${deleteTarget?.name ?? ""}"?`}
+        body={deleteTarget === "bulk"
+          ? `Delete ${selectedResources.length} bundle${selectedResources.length === 1 ? "" : "s"}? This cannot be undone.`
+          : "This cannot be undone."}
+        loading={inFlight}
+        onConfirm={confirmDelete}
+        onClose={closeModal}
+      />
     </Page>
   );
 }
