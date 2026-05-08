@@ -109,7 +109,7 @@ export async function action({
     `config:${session.shop}`
   );
 
-  return redirect("/app/quantity-breaks");
+  return redirect("/app/quantity-breaks?saved=" + encodeURIComponent(input.name));
 }
 
 export default function QbEdit() {

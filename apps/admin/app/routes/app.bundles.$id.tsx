@@ -166,7 +166,7 @@ export async function action({
     `config:${session.shop}`
   );
 
-  return redirect("/app/bundles");
+  return redirect("/app/bundles?saved=" + encodeURIComponent(input.name));
 }
 
 export default function BundleEdit() {

@@ -98,7 +98,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     `config:${session.shop}`
   );
 
-  return redirect("/app/bundles");
+  return redirect("/app/bundles?saved=" + encodeURIComponent(input.name));
 }
 
 export default function BundleNew() {

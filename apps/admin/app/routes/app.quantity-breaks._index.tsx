@@ -20,6 +20,7 @@ import { StatusBadge } from "~/components/StatusBadge";
 import { getUsage } from "~/lib/billing/usage";
 import { UsageBanner } from "~/components/UsageBanner";
 import { ConfirmModal } from "~/components/ConfirmModal";
+import { useSavedToast } from "~/lib/toast";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
@@ -85,6 +86,7 @@ function DeleteRowButton({ id, name, onDelete }: { id: string; name: string; onD
 
 export default function QbsIndex() {
   const { items, usage } = useLoaderData<typeof loader>();
+  useSavedToast();
   const fetcher = useFetcher();
   const navigate = useNavigate();
   const resourceIDResolver = (q: { id: string }) => q.id;
