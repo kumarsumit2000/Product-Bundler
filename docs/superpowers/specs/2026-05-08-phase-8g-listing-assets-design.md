@@ -172,3 +172,20 @@ Markdown document with sections:
 | Privacy policy text becomes inaccurate as features evolve (e.g. when orders/paid webhook re-enables, retention may change) | Add a TODO comment in the route file pointing to this spec; maintainers update both together. |
 | Listing copy gets stale | Markdown lives in `docs/listing/` — easy to find. Update before each App Store re-submission. |
 | `CrispChat` script tag inserted via `dangerouslySetInnerHTML` is XSS-able if `websiteId` ever became user-input | `websiteId` is hardcoded at the call site (passed as a literal). Never sourced from user input. |
+
+---
+
+## 11. Manual QA execution log
+
+To be completed post-deploy:
+
+- [ ] Visit `https://bundler.deepseatools.in/privacy` in incognito → privacy policy renders, no Crisp widget visible, no console errors
+- [ ] Visit `https://bundler.deepseatools.in/support` in incognito → support page + Crisp chat bubble appears in bottom-right within ~2s
+- [ ] Click Crisp bubble on public support page → chat panel opens
+- [ ] Send a test message via public support → message arrives in Crisp inbox (verify in Crisp dashboard)
+- [ ] In Shopify admin, click **Support** in NavMenu → /app/support renders inside iframe
+- [ ] Crisp bubble visible on /app/support → click → panel opens
+- [ ] Send test message via embedded admin support → arrives in Crisp inbox
+- [ ] If embedded admin Crisp fails (App Bridge / iframe conflict): remove `<CrispChat />` from `app.support.tsx`, redeploy. Public `/support` keeps chat. File this as a known limitation.
+
+If any step fails, file a follow-up issue with reproduction details.
