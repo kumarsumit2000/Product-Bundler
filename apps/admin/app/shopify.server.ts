@@ -71,10 +71,7 @@ export function createShopifyApp(context: AppLoadContext) {
     authPathPrefix: "/auth",
     sessionStorage: new KvSessionStorage(env.SESSIONS, env.DATABASE_ENCRYPTION_KEY),
     distribution: AppDistribution.AppStore,
-    // Use OAuth token exchange (Shopify managed install) instead of auth-code OAuth.
-    // Required for public-distributed apps and avoids the stale-access-token 403s
-    // that hit when sessions persist across distribution / install state changes.
-    future: { unstable_newEmbeddedAuthStrategy: true },
+    // Token Exchange (Shopify managed install) is the default in v4 — no flag needed.
     billing: BILLING_PLANS,
   });
 }

@@ -56,7 +56,7 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
   }
   const tierVariantDetails = await fetchVariantDetails(admin, [...tierVariantIds]).catch((err) => {
     console.error("[app.quantity-breaks.$id] fetchVariantDetails failed (non-fatal):", err);
-    return {};
+    return {} as Awaited<ReturnType<typeof fetchVariantDetails>>;
   });
 
   const usage = await getUsage(db, session.shop);
