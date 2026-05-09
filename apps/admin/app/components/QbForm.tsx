@@ -23,6 +23,13 @@ export type QbFormValues = {
   tiers: TierFormValue[];
   combinable: boolean;
   status: Status;
+  headline: string;
+  ctaLabel: string;
+  primaryColor: string;
+  textColor: string;
+  backgroundColor: string;
+  borderRadius: string;
+  textOverrides: Record<string, string>;
 };
 
 type Props = {
@@ -38,6 +45,18 @@ const DEFAULTS: QbFormValues = {
   tiers: [{ qty: 1, discountType: "percentage", discountValue: 0, label: "Buy 1", isMostPopular: false }],
   combinable: false,
   status: "draft",
+  headline: "",
+  ctaLabel: "",
+  primaryColor: "",
+  textColor: "",
+  backgroundColor: "",
+  borderRadius: "",
+  textOverrides: {
+    "qb.tierLabel": "",
+    "qb.savingsBadge": "",
+    "qb.mostPopular": "",
+    "qb.giftBadge": "",
+  },
 };
 
 export function QbForm({ initialValues, errors, submitLabel, onValuesChange }: Props) {
@@ -57,6 +76,17 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange }: P
   return (
     <Form method="post">
       <input type="hidden" name="productId" value={values.product[0]?.productId ?? ""} />
+      <input type="hidden" name="headline" value={values.headline} />
+      <input type="hidden" name="ctaLabel" value={values.ctaLabel} />
+      <input type="hidden" name="styleOverrides" value={JSON.stringify({
+        primaryColor: values.primaryColor || undefined,
+        textColor: values.textColor || undefined,
+        backgroundColor: values.backgroundColor || undefined,
+        borderRadius: values.borderRadius ? parseInt(values.borderRadius, 10) : undefined,
+      })} />
+      <input type="hidden" name="textOverrides" value={JSON.stringify(
+        Object.fromEntries(Object.entries(values.textOverrides).filter(([, v]) => v.length > 0))
+      )} />
       <input
         type="hidden"
         name="tiers"
@@ -144,6 +174,119 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange }: P
               onChange={(c) => update("combinable", c)}
               name="combinable"
             />
+          </BlockStack>
+        </Card>
+
+        <Card>
+          <BlockStack gap="400">
+            <Text as="h2" variant="headingMd">Style &amp; Text</Text>
+            <Text as="p" tone="subdued">Override how this quantity break looks and reads. Leave fields empty to use shop defaults.</Text>
+
+            <BlockStack gap="200">
+              <Text as="h3" variant="headingSm">Headline &amp; CTA</Text>
+              <TextField
+                label="Headline (optional)"
+                value={values.headline}
+                onChange={(v) => update("headline", v)}
+                error={errors?.headline}
+                placeholder="Choose your savings"
+                autoComplete="off"
+                maxLength={100}
+              />
+              <TextField
+                label="CTA label (optional)"
+                value={values.ctaLabel}
+                onChange={(v) => update("ctaLabel", v)}
+                error={errors?.ctaLabel}
+                placeholder="Add to cart"
+                autoComplete="off"
+                maxLength={50}
+              />
+            </BlockStack>
+
+            <BlockStack gap="200">
+              <Text as="h3" variant="headingSm">Colors</Text>
+              <InlineStack gap="300">
+                <TextField
+                  label="Primary color"
+                  value={values.primaryColor}
+                  onChange={(v) => update("primaryColor", v)}
+                  placeholder="#7B1E2A"
+                  helpText="6-digit hex like #FF0000"
+                  autoComplete="off"
+                  maxLength={7}
+                />
+                <TextField
+                  label="Text color"
+                  value={values.textColor}
+                  onChange={(v) => update("textColor", v)}
+                  placeholder="#1A1A1A"
+                  autoComplete="off"
+                  maxLength={7}
+                />
+                <TextField
+                  label="Background color"
+                  value={values.backgroundColor}
+                  onChange={(v) => update("backgroundColor", v)}
+                  placeholder="#FFFFFF"
+                  autoComplete="off"
+                  maxLength={7}
+                />
+              </InlineStack>
+              <TextField
+                label="Border radius (px)"
+                type="number"
+                min={0}
+                max={24}
+                value={values.borderRadius}
+                onChange={(v) => update("borderRadius", v)}
+                placeholder="8"
+                autoComplete="off"
+              />
+            </BlockStack>
+
+            <BlockStack gap="200">
+              <Text as="h3" variant="headingSm">Text overrides</Text>
+              <TextField
+                label="Tier label"
+                value={values.textOverrides["qb.tierLabel"] ?? ""}
+                onChange={(v) => update("textOverrides", { ...values.textOverrides, "qb.tierLabel": v })}
+                placeholder="Buy {qty}"
+                helpText="Available variables: {qty}"
+                autoComplete="off"
+                maxLength={120}
+              />
+              <TextField
+                label="Savings badge"
+                value={values.textOverrides["qb.savingsBadge"] ?? ""}
+                onChange={(v) => update("textOverrides", { ...values.textOverrides, "qb.savingsBadge": v })}
+                placeholder="−{savings}"
+                helpText="Available variables: {savings}"
+                autoComplete="off"
+                maxLength={120}
+              />
+              <TextField
+                label='"Most popular" badge'
+                value={values.textOverrides["qb.mostPopular"] ?? ""}
+                onChange={(v) => update("textOverrides", { ...values.textOverrides, "qb.mostPopular": v })}
+                placeholder="MOST POPULAR"
+                autoComplete="off"
+                maxLength={120}
+              />
+              <TextField
+                label="Free gift badge"
+                value={values.textOverrides["qb.giftBadge"] ?? ""}
+                onChange={(v) => update("textOverrides", { ...values.textOverrides, "qb.giftBadge": v })}
+                placeholder="🎁 + Free {variantTitle}"
+                helpText="Available variables: {variantTitle}"
+                autoComplete="off"
+                maxLength={120}
+              />
+            </BlockStack>
+
+            {(errors?.styleOverrides || errors?.textOverrides) && (
+              <Banner tone="critical">{errors?.styleOverrides || errors?.textOverrides}</Banner>
+            )}
           </BlockStack>
         </Card>
 
