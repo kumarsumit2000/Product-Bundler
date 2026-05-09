@@ -17,6 +17,7 @@ import type { TierFormValue } from "~/components/QbTierBuilder";
 import { fetchVariantDetails } from "~/lib/shopify-product-fetch";
 import { getUsage } from "~/lib/billing/usage";
 import { useSavedToast } from "~/lib/toast";
+import type { StyleOverrides, TextOverrides } from "../../drizzle/schema";
 
 export async function loader({ request, params, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
@@ -90,11 +91,32 @@ export async function action({
       })(),
     })),
     combinable: form.get("combinable") === "on",
-    headline: null,
-    ctaLabel: null,
-    styleOverrides: null,
-    textOverrides: null,
+    headline: null as string | null,
+    ctaLabel: null as string | null,
+    styleOverrides: null as StyleOverrides | null,
+    textOverrides: null as TextOverrides | null,
   };
+
+  const styleOverridesRaw = (form.get("styleOverrides") as string) || "{}";
+  const textOverridesRaw = (form.get("textOverrides") as string) || "{}";
+  try {
+    const so = JSON.parse(styleOverridesRaw);
+    const filteredSo: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(so)) {
+      if (v !== undefined && v !== null && v !== "") filteredSo[k] = v;
+    }
+    input.styleOverrides = Object.keys(filteredSo).length > 0 ? (filteredSo as StyleOverrides) : null;
+  } catch { input.styleOverrides = null; }
+  try {
+    const to = JSON.parse(textOverridesRaw);
+    const filteredTo: Record<string, string> = {};
+    for (const [k, v] of Object.entries(to)) {
+      if (typeof v === "string" && v.length > 0) filteredTo[k] = v;
+    }
+    input.textOverrides = Object.keys(filteredTo).length > 0 ? (filteredTo as TextOverrides) : null;
+  } catch { input.textOverrides = null; }
+  input.headline = (form.get("headline") as string) || null;
+  input.ctaLabel = (form.get("ctaLabel") as string) || null;
 
   const v = validateQb(input);
   if (!v.valid) {
@@ -109,6 +131,10 @@ export async function action({
     productId: input.productId,
     tiers: input.tiers,
     combinable: input.combinable,
+    styleOverrides: input.styleOverrides,
+    textOverrides: input.textOverrides,
+    headline: input.headline,
+    ctaLabel: input.ctaLabel,
   });
 
   await ensureDiscountNodes(admin, db, session.shop);
@@ -170,6 +196,18 @@ export default function QbEdit() {
     })),
     combinable: qb.combinable,
     status: qb.status as QbFormValues["status"],
+    headline: qb.headline ?? "",
+    ctaLabel: qb.ctaLabel ?? "",
+    primaryColor: (qb.styleOverrides as { primaryColor?: string } | null)?.primaryColor ?? "",
+    textColor: (qb.styleOverrides as { textColor?: string } | null)?.textColor ?? "",
+    backgroundColor: (qb.styleOverrides as { backgroundColor?: string } | null)?.backgroundColor ?? "",
+    borderRadius: (qb.styleOverrides as { borderRadius?: number } | null)?.borderRadius?.toString() ?? "",
+    textOverrides: {
+      "qb.tierLabel": (qb.textOverrides as Record<string, string> | null)?.["qb.tierLabel"] ?? "",
+      "qb.savingsBadge": (qb.textOverrides as Record<string, string> | null)?.["qb.savingsBadge"] ?? "",
+      "qb.mostPopular": (qb.textOverrides as Record<string, string> | null)?.["qb.mostPopular"] ?? "",
+      "qb.giftBadge": (qb.textOverrides as Record<string, string> | null)?.["qb.giftBadge"] ?? "",
+    },
   };
 
   const previewConfig = values
