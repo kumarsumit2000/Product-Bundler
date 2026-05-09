@@ -13,21 +13,10 @@ const listRow: React.CSSProperties = {
   background: "#cbd5e1",
   borderRadius: 3,
 };
-const cardCell: React.CSSProperties = {
-  flex: 1,
-  height: 50,
-  background: "#cbd5e1",
-  borderRadius: 4,
-};
 const gridCell: React.CSSProperties = {
   height: 18,
   background: "#cbd5e1",
   borderRadius: 3,
-};
-const compactRow: React.CSSProperties = {
-  height: 6,
-  background: "#cbd5e1",
-  borderRadius: 2,
 };
 
 const PRESETS: Array<{ value: LayoutVariant; label: string; thumb: JSX.Element }> = [
@@ -40,17 +29,6 @@ const PRESETS: Array<{ value: LayoutVariant; label: string; thumb: JSX.Element }
         <span style={listRow} />
         <span style={listRow} />
       </>
-    ),
-  },
-  {
-    value: "cards",
-    label: "Cards",
-    thumb: (
-      <div style={{ display: "flex", gap: 4, padding: 6 }}>
-        <span style={cardCell} />
-        <span style={cardCell} />
-        <span style={cardCell} />
-      </div>
     ),
   },
   {
@@ -67,19 +45,6 @@ const PRESETS: Array<{ value: LayoutVariant; label: string; thumb: JSX.Element }
       </div>
     ),
   },
-  {
-    value: "compact",
-    label: "Compact",
-    thumb: (
-      <div style={{ display: "flex", flexDirection: "column", gap: 3, padding: 6 }}>
-        <span style={compactRow} />
-        <span style={compactRow} />
-        <span style={compactRow} />
-        <span style={compactRow} />
-        <span style={compactRow} />
-      </div>
-    ),
-  },
 ];
 
 export function LayoutPresetPicker({ value, onChange }: Props) {
@@ -89,7 +54,7 @@ export function LayoutPresetPicker({ value, onChange }: Props) {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
           gap: 12,
         }}
       >

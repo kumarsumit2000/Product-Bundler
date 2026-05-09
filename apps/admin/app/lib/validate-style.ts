@@ -19,6 +19,7 @@ const COLOR_KEYS = new Set([
 const NUMBER_KEYS: Record<string, [number, number]> = {
   borderRadius: [0, 48],
   spacing: [0, 64],
+  gridColumns: [1, 6],
   blockTitleFontSize: [10, 48],
   titleFontSize: [10, 48],
   subtitleFontSize: [10, 48],
@@ -29,7 +30,7 @@ const NUMBER_KEYS: Record<string, [number, number]> = {
 };
 
 const FONT_STYLES = new Set(["regular", "medium", "semibold", "bold"]);
-const LAYOUT_VARIANTS = new Set(["list", "cards", "grid", "compact"]);
+const LAYOUT_VARIANTS = new Set(["list", "grid"]);
 
 const FONT_STYLE_KEYS = new Set([
   "blockTitleFontStyle",
@@ -50,7 +51,7 @@ export function validateStyleOverrides(input: unknown): string | null {
   for (const [k, v] of Object.entries(input as Record<string, unknown>)) {
     if (k === "layoutVariant") {
       if (typeof v !== "string" || !LAYOUT_VARIANTS.has(v)) {
-        return "layoutVariant must be one of: list, cards, grid, compact";
+        return "layoutVariant must be one of: list, grid";
       }
       continue;
     }

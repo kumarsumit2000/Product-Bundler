@@ -21,6 +21,7 @@ import type {
 // inputs don't fight with us about type coercion.
 export type StylePanelValues = {
   layoutVariant: LayoutVariant | "";
+  gridColumns: string;
   borderRadius: string;
   spacing: string;
   // Legacy
@@ -168,6 +169,21 @@ export function StylePanel({ values, onChange }: Props) {
               value={values.layoutVariant}
               onChange={(v) => set("layoutVariant", v)}
             />
+
+            {values.layoutVariant === "grid" && (
+              <div style={{ maxWidth: 240 }}>
+                <Select
+                  label="Items per row"
+                  options={[
+                    { label: "2", value: "2" },
+                    { label: "3", value: "3" },
+                    { label: "4", value: "4" },
+                  ]}
+                  value={values.gridColumns || "3"}
+                  onChange={(v) => set("gridColumns", v)}
+                />
+              </div>
+            )}
 
             <InlineStack gap="400" align="start">
               <div style={{ flex: 1, minWidth: 220 }}>

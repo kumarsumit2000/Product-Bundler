@@ -125,6 +125,12 @@ export function applyCssVars(
   } else {
     target.removeAttribute("data-pumper-layout");
   }
+  // Grid: items-per-row CSS var (1–6, defaults to 3 if grid layout but unset).
+  if (o.layoutVariant === "grid") {
+    target.style.setProperty("--pumper-grid-columns", String(o.gridColumns ?? 3));
+  } else {
+    target.style.removeProperty("--pumper-grid-columns");
+  }
 }
 
 type ShortcodeKind = "bundle" | "qb" | "mix";

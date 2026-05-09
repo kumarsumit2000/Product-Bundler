@@ -19,12 +19,13 @@ export type CollectionProduct = {
   priceCents: number;
 };
 
-export type LayoutVariant = "list" | "cards" | "grid" | "compact";
+export type LayoutVariant = "list" | "grid";
 export type FontStyle = "regular" | "medium" | "semibold" | "bold";
 
 export type StyleOverrides = Partial<{
   // Layout
   layoutVariant: LayoutVariant;
+  gridColumns: number;
   borderRadius: number;
   spacing: number;
   // Legacy 3-color shorthand

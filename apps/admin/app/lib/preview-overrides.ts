@@ -8,6 +8,7 @@ import type { FontStyle, LayoutVariant } from "../../drizzle/schema";
 type StyleFormFields = {
   // Layout
   layoutVariant: LayoutVariant | "";
+  gridColumns: string;
   borderRadius: string;
   spacing: string;
 
@@ -94,6 +95,7 @@ const COLOR_KEYS: Array<keyof StyleFormFields> = [
 const NUMBER_KEYS: Array<keyof StyleFormFields> = [
   "borderRadius",
   "spacing",
+  "gridColumns",
   "blockTitleFontSize",
   "titleFontSize",
   "subtitleFontSize",
@@ -151,6 +153,7 @@ export function buildTextOverrides(
 // without having to enumerate ~36 fields each time.
 export const EMPTY_STYLE_FORM: StyleFormFields = {
   layoutVariant: "",
+  gridColumns: "",
   borderRadius: "",
   spacing: "",
   primaryColor: "",

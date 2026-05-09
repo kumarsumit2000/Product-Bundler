@@ -183,39 +183,20 @@
 }
 
 /* ============================================================
-   Layout variants (data-pumper-layout="list|cards|grid|compact")
+   Layout variants (data-pumper-layout="list|grid")
    Default rendering is the existing "list" style.
+   --pumper-grid-columns drives items-per-row in grid mode (defaults
+   to 3 when the layout is grid but the var is unset).
    ============================================================ */
 
-/* Cards: each tier becomes a wider card with extra vertical padding */
-[data-pumper-layout="cards"] .pumper-qb-tier,
-[data-pumper-layout="cards"] .pumper-bundle-row {
-  padding: 16px;
-  border-radius: calc(var(--pumper-radius, 8px) + 2px);
-}
-
-/* Grid: tiers laid out in columns */
-[data-pumper-layout="grid"] .pumper-qb-tiers {
+[data-pumper-layout="grid"] .pumper-qb-tiers,
+[data-pumper-layout="grid"] .pumper-bundle-rows {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: repeat(var(--pumper-grid-columns, 3), 1fr);
 }
-[data-pumper-layout="grid"] .pumper-qb-tier {
+[data-pumper-layout="grid"] .pumper-qb-tier,
+[data-pumper-layout="grid"] .pumper-bundle-row {
   flex-direction: column;
   align-items: stretch;
   text-align: left;
-}
-
-/* Compact: tighter rows, smaller text */
-[data-pumper-layout="compact"] .pumper-qb-tier,
-[data-pumper-layout="compact"] .pumper-bundle-row {
-  padding: 6px 10px;
-  gap: 6px;
-}
-[data-pumper-layout="compact"] .pumper-qb-tier-title,
-[data-pumper-layout="compact"] .pumper-row-title {
-  font-size: calc(var(--pumper-title-fs, 13px) - 1px);
-}
-[data-pumper-layout="compact"] .pumper-qb-tier-sub,
-[data-pumper-layout="compact"] .pumper-row-sub {
-  font-size: calc(var(--pumper-subtitle-fs, 11px) - 1px);
 }
