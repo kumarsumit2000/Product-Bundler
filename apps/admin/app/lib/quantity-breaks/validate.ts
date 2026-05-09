@@ -18,7 +18,7 @@ export type QbInput = {
   headline: string | null;
   ctaLabel: string | null;
   styleOverrides: Record<string, unknown> | null;
-  textOverrides: Record<string, string> | null;
+  textOverrides: Record<string, unknown> | null;
 };
 
 export type ValidationResult =
@@ -153,8 +153,8 @@ export function validateQb(input: QbInput): ValidationResult {
           break;
         }
         if (k === "borderRadius") {
-          if (typeof v !== "number" || v < 0 || v > 24) {
-            errors.styleOverrides = "borderRadius must be a number between 0 and 24";
+          if (typeof v !== "number" || !Number.isInteger(v) || v < 0 || v > 24) {
+            errors.styleOverrides = "borderRadius must be an integer between 0 and 24";
             break;
           }
         } else {

@@ -193,4 +193,24 @@ describe("validateQb textOverrides + styleOverrides + headline/cta", () => {
     });
     expect(r.valid).toBe(false);
   });
+
+  it("rejects ctaLabel > 50 chars", () => {
+    const r = validateQb({
+      ...baseInput,
+      ctaLabel: "x".repeat(51),
+      textOverrides: null,
+      styleOverrides: null,
+    });
+    expect(r.valid).toBe(false);
+  });
+
+  it("accepts borderRadius at boundaries 0 and 24", () => {
+    expect(validateQb({ ...baseInput, textOverrides: null, styleOverrides: { borderRadius: 0 } }).valid).toBe(true);
+    expect(validateQb({ ...baseInput, textOverrides: null, styleOverrides: { borderRadius: 24 } }).valid).toBe(true);
+  });
+
+  it("rejects non-integer borderRadius", () => {
+    const r = validateQb({ ...baseInput, textOverrides: null, styleOverrides: { borderRadius: 12.5 } });
+    expect(r.valid).toBe(false);
+  });
 });

@@ -240,4 +240,24 @@ describe("validateBundle textOverrides + styleOverrides", () => {
     expect(r.valid).toBe(false);
     if (!r.valid) expect(r.errors.styleOverrides).toMatch(/radius/i);
   });
+
+  it("accepts borderRadius at boundaries 0 and 24", () => {
+    expect(validateBundle({ ...baseInput, textOverrides: null, styleOverrides: { borderRadius: 0 } }).valid).toBe(true);
+    expect(validateBundle({ ...baseInput, textOverrides: null, styleOverrides: { borderRadius: 24 } }).valid).toBe(true);
+  });
+
+  it("rejects non-integer borderRadius", () => {
+    const r = validateBundle({ ...baseInput, textOverrides: null, styleOverrides: { borderRadius: 12.5 } });
+    expect(r.valid).toBe(false);
+    if (!r.valid) expect(r.errors.styleOverrides).toMatch(/integer/i);
+  });
+
+  it("accepts textOverride at exactly 120 chars", () => {
+    const r = validateBundle({
+      ...baseInput,
+      textOverrides: { "bundle.totalLabel": "x".repeat(120) },
+      styleOverrides: null,
+    });
+    expect(r.valid).toBe(true);
+  });
 });
