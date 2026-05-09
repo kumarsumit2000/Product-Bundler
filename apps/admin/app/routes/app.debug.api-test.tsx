@@ -1,5 +1,6 @@
 import type { LoaderFunctionArgs } from "@remix-run/cloudflare";
 import { json } from "@remix-run/cloudflare";
+import { useLoaderData } from "@remix-run/react";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
 
 // TEMP DEBUG ROUTE — remove after diagnosing the 403.
@@ -66,5 +67,10 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 }
 
 export default function ApiTestDebug() {
-  return null;
+  const data = useLoaderData<typeof loader>();
+  return (
+    <pre style={{ padding: 16, fontSize: 12, fontFamily: "monospace", whiteSpace: "pre-wrap", wordBreak: "break-all", background: "#fff", color: "#000" }}>
+      {JSON.stringify(data, null, 2)}
+    </pre>
+  );
 }
