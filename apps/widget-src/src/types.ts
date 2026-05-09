@@ -177,6 +177,16 @@ export type NewsletterPopup = {
   imagePosition?: "none" | "top" | "bottom" | "left" | "right";
 };
 
+export type NewsletterStyleOverrides = Partial<{
+  backgroundColor: string;
+  headingColor: string;
+  textColor: string;
+  buttonBg: string;
+  buttonText: string;
+  borderColor: string;
+  borderRadius: number;
+}>;
+
 export type NewsletterConfig = {
   headline: string;
   subtitle: string;
@@ -185,6 +195,7 @@ export type NewsletterConfig = {
   successMessage: string;
   tags: string;
   popup?: NewsletterPopup | null;
+  styleOverrides?: NewsletterStyleOverrides | null;
 };
 
 export type WidgetConfig = {

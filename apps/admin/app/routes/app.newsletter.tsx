@@ -13,6 +13,7 @@ import { EmbedCodeCard } from "~/components/EmbedCodeCard";
 import { useEffect, useRef } from "react";
 import { Box } from "@shopify/polaris";
 import { ShopifyImagePicker } from "~/components/ShopifyImagePicker";
+import { ColorSwatchPicker } from "~/components/ColorSwatchPicker";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
@@ -30,6 +31,18 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
   const trigger = (form.get("popupTrigger") as string) || "delay";
   const imagePos = (form.get("popupImagePosition") as string) || "none";
+
+  const styleRaw = (form.get("styleOverrides") as string) || "{}";
+  let styleOverrides: Record<string, unknown> | null = null;
+  try {
+    const parsed = JSON.parse(styleRaw);
+    const filtered: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(parsed)) {
+      if (v !== undefined && v !== null && v !== "") filtered[k] = v;
+    }
+    styleOverrides = Object.keys(filtered).length > 0 ? filtered : null;
+  } catch { styleOverrides = null; }
+
   await repo.upsert(db, session.shop, {
     enabled: form.get("enabled") === "on",
     headline: ((form.get("headline") as string) || "").slice(0, 100),
@@ -46,6 +59,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     popupImageUrl: ((form.get("popupImageUrl") as string) || "").slice(0, 500),
     popupImagePosition: ["none", "top", "bottom", "left", "right"].includes(imagePos) ? imagePos : "none",
     excludedPaths: ((form.get("excludedPaths") as string) || "").slice(0, 2000),
+    styleOverrides: styleOverrides as never,
   });
 
   await ctx.cloudflare.env.SHOP_SETTINGS_CACHE.delete(`config:${session.shop}`);
@@ -93,10 +107,63 @@ function NewsletterLivePreview({ config }: { config: unknown }) {
   );
 }
 
+type StyleForm = {
+  backgroundColor: string;
+  headingColor: string;
+  textColor: string;
+  buttonBg: string;
+  buttonText: string;
+  borderColor: string;
+  borderRadius: string;
+};
+
+const EMPTY_STYLE: StyleForm = {
+  backgroundColor: "",
+  headingColor: "",
+  textColor: "",
+  buttonBg: "",
+  buttonText: "",
+  borderColor: "",
+  borderRadius: "",
+};
+
+function styleFromSettings(so: unknown): StyleForm {
+  const s = (so ?? {}) as Record<string, unknown>;
+  return {
+    backgroundColor: typeof s.backgroundColor === "string" ? s.backgroundColor : "",
+    headingColor: typeof s.headingColor === "string" ? s.headingColor : "",
+    textColor: typeof s.textColor === "string" ? s.textColor : "",
+    buttonBg: typeof s.buttonBg === "string" ? s.buttonBg : "",
+    buttonText: typeof s.buttonText === "string" ? s.buttonText : "",
+    borderColor: typeof s.borderColor === "string" ? s.borderColor : "",
+    borderRadius: typeof s.borderRadius === "number" ? String(s.borderRadius) : "",
+  };
+}
+
+function buildStyleOverrides(s: StyleForm): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  if (s.backgroundColor) out.backgroundColor = s.backgroundColor;
+  if (s.headingColor) out.headingColor = s.headingColor;
+  if (s.textColor) out.textColor = s.textColor;
+  if (s.buttonBg) out.buttonBg = s.buttonBg;
+  if (s.buttonText) out.buttonText = s.buttonText;
+  if (s.borderColor) out.borderColor = s.borderColor;
+  if (s.borderRadius) {
+    const n = parseInt(s.borderRadius, 10);
+    if (Number.isFinite(n)) out.borderRadius = n;
+  }
+  return out;
+}
+
 export default function NewsletterPage() {
   const { settings } = useLoaderData<typeof loader>();
   useSavedToast();
-  const [values, setValues] = useState(settings);
+  const [values, setValues] = useState({
+    ...settings,
+    style: styleFromSettings((settings as { styleOverrides?: unknown }).styleOverrides),
+  });
+  const setStyle = (patch: Partial<StyleForm>) =>
+    setValues((v) => ({ ...v, style: { ...v.style, ...patch } }));
 
   const previewConfig = {
     shop: "preview",
@@ -127,6 +194,7 @@ export default function NewsletterPage() {
         imagePosition: values.popupImagePosition as "none" | "top" | "bottom" | "left" | "right",
         excludedPaths: [],
       },
+      styleOverrides: buildStyleOverrides(values.style),
     },
   };
 
@@ -306,6 +374,74 @@ export default function NewsletterPage() {
                       />
                     </FormLayout>
                   )}
+                </BlockStack>
+              </Card>
+
+              <Card>
+                <BlockStack gap="300">
+                  <Text as="h2" variant="headingMd">Appearance</Text>
+                  <Text as="p" tone="subdued">
+                    Override colors and shape. Leave any field blank to use defaults.
+                  </Text>
+                  <input
+                    type="hidden"
+                    name="styleOverrides"
+                    value={JSON.stringify(buildStyleOverrides(values.style))}
+                  />
+                  <FormLayout>
+                    <FormLayout.Group>
+                      <ColorSwatchPicker
+                        label="Background"
+                        value={values.style.backgroundColor}
+                        onChange={(backgroundColor) => setStyle({ backgroundColor })}
+                        placeholder="#FFFFFF"
+                      />
+                      <ColorSwatchPicker
+                        label="Border"
+                        value={values.style.borderColor}
+                        onChange={(borderColor) => setStyle({ borderColor })}
+                        placeholder="#E5E7EB"
+                      />
+                    </FormLayout.Group>
+                    <FormLayout.Group>
+                      <ColorSwatchPicker
+                        label="Heading text"
+                        value={values.style.headingColor}
+                        onChange={(headingColor) => setStyle({ headingColor })}
+                        placeholder="#1A1A1A"
+                      />
+                      <ColorSwatchPicker
+                        label="Body text"
+                        value={values.style.textColor}
+                        onChange={(textColor) => setStyle({ textColor })}
+                        placeholder="#666666"
+                      />
+                    </FormLayout.Group>
+                    <FormLayout.Group>
+                      <ColorSwatchPicker
+                        label="Button background"
+                        value={values.style.buttonBg}
+                        onChange={(buttonBg) => setStyle({ buttonBg })}
+                        placeholder="#7B1E2A"
+                      />
+                      <ColorSwatchPicker
+                        label="Button text"
+                        value={values.style.buttonText}
+                        onChange={(buttonText) => setStyle({ buttonText })}
+                        placeholder="#FFFFFF"
+                      />
+                    </FormLayout.Group>
+                    <TextField
+                      label="Border radius (px)"
+                      type="number"
+                      value={values.style.borderRadius}
+                      onChange={(borderRadius) => setStyle({ borderRadius })}
+                      autoComplete="off"
+                      min={0}
+                      max={48}
+                      placeholder="8"
+                    />
+                  </FormLayout>
                 </BlockStack>
               </Card>
 

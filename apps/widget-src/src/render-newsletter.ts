@@ -4,6 +4,21 @@ function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 }
 
+function applyNewsletterVars(target: HTMLElement, n: NewsletterConfig): void {
+  const s = n.styleOverrides ?? {};
+  const set = (name: string, value: string | number | undefined): void => {
+    if (value === undefined || value === null || value === "") return;
+    target.style.setProperty(name, typeof value === "number" ? `${value}px` : value);
+  };
+  set("--pumper-nl-bg", s.backgroundColor);
+  set("--pumper-nl-heading", s.headingColor);
+  set("--pumper-nl-text", s.textColor);
+  set("--pumper-nl-btn-bg", s.buttonBg);
+  set("--pumper-nl-btn-text", s.buttonText);
+  set("--pumper-nl-border", s.borderColor);
+  set("--pumper-nl-radius", s.borderRadius);
+}
+
 function newsletterFormHtml(n: NewsletterConfig): string {
   return `
     <h3 class="pumper-newsletter-heading">${escapeHtml(n.headline)}</h3>
@@ -80,6 +95,7 @@ function bindForm(root: HTMLElement, n: NewsletterConfig, onDone?: () => void): 
 }
 
 export function renderNewsletter(mount: HTMLElement, n: NewsletterConfig): void {
+  applyNewsletterVars(mount, n);
   mount.innerHTML = `<section class="pumper-card pumper-newsletter">${newsletterFormHtml(n)}</section>`;
   bindForm(mount, n);
 }
@@ -104,6 +120,7 @@ export function renderPopupInline(mount: HTMLElement, n: NewsletterConfig): void
     : pos === "bottom" ? contentHtml + imgHtml
     : contentHtml;
 
+  applyNewsletterVars(mount, n);
   mount.innerHTML = `
     <div class="pumper-modal pumper-newsletter pumper-card pumper-modal--${pos}${sideImage ? " pumper-modal--wide" : ""}" role="dialog" aria-modal="true" style="margin: 0 auto;">
       <button type="button" class="pumper-modal-close" aria-label="Close">&times;</button>
@@ -186,6 +203,7 @@ function showPopup(n: NewsletterConfig): void {
       ${inner}
     </div>
   `;
+  applyNewsletterVars(root, n);
   document.body.appendChild(root);
 
   const close = () => {

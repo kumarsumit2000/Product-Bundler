@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { schema } from "~/db.server";
-import type { NewsletterSettings } from "../../../drizzle/schema";
+import type { NewsletterSettings, NewsletterStyleOverrides } from "../../../drizzle/schema";
 
 const DEFAULTS = {
   enabled: false,
@@ -18,6 +18,7 @@ const DEFAULTS = {
   popupImageUrl: "",
   popupImagePosition: "none",
   excludedPaths: "",
+  styleOverrides: null as NewsletterStyleOverrides | null,
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -216,6 +216,7 @@ export async function buildStorefrontConfig(
           ctaLabel: newsletter.ctaLabel,
           successMessage: newsletter.successMessage,
           tags: newsletter.tags,
+          styleOverrides: newsletter.styleOverrides ?? null,
           popup: newsletter.popupEnabled
             ? {
                 trigger: newsletter.popupTrigger as "delay" | "exit_intent" | "scroll",

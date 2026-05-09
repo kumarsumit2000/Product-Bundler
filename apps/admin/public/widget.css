@@ -205,17 +205,38 @@
 }
 
 /* Newsletter signup widget */
-.pumper-newsletter { padding: 16px; }
-.pumper-newsletter-heading { font-size: 16px; font-weight: 700; margin: 0 0 4px; color: var(--pumper-text, #1a1a1a); }
-.pumper-newsletter-sub { font-size: 13px; color: #666; margin: 0 0 12px; }
+.pumper-newsletter {
+  padding: 16px;
+  background: var(--pumper-nl-bg, #fff);
+  border-radius: var(--pumper-nl-radius, 8px);
+  border: 1px solid var(--pumper-nl-border, #e5e7eb);
+}
+.pumper-newsletter-heading {
+  font-size: 16px; font-weight: 700; margin: 0 0 4px;
+  color: var(--pumper-nl-heading, var(--pumper-text, #1a1a1a));
+}
+.pumper-newsletter-sub {
+  font-size: 13px; margin: 0 0 12px;
+  color: var(--pumper-nl-text, #666);
+}
 .pumper-newsletter-form { display: flex; gap: 6px; flex-wrap: wrap; }
 .pumper-newsletter-input {
-  flex: 1 1 200px; min-width: 0; padding: 10px 12px; border: 1px solid #d1d5db;
-  border-radius: var(--pumper-radius, 6px);
-  font-size: 14px; background: #fff; color: var(--pumper-text, #1a1a1a);
+  flex: 1 1 200px; min-width: 0; padding: 10px 12px;
+  border: 1px solid var(--pumper-nl-border, #d1d5db);
+  border-radius: var(--pumper-nl-radius, 6px);
+  font-size: 14px; background: #fff;
+  color: var(--pumper-nl-heading, var(--pumper-text, #1a1a1a));
 }
-.pumper-newsletter-input:focus { outline: 2px solid var(--pumper-primary, #7B1E2A); outline-offset: 1px; }
-.pumper-newsletter-cta { padding: 10px 16px; white-space: nowrap; }
+.pumper-newsletter-input:focus {
+  outline: 2px solid var(--pumper-nl-btn-bg, var(--pumper-primary, #7B1E2A));
+  outline-offset: 1px;
+}
+.pumper-newsletter-cta {
+  padding: 10px 16px; white-space: nowrap;
+  background: var(--pumper-nl-btn-bg, var(--pumper-primary, #7B1E2A));
+  color: var(--pumper-nl-btn-text, #fff);
+  border-radius: var(--pumper-nl-radius, var(--pumper-radius, 6px));
+}
 .pumper-newsletter-status { margin-top: 10px; padding: 10px 12px; border-radius: var(--pumper-radius, 6px); font-size: 13px; }
 .pumper-newsletter-status--success { background: #ecfdf5; color: #065f46; }
 .pumper-newsletter-status--error { background: #fef2f2; color: #b91c1c; }
@@ -239,6 +260,9 @@
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
   animation: pumper-pop .25s ease;
   display: flex; flex-direction: column;
+  background: var(--pumper-nl-bg, #fff);
+  border: 1px solid var(--pumper-nl-border, transparent);
+  border-radius: var(--pumper-nl-radius, 12px);
 }
 .pumper-modal--wide { max-width: 760px; }
 .pumper-modal--left,

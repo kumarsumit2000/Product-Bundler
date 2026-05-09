@@ -189,8 +189,19 @@ export const newsletterSettings = sqliteTable("newsletter_settings", {
   popupImageUrl: text("popup_image_url").notNull().default(""),
   popupImagePosition: text("popup_image_position").notNull().default("none"),
   excludedPaths: text("excluded_paths").notNull().default(""),
+  styleOverrides: text("style_overrides", { mode: "json" }).$type<NewsletterStyleOverrides | null>(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });
+
+export type NewsletterStyleOverrides = Partial<{
+  backgroundColor: string;
+  headingColor: string;
+  textColor: string;
+  buttonBg: string;
+  buttonText: string;
+  borderColor: string;
+  borderRadius: number;
+}>;
 
 export type ProgressiveThreshold = {
   minSpendCents: number;

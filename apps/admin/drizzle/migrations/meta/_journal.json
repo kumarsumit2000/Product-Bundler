@@ -92,6 +92,13 @@
       "when": 1778351400000,
       "tag": "0012_newsletter_popup_image",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1778352600000,
+      "tag": "0013_newsletter_style",
+      "breakpoints": true
     }
   ]
 }
