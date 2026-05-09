@@ -267,8 +267,7 @@
   border-radius: var(--pumper-nl-radius, 12px);
 }
 .pumper-modal--wide { max-width: 760px; }
-.pumper-modal--left,
-.pumper-modal--right { flex-direction: row; }
+.pumper-modal--left { flex-direction: row; }
 .pumper-modal--right { flex-direction: row-reverse; }
 @media (max-width: 600px) {
   .pumper-modal--wide { max-width: 440px; }
@@ -280,6 +279,9 @@
 .pumper-modal-content {
   padding: var(--pumper-nl-popup-padding, 32px) var(--pumper-nl-popup-padding, 28px);
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 .pumper-modal-image {
   background-size: cover;

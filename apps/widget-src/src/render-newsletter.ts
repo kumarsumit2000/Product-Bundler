@@ -116,11 +116,9 @@ export function renderPopupInline(mount: HTMLElement, n: NewsletterConfig): void
     : "";
   const contentHtml = `<div class="pumper-modal-content">${newsletterFormHtml(n)}</div>`;
 
-  const inner = pos === "left" ? imgHtml + contentHtml
-    : pos === "right" ? contentHtml + imgHtml
-    : pos === "top" ? imgHtml + contentHtml
-    : pos === "bottom" ? contentHtml + imgHtml
-    : contentHtml;
+  const inner = pos === "bottom"
+    ? contentHtml + imgHtml
+    : imgHtml + contentHtml;
 
   applyNewsletterVars(mount, n);
   mount.innerHTML = `
@@ -186,11 +184,11 @@ function showPopup(n: NewsletterConfig): void {
     : "";
   const contentHtml = `<div class="pumper-modal-content">${newsletterFormHtml(n)}</div>`;
 
-  const inner = pos === "left" ? imgHtml + contentHtml
-    : pos === "right" ? contentHtml + imgHtml
-    : pos === "top" ? imgHtml + contentHtml
-    : pos === "bottom" ? contentHtml + imgHtml
-    : contentHtml;
+  // CSS handles left/right placement via flex-direction; HTML order is the
+  // same for both. Top/bottom use document flow (column).
+  const inner = pos === "bottom"
+    ? contentHtml + imgHtml
+    : imgHtml + contentHtml;
 
   const root = document.createElement("div");
   root.setAttribute("data-pumper-newsletter-popup", "1");
