@@ -115,8 +115,16 @@ export async function action({ request, context }: ActionFunctionArgs) {
     mode: input.mode,
   });
 
-  await ensureDiscountNodes(admin, db, session.shop);
-  await syncShopConfig(db, admin, session.shop);
+  try {
+    await ensureDiscountNodes(admin, db, session.shop);
+  } catch (err) {
+    console.error("[app.bundles.new action] ensureDiscountNodes failed (non-fatal):", err);
+  }
+  try {
+    await syncShopConfig(db, admin, session.shop);
+  } catch (err) {
+    console.error("[app.bundles.new action] syncShopConfig failed (non-fatal):", err);
+  }
   await ctx.cloudflare.env.SHOP_SETTINGS_CACHE.delete(
     `config:${session.shop}`
   );

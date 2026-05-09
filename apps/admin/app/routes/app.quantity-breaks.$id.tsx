@@ -29,18 +29,22 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
   let productTitle: string | undefined;
   let productImage: string | undefined;
   if (qb.productId) {
-    const res = await admin.graphql(
-      `query Product($id: ID!) {
-        product(id: $id) { id title featuredImage { url } }
-      }`,
-      { variables: { id: qb.productId } },
-    );
-    const data = (await res.json()) as {
-      data: { product: { id: string; title: string; featuredImage: { url: string } | null } | null };
-    };
-    if (data.data.product) {
-      productTitle = data.data.product.title;
-      productImage = data.data.product.featuredImage?.url ?? undefined;
+    try {
+      const res = await admin.graphql(
+        `query Product($id: ID!) {
+          product(id: $id) { id title featuredImage { url } }
+        }`,
+        { variables: { id: qb.productId } },
+      );
+      const data = (await res.json()) as {
+        data: { product: { id: string; title: string; featuredImage: { url: string } | null } | null };
+      };
+      if (data.data.product) {
+        productTitle = data.data.product.title;
+        productImage = data.data.product.featuredImage?.url ?? undefined;
+      }
+    } catch (err) {
+      console.error("[app.quantity-breaks.$id] product fetch failed (non-fatal):", err);
     }
   }
 
@@ -50,7 +54,10 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
     if (tr.freeGiftVariantId) tierVariantIds.add(tr.freeGiftVariantId);
     if (tr.bogo?.targetVariantId) tierVariantIds.add(tr.bogo.targetVariantId);
   }
-  const tierVariantDetails = await fetchVariantDetails(admin, [...tierVariantIds]);
+  const tierVariantDetails = await fetchVariantDetails(admin, [...tierVariantIds]).catch((err) => {
+    console.error("[app.quantity-breaks.$id] fetchVariantDetails failed (non-fatal):", err);
+    return {};
+  });
 
   const usage = await getUsage(db, session.shop);
   return json({ qb, productTitle, productImage, tierVariantDetails, plan: usage.plan });
@@ -137,8 +144,16 @@ export async function action({
     ctaLabel: input.ctaLabel,
   });
 
-  await ensureDiscountNodes(admin, db, session.shop);
-  await syncShopConfig(db, admin, session.shop);
+  try {
+    await ensureDiscountNodes(admin, db, session.shop);
+  } catch (err) {
+    console.error("[app.quantity-breaks.$id action] ensureDiscountNodes failed (non-fatal):", err);
+  }
+  try {
+    await syncShopConfig(db, admin, session.shop);
+  } catch (err) {
+    console.error("[app.quantity-breaks.$id action] syncShopConfig failed (non-fatal):", err);
+  }
   await ctx.cloudflare.env.SHOP_SETTINGS_CACHE.delete(
     `config:${session.shop}`
   );

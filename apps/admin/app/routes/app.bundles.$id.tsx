@@ -26,34 +26,39 @@ async function fetchProductDetails(
   productIds: string[],
 ): Promise<Record<string, ProductDetails>> {
   if (productIds.length === 0) return {};
-  const res = await admin.graphql(
-    `query Products($ids: [ID!]!) {
-      nodes(ids: $ids) {
-        ... on Product {
-          id
-          title
-          featuredImage { url }
+  try {
+    const res = await admin.graphql(
+      `query Products($ids: [ID!]!) {
+        nodes(ids: $ids) {
+          ... on Product {
+            id
+            title
+            featuredImage { url }
+          }
         }
-      }
-    }`,
-    { variables: { ids: productIds } },
-  );
-  const data = (await res.json()) as {
-    data: {
-      nodes: Array<{ id: string; title: string; featuredImage: { url: string } | null } | null>;
-    };
-  };
-  const map: Record<string, ProductDetails> = {};
-  for (const node of data.data.nodes) {
-    if (node) {
-      map[node.id] = {
-        id: node.id,
-        title: node.title,
-        image: node.featuredImage?.url ?? null,
+      }`,
+      { variables: { ids: productIds } },
+    );
+    const data = (await res.json()) as {
+      data: {
+        nodes: Array<{ id: string; title: string; featuredImage: { url: string } | null } | null>;
       };
+    };
+    const map: Record<string, ProductDetails> = {};
+    for (const node of data.data.nodes) {
+      if (node) {
+        map[node.id] = {
+          id: node.id,
+          title: node.title,
+          image: node.featuredImage?.url ?? null,
+        };
+      }
     }
+    return map;
+  } catch (err) {
+    console.error("[app.bundles.$id] fetchProductDetails failed (non-fatal):", err);
+    return {};
   }
-  return map;
 }
 
 export async function loader({ request, params, context }: LoaderFunctionArgs) {
@@ -187,8 +192,16 @@ export async function action({
     mode: input.mode,
   });
 
-  await ensureDiscountNodes(admin, db, session.shop);
-  await syncShopConfig(db, admin, session.shop);
+  try {
+    await ensureDiscountNodes(admin, db, session.shop);
+  } catch (err) {
+    console.error("[app.bundles.$id action] ensureDiscountNodes failed (non-fatal):", err);
+  }
+  try {
+    await syncShopConfig(db, admin, session.shop);
+  } catch (err) {
+    console.error("[app.bundles.$id action] syncShopConfig failed (non-fatal):", err);
+  }
   await ctx.cloudflare.env.SHOP_SETTINGS_CACHE.delete(
     `config:${session.shop}`
   );
