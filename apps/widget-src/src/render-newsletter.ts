@@ -84,6 +84,35 @@ export function renderNewsletter(mount: HTMLElement, n: NewsletterConfig): void 
   bindForm(mount, n);
 }
 
+// Static, non-overlay rendering of the popup — used in the admin preview iframe.
+// Renders the same modal shell + image-positioned layout, no triggers, no dismiss.
+export function renderPopupInline(mount: HTMLElement, n: NewsletterConfig): void {
+  const popup = n.popup;
+  const pos = popup?.imagePosition ?? "none";
+  const img = popup?.imageUrl ?? "";
+  const hasImage = pos !== "none" && !!img;
+  const sideImage = hasImage && (pos === "left" || pos === "right");
+
+  const imgHtml = hasImage
+    ? `<div class="pumper-modal-image pumper-modal-image--${pos}" style="background-image:url('${img.replace(/'/g, "%27")}')"></div>`
+    : "";
+  const contentHtml = `<div class="pumper-modal-content">${newsletterFormHtml(n)}</div>`;
+
+  const inner = pos === "left" ? imgHtml + contentHtml
+    : pos === "right" ? contentHtml + imgHtml
+    : pos === "top" ? imgHtml + contentHtml
+    : pos === "bottom" ? contentHtml + imgHtml
+    : contentHtml;
+
+  mount.innerHTML = `
+    <div class="pumper-modal pumper-newsletter pumper-card pumper-modal--${pos}${sideImage ? " pumper-modal--wide" : ""}" role="dialog" aria-modal="true" style="margin: 0 auto;">
+      <button type="button" class="pumper-modal-close" aria-label="Close">&times;</button>
+      ${inner}
+    </div>
+  `;
+  bindForm(mount, n);
+}
+
 // ----- Popup mode --------------------------------------------------------
 
 const POPUP_KEY = "pumper_newsletter_popup_dismissed_at";
@@ -127,13 +156,34 @@ function markDismissed(): void {
 function showPopup(n: NewsletterConfig): void {
   if (document.querySelector("[data-pumper-newsletter-popup]")) return;
 
+  const popup = n.popup;
+  const pos = popup?.imagePosition ?? "none";
+  const img = popup?.imageUrl ?? "";
+  const hasImage = pos !== "none" && !!img;
+  const sideImage = hasImage && (pos === "left" || pos === "right");
+
+  const imgHtml = hasImage
+    ? `<div class="pumper-modal-image pumper-modal-image--${pos}" style="background-image:url('${img.replace(/'/g, "%27")}')"></div>`
+    : "";
+  const contentHtml = `<div class="pumper-modal-content">${newsletterFormHtml(n)}</div>`;
+
+  const inner = pos === "left" ? imgHtml + contentHtml
+    : pos === "right" ? contentHtml + imgHtml
+    : pos === "top" ? imgHtml + contentHtml
+    : pos === "bottom" ? contentHtml + imgHtml
+    : contentHtml;
+
   const root = document.createElement("div");
   root.setAttribute("data-pumper-newsletter-popup", "1");
   root.className = "pumper-modal-backdrop";
   root.innerHTML = `
-    <div class="pumper-modal pumper-newsletter pumper-card" role="dialog" aria-modal="true">
+    <div
+      class="pumper-modal pumper-newsletter pumper-card pumper-modal--${pos}${sideImage ? " pumper-modal--wide" : ""}"
+      role="dialog"
+      aria-modal="true"
+    >
       <button type="button" class="pumper-modal-close" aria-label="Close">&times;</button>
-      ${newsletterFormHtml(n)}
+      ${inner}
     </div>
   `;
   document.body.appendChild(root);

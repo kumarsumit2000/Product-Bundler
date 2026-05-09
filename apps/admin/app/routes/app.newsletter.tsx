@@ -28,6 +28,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const db = getDb(ctx.cloudflare.env.DB);
 
   const trigger = (form.get("popupTrigger") as string) || "delay";
+  const imagePos = (form.get("popupImagePosition") as string) || "none";
   await repo.upsert(db, session.shop, {
     enabled: form.get("enabled") === "on",
     headline: ((form.get("headline") as string) || "").slice(0, 100),
@@ -41,6 +42,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
     popupDelaySeconds: Math.max(0, Math.min(120, parseInt((form.get("popupDelaySeconds") as string) || "5", 10) || 5)),
     popupScrollPercent: Math.max(10, Math.min(100, parseInt((form.get("popupScrollPercent") as string) || "50", 10) || 50)),
     popupFrequencyDays: Math.max(0, Math.min(365, parseInt((form.get("popupFrequencyDays") as string) || "7", 10) || 7)),
+    popupImageUrl: ((form.get("popupImageUrl") as string) || "").slice(0, 500),
+    popupImagePosition: ["none", "top", "bottom", "left", "right"].includes(imagePos) ? imagePos : "none",
     excludedPaths: ((form.get("excludedPaths") as string) || "").slice(0, 2000),
   });
 
@@ -80,7 +83,7 @@ function NewsletterLivePreview({ config }: { config: unknown }) {
           <iframe
             ref={iframeRef}
             src="/preview/newsletter/default"
-            style={{ width: "100%", height: "320px", border: "none", display: "block" }}
+            style={{ width: "100%", height: "460px", border: "none", display: "block", background: "#f6f6f7" }}
             title="Newsletter preview"
           />
         </Box>
@@ -111,9 +114,17 @@ export default function NewsletterPage() {
       ctaLabel: values.ctaLabel,
       successMessage: values.successMessage,
       tags: values.tags,
-      // Popup is intentionally omitted in preview — the iframe just renders
-      // the inline form so the merchant can see the copy + styling.
-      popup: null,
+      popup: values.popupEnabled
+        ? {
+            trigger: values.popupTrigger as "delay" | "exit_intent" | "scroll",
+            delaySeconds: values.popupDelaySeconds,
+            scrollPercent: values.popupScrollPercent,
+            frequencyDays: values.popupFrequencyDays,
+            imageUrl: values.popupImageUrl || null,
+            imagePosition: values.popupImagePosition as "none" | "top" | "bottom" | "left" | "right",
+            excludedPaths: [],
+          }
+        : null,
     },
   };
 
@@ -255,6 +266,31 @@ export default function NewsletterPage() {
                         max={365}
                         helpText="0 = show on every page load"
                       />
+                      <Select
+                        label="Image position"
+                        name="popupImagePosition"
+                        options={[
+                          { label: "No image", value: "none" },
+                          { label: "Image on left", value: "left" },
+                          { label: "Image on right", value: "right" },
+                          { label: "Image on top", value: "top" },
+                          { label: "Image on bottom", value: "bottom" },
+                        ]}
+                        value={values.popupImagePosition}
+                        onChange={(popupImagePosition) => setValues((v) => ({ ...v, popupImagePosition }))}
+                      />
+                      {values.popupImagePosition !== "none" && (
+                        <TextField
+                          label="Image URL"
+                          name="popupImageUrl"
+                          value={values.popupImageUrl}
+                          onChange={(popupImageUrl) => setValues((v) => ({ ...v, popupImageUrl }))}
+                          autoComplete="off"
+                          maxLength={500}
+                          placeholder="https://cdn.shopify.com/.../newsletter.jpg"
+                          helpText="Paste any public image URL. For best results: 800×800px (square) for left/right, 1200×400px for top/bottom."
+                        />
+                      )}
                       <TextField
                         label="Hide popup on these pages"
                         name="excludedPaths"

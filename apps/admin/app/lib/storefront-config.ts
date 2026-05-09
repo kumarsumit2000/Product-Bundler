@@ -222,6 +222,8 @@ export async function buildStorefrontConfig(
                 delaySeconds: newsletter.popupDelaySeconds,
                 scrollPercent: newsletter.popupScrollPercent,
                 frequencyDays: newsletter.popupFrequencyDays,
+                imageUrl: newsletter.popupImageUrl || null,
+                imagePosition: newsletter.popupImagePosition as "none" | "top" | "bottom" | "left" | "right",
                 excludedPaths: newsletter.excludedPaths
                   .split(/[\n,]/)
                   .map((s) => s.trim())

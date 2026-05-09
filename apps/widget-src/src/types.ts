@@ -173,6 +173,8 @@ export type NewsletterPopup = {
   scrollPercent: number;
   frequencyDays: number;
   excludedPaths: string[];
+  imageUrl?: string | null;
+  imagePosition?: "none" | "top" | "bottom" | "left" | "right";
 };
 
 export type NewsletterConfig = {

@@ -15,6 +15,8 @@ const DEFAULTS = {
   popupDelaySeconds: 5,
   popupScrollPercent: 50,
   popupFrequencyDays: 7,
+  popupImageUrl: "",
+  popupImagePosition: "none",
   excludedPaths: "",
 };
 

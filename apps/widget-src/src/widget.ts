@@ -4,7 +4,7 @@ import { lookupBundle, lookupQb, lookupMixMatch } from "./lookup";
 import { renderBundle } from "./render-bundle";
 import { renderQb } from "./render-qb";
 import { renderMixMatch } from "./render-mix-match";
-import { renderNewsletter, maybeStartNewsletterPopup } from "./render-newsletter";
+import { renderNewsletter, renderPopupInline, maybeStartNewsletterPopup } from "./render-newsletter";
 import { configureAnalytics } from "./analytics";
 import { setLocale } from "./i18n";
 
@@ -248,7 +248,13 @@ export async function initWidget(): Promise<void> {
   for (const nm of newsletterMounts) {
     if (cfg.newsletter) {
       applyCssVars(nm, cfg, null);
-      renderNewsletter(nm, cfg.newsletter);
+      // In preview, when the merchant has popup enabled, render the popup
+      // styling inline so they can see image position + close button + sizing.
+      if (window._pumperPreview && cfg.newsletter.popup) {
+        renderPopupInline(nm, cfg.newsletter);
+      } else {
+        renderNewsletter(nm, cfg.newsletter);
+      }
       nm.dataset.pumperRendered = "1";
     } else {
       nm.innerHTML = "";

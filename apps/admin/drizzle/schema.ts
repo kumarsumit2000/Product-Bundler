@@ -186,6 +186,8 @@ export const newsletterSettings = sqliteTable("newsletter_settings", {
   popupDelaySeconds: integer("popup_delay_seconds").notNull().default(5),
   popupScrollPercent: integer("popup_scroll_percent").notNull().default(50),
   popupFrequencyDays: integer("popup_frequency_days").notNull().default(7),
+  popupImageUrl: text("popup_image_url").notNull().default(""),
+  popupImagePosition: text("popup_image_position").notNull().default("none"),
   excludedPaths: text("excluded_paths").notNull().default(""),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });

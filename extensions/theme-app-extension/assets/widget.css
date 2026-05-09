@@ -228,20 +228,59 @@
   z-index: 999999;
   padding: 16px;
   animation: pumper-fade-in .2s ease;
+  box-sizing: border-box;
 }
 @keyframes pumper-fade-in { from { opacity: 0; } to { opacity: 1; } }
 .pumper-modal {
   position: relative;
   max-width: 440px; width: 100%;
-  padding: 32px 24px 24px;
+  padding: 0;
+  overflow: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
   animation: pumper-pop .25s ease;
+  display: flex; flex-direction: column;
+}
+.pumper-modal--wide { max-width: 760px; }
+.pumper-modal--left,
+.pumper-modal--right { flex-direction: row; }
+.pumper-modal--right { flex-direction: row-reverse; }
+@media (max-width: 600px) {
+  .pumper-modal--wide { max-width: 440px; }
+  .pumper-modal--left,
+  .pumper-modal--right { flex-direction: column; }
 }
 @keyframes pumper-pop { from { transform: translateY(8px) scale(.98); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
-.pumper-modal-close {
-  position: absolute; top: 8px; right: 12px;
-  background: transparent; border: 0;
-  font-size: 28px; line-height: 1; color: #888;
-  cursor: pointer; padding: 4px 8px;
+
+.pumper-modal-content { padding: 32px 28px 28px; flex: 1; }
+.pumper-modal-image {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
-.pumper-modal-close:hover { color: #1a1a1a; }
+.pumper-modal--top .pumper-modal-image,
+.pumper-modal--bottom .pumper-modal-image {
+  width: 100%; height: 180px;
+}
+.pumper-modal--left .pumper-modal-image,
+.pumper-modal--right .pumper-modal-image {
+  width: 50%; min-height: 360px; flex-shrink: 0;
+}
+@media (max-width: 600px) {
+  .pumper-modal--left .pumper-modal-image,
+  .pumper-modal--right .pumper-modal-image {
+    width: 100%; min-height: 160px;
+  }
+}
+
+.pumper-modal-close {
+  position: absolute; top: 10px; right: 10px;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255, 255, 255, 0.9);
+  border: 0; border-radius: 50%;
+  font-size: 22px; line-height: 1; color: #555;
+  cursor: pointer; padding: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  z-index: 2;
+}
+.pumper-modal-close:hover { color: #1a1a1a; background: #fff; }

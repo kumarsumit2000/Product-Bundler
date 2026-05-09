@@ -85,6 +85,13 @@
       "when": 1778350200000,
       "tag": "0011_newsletter_popup",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1778351400000,
+      "tag": "0012_newsletter_popup_image",
+      "breakpoints": true
     }
   ]
 }
