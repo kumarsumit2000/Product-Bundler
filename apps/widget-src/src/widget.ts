@@ -4,7 +4,7 @@ import { lookupBundle, lookupQb, lookupMixMatch } from "./lookup";
 import { renderBundle } from "./render-bundle";
 import { renderQb } from "./render-qb";
 import { renderMixMatch } from "./render-mix-match";
-import { renderNewsletter } from "./render-newsletter";
+import { renderNewsletter, maybeStartNewsletterPopup } from "./render-newsletter";
 import { configureAnalytics } from "./analytics";
 import { setLocale } from "./i18n";
 
@@ -213,7 +213,6 @@ export async function initWidget(): Promise<void> {
   const mounts = Array.from(document.querySelectorAll<HTMLElement>(".pumper-mount:not([data-pumper-rendered])"));
   const shortcodes = collectShortcodes();
   const newsletterMounts = collectNewsletterMounts();
-  if (mounts.length === 0 && shortcodes.length === 0 && newsletterMounts.length === 0) return;
 
   const apiBase = (window._pumperConfig?.apiBase) ?? "https://bundler.deepseatools.in/api/storefront";
   const shopFromGlobal = window._pumperConfig?.shop;
@@ -221,6 +220,11 @@ export async function initWidget(): Promise<void> {
   const shopFromPreview = window._pumperPreview ? window._pumperPreviewConfig?.shop : undefined;
   const shop = shopFromGlobal ?? shopFromMount ?? shopFromPreview ?? "";
   if (!shop) return;
+
+  // Bail only if there's no shop context AND no work to do. With a known shop
+  // we still need to fetch config to know whether to fire the newsletter popup.
+  const hasInlineWork = mounts.length > 0 || shortcodes.length > 0 || newsletterMounts.length > 0;
+  if (!hasInlineWork && !shopFromGlobal) return;
 
   configureAnalytics({ apiBase, shop });
 
@@ -250,6 +254,12 @@ export async function initWidget(): Promise<void> {
       nm.innerHTML = "";
       nm.dataset.pumperRendered = "1";
     }
+  }
+
+  // Auto-popup (idempotent — early-returns if already shown / dismissed / excluded)
+  if (cfg.newsletter && cfg.newsletter.popup && !window._pumperPreview) {
+    applyCssVars(document.documentElement, cfg, null);
+    maybeStartNewsletterPopup(cfg.newsletter);
   }
 
   startObserver(cfg);

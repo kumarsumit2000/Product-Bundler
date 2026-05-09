@@ -216,6 +216,18 @@ export async function buildStorefrontConfig(
           ctaLabel: newsletter.ctaLabel,
           successMessage: newsletter.successMessage,
           tags: newsletter.tags,
+          popup: newsletter.popupEnabled
+            ? {
+                trigger: newsletter.popupTrigger as "delay" | "exit_intent" | "scroll",
+                delaySeconds: newsletter.popupDelaySeconds,
+                scrollPercent: newsletter.popupScrollPercent,
+                frequencyDays: newsletter.popupFrequencyDays,
+                excludedPaths: newsletter.excludedPaths
+                  .split(/[\n,]/)
+                  .map((s) => s.trim())
+                  .filter(Boolean),
+              }
+            : null,
         }
       : null,
   };

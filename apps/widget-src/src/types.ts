@@ -167,6 +167,14 @@ export type Settings = {
   locale: string;
 };
 
+export type NewsletterPopup = {
+  trigger: "delay" | "exit_intent" | "scroll";
+  delaySeconds: number;
+  scrollPercent: number;
+  frequencyDays: number;
+  excludedPaths: string[];
+};
+
 export type NewsletterConfig = {
   headline: string;
   subtitle: string;
@@ -174,6 +182,7 @@ export type NewsletterConfig = {
   ctaLabel: string;
   successMessage: string;
   tags: string;
+  popup?: NewsletterPopup | null;
 };
 
 export type WidgetConfig = {

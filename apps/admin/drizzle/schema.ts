@@ -181,6 +181,12 @@ export const newsletterSettings = sqliteTable("newsletter_settings", {
   ctaLabel: text("cta_label").notNull().default("Subscribe"),
   successMessage: text("success_message").notNull().default("Thanks! Check your inbox for the discount code."),
   tags: text("tags").notNull().default("newsletter,prospect"),
+  popupEnabled: integer("popup_enabled", { mode: "boolean" }).notNull().default(false),
+  popupTrigger: text("popup_trigger").notNull().default("delay"),
+  popupDelaySeconds: integer("popup_delay_seconds").notNull().default(5),
+  popupScrollPercent: integer("popup_scroll_percent").notNull().default(50),
+  popupFrequencyDays: integer("popup_frequency_days").notNull().default(7),
+  excludedPaths: text("excluded_paths").notNull().default(""),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });
 

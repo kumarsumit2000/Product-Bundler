@@ -10,6 +10,12 @@ const DEFAULTS = {
   ctaLabel: "Subscribe",
   successMessage: "Thanks! Check your inbox for the discount code.",
   tags: "newsletter,prospect",
+  popupEnabled: false,
+  popupTrigger: "delay",
+  popupDelaySeconds: 5,
+  popupScrollPercent: 50,
+  popupFrequencyDays: 7,
+  excludedPaths: "",
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

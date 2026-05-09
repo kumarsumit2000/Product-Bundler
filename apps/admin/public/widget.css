@@ -218,3 +218,29 @@
 .pumper-newsletter-status { margin-top: 10px; padding: 10px 12px; border-radius: var(--pumper-radius, 6px); font-size: 13px; }
 .pumper-newsletter-status--success { background: #ecfdf5; color: #065f46; }
 .pumper-newsletter-status--error { background: #fef2f2; color: #b91c1c; }
+
+/* Newsletter popup */
+.pumper-modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 999999;
+  padding: 16px;
+  animation: pumper-fade-in .2s ease;
+}
+@keyframes pumper-fade-in { from { opacity: 0; } to { opacity: 1; } }
+.pumper-modal {
+  position: relative;
+  max-width: 440px; width: 100%;
+  padding: 32px 24px 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  animation: pumper-pop .25s ease;
+}
+@keyframes pumper-pop { from { transform: translateY(8px) scale(.98); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+.pumper-modal-close {
+  position: absolute; top: 8px; right: 12px;
+  background: transparent; border: 0;
+  font-size: 28px; line-height: 1; color: #888;
+  cursor: pointer; padding: 4px 8px;
+}
+.pumper-modal-close:hover { color: #1a1a1a; }

@@ -3,7 +3,7 @@ import { json, redirect } from "@remix-run/cloudflare";
 import { Form, useLoaderData } from "@remix-run/react";
 import { useState } from "react";
 import {
-  Page, Layout, Card, BlockStack, FormLayout, TextField, Checkbox, Button, Text, Banner, InlineStack,
+  Page, Layout, Card, BlockStack, FormLayout, TextField, Checkbox, Select, Button, Text, Banner, InlineStack,
 } from "@shopify/polaris";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
 import { getDb } from "~/db.server";
@@ -25,6 +25,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const form = await request.formData();
   const db = getDb(ctx.cloudflare.env.DB);
 
+  const trigger = (form.get("popupTrigger") as string) || "delay";
   await repo.upsert(db, session.shop, {
     enabled: form.get("enabled") === "on",
     headline: ((form.get("headline") as string) || "").slice(0, 100),
@@ -33,6 +34,12 @@ export async function action({ request, context }: ActionFunctionArgs) {
     ctaLabel: ((form.get("ctaLabel") as string) || "Subscribe").slice(0, 30),
     successMessage: ((form.get("successMessage") as string) || "Thanks!").slice(0, 200),
     tags: ((form.get("tags") as string) || "newsletter,prospect").slice(0, 100),
+    popupEnabled: form.get("popupEnabled") === "on",
+    popupTrigger: ["delay", "exit_intent", "scroll"].includes(trigger) ? trigger : "delay",
+    popupDelaySeconds: Math.max(0, Math.min(120, parseInt((form.get("popupDelaySeconds") as string) || "5", 10) || 5)),
+    popupScrollPercent: Math.max(10, Math.min(100, parseInt((form.get("popupScrollPercent") as string) || "50", 10) || 50)),
+    popupFrequencyDays: Math.max(0, Math.min(365, parseInt((form.get("popupFrequencyDays") as string) || "7", 10) || 7)),
+    excludedPaths: ((form.get("excludedPaths") as string) || "").slice(0, 2000),
   });
 
   await ctx.cloudflare.env.SHOP_SETTINGS_CACHE.delete(`config:${session.shop}`);
@@ -116,6 +123,82 @@ export default function NewsletterPage() {
                       maxLength={200}
                     />
                   </FormLayout>
+                </BlockStack>
+              </Card>
+
+              <Card>
+                <BlockStack gap="300">
+                  <Text as="h2" variant="headingMd">Popup display</Text>
+                  <Text as="p" tone="subdued">
+                    Show the signup form as a centered popup. Otherwise it only renders inline
+                    where you paste the embed snippet.
+                  </Text>
+                  <Checkbox
+                    label="Show as popup on storefront"
+                    name="popupEnabled"
+                    checked={values.popupEnabled}
+                    onChange={(popupEnabled) => setValues((v) => ({ ...v, popupEnabled }))}
+                  />
+                  {values.popupEnabled && (
+                    <FormLayout>
+                      <Select
+                        label="When to open"
+                        name="popupTrigger"
+                        options={[
+                          { label: "After a delay", value: "delay" },
+                          { label: "When the visitor scrolls", value: "scroll" },
+                          { label: "On exit intent (mouse leaves window)", value: "exit_intent" },
+                        ]}
+                        value={values.popupTrigger}
+                        onChange={(popupTrigger) => setValues((v) => ({ ...v, popupTrigger }))}
+                      />
+                      {values.popupTrigger === "delay" && (
+                        <TextField
+                          label="Delay (seconds)"
+                          type="number"
+                          name="popupDelaySeconds"
+                          value={String(values.popupDelaySeconds)}
+                          onChange={(s) => setValues((v) => ({ ...v, popupDelaySeconds: parseInt(s, 10) || 0 }))}
+                          autoComplete="off"
+                          min={0}
+                          max={120}
+                        />
+                      )}
+                      {values.popupTrigger === "scroll" && (
+                        <TextField
+                          label="Show after scrolling (%)"
+                          type="number"
+                          name="popupScrollPercent"
+                          value={String(values.popupScrollPercent)}
+                          onChange={(s) => setValues((v) => ({ ...v, popupScrollPercent: parseInt(s, 10) || 0 }))}
+                          autoComplete="off"
+                          min={10}
+                          max={100}
+                        />
+                      )}
+                      <TextField
+                        label="Don't show again for (days)"
+                        type="number"
+                        name="popupFrequencyDays"
+                        value={String(values.popupFrequencyDays)}
+                        onChange={(s) => setValues((v) => ({ ...v, popupFrequencyDays: parseInt(s, 10) || 0 }))}
+                        autoComplete="off"
+                        min={0}
+                        max={365}
+                        helpText="0 = show on every page load"
+                      />
+                      <TextField
+                        label="Hide popup on these pages"
+                        name="excludedPaths"
+                        value={values.excludedPaths}
+                        onChange={(excludedPaths) => setValues((v) => ({ ...v, excludedPaths }))}
+                        autoComplete="off"
+                        multiline={4}
+                        helpText="One path per line. Use * as a wildcard. Examples: /cart, /checkout/*, /pages/contact"
+                        placeholder={`/cart\n/checkout/*\n/pages/contact`}
+                      />
+                    </FormLayout>
+                  )}
                 </BlockStack>
               </Card>
 

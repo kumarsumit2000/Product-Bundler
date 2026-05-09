@@ -1,31 +1,31 @@
-import type { NewsletterConfig } from "./types";
+import type { NewsletterConfig, NewsletterPopup } from "./types";
 
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 }
 
-export function renderNewsletter(mount: HTMLElement, n: NewsletterConfig): void {
-  mount.innerHTML = `
-    <section class="pumper-card pumper-newsletter">
-      <h3 class="pumper-newsletter-heading">${escapeHtml(n.headline)}</h3>
-      ${n.subtitle ? `<p class="pumper-newsletter-sub">${escapeHtml(n.subtitle)}</p>` : ""}
-      <form class="pumper-newsletter-form" data-pumper-newsletter-form novalidate>
-        <input
-          type="email"
-          name="contact[email]"
-          required
-          placeholder="${escapeHtml(n.placeholder)}"
-          class="pumper-newsletter-input"
-          autocomplete="email"
-        />
-        <button type="submit" class="pumper-cta pumper-newsletter-cta">${escapeHtml(n.ctaLabel)}</button>
-      </form>
-      <div class="pumper-newsletter-status" data-pumper-newsletter-status hidden></div>
-    </section>
+function newsletterFormHtml(n: NewsletterConfig): string {
+  return `
+    <h3 class="pumper-newsletter-heading">${escapeHtml(n.headline)}</h3>
+    ${n.subtitle ? `<p class="pumper-newsletter-sub">${escapeHtml(n.subtitle)}</p>` : ""}
+    <form class="pumper-newsletter-form" data-pumper-newsletter-form novalidate>
+      <input
+        type="email"
+        name="contact[email]"
+        required
+        placeholder="${escapeHtml(n.placeholder)}"
+        class="pumper-newsletter-input"
+        autocomplete="email"
+      />
+      <button type="submit" class="pumper-cta pumper-newsletter-cta">${escapeHtml(n.ctaLabel)}</button>
+    </form>
+    <div class="pumper-newsletter-status" data-pumper-newsletter-status hidden></div>
   `;
+}
 
-  const form = mount.querySelector<HTMLFormElement>("[data-pumper-newsletter-form]");
-  const status = mount.querySelector<HTMLDivElement>("[data-pumper-newsletter-status]");
+function bindForm(root: HTMLElement, n: NewsletterConfig, onDone?: () => void): void {
+  const form = root.querySelector<HTMLFormElement>("[data-pumper-newsletter-form]");
+  const status = root.querySelector<HTMLDivElement>("[data-pumper-newsletter-status]");
   const input = form?.querySelector<HTMLInputElement>("input[type=email]");
   const button = form?.querySelector<HTMLButtonElement>("button[type=submit]");
   if (!form || !status || !input || !button) return;
@@ -54,7 +54,6 @@ export function renderNewsletter(mount: HTMLElement, n: NewsletterConfig): void 
     body.set("contact[accepts_marketing]", "yes");
 
     try {
-      // Same-origin POST. Shopify returns HTML; we treat 2xx as success.
       const res = await fetch("/contact", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -68,6 +67,7 @@ export function renderNewsletter(mount: HTMLElement, n: NewsletterConfig): void 
       status.hidden = false;
       status.className = "pumper-newsletter-status pumper-newsletter-status--success";
       status.textContent = n.successMessage;
+      if (onDone) setTimeout(onDone, 2500);
     } catch (err) {
       console.error("[pumper newsletter]", err);
       button.disabled = false;
@@ -77,4 +77,120 @@ export function renderNewsletter(mount: HTMLElement, n: NewsletterConfig): void 
       status.textContent = "Something went wrong — please try again.";
     }
   });
+}
+
+export function renderNewsletter(mount: HTMLElement, n: NewsletterConfig): void {
+  mount.innerHTML = `<section class="pumper-card pumper-newsletter">${newsletterFormHtml(n)}</section>`;
+  bindForm(mount, n);
+}
+
+// ----- Popup mode --------------------------------------------------------
+
+const POPUP_KEY = "pumper_newsletter_popup_dismissed_at";
+
+function pathMatches(pattern: string, path: string): boolean {
+  const p = pattern.trim();
+  if (!p) return false;
+  if (p === path) return true;
+  if (p.endsWith("/*")) {
+    const prefix = p.slice(0, -1); // keep trailing "/"
+    return path.startsWith(prefix);
+  }
+  if (p.endsWith("*")) {
+    const prefix = p.slice(0, -1);
+    return path.startsWith(prefix);
+  }
+  return false;
+}
+
+function isExcludedPath(popup: NewsletterPopup, path: string): boolean {
+  return popup.excludedPaths.some((pat) => pathMatches(pat, path));
+}
+
+function recentlyDismissed(frequencyDays: number): boolean {
+  if (frequencyDays <= 0) return false;
+  try {
+    const raw = localStorage.getItem(POPUP_KEY);
+    if (!raw) return false;
+    const ts = parseInt(raw, 10);
+    if (!Number.isFinite(ts)) return false;
+    return Date.now() - ts < frequencyDays * 86400_000;
+  } catch {
+    return false;
+  }
+}
+
+function markDismissed(): void {
+  try { localStorage.setItem(POPUP_KEY, String(Date.now())); } catch { /* ignore */ }
+}
+
+function showPopup(n: NewsletterConfig): void {
+  if (document.querySelector("[data-pumper-newsletter-popup]")) return;
+
+  const root = document.createElement("div");
+  root.setAttribute("data-pumper-newsletter-popup", "1");
+  root.className = "pumper-modal-backdrop";
+  root.innerHTML = `
+    <div class="pumper-modal pumper-newsletter pumper-card" role="dialog" aria-modal="true">
+      <button type="button" class="pumper-modal-close" aria-label="Close">&times;</button>
+      ${newsletterFormHtml(n)}
+    </div>
+  `;
+  document.body.appendChild(root);
+
+  const close = () => {
+    markDismissed();
+    root.remove();
+  };
+
+  root.querySelector<HTMLButtonElement>(".pumper-modal-close")?.addEventListener("click", close);
+  root.addEventListener("click", (e) => { if (e.target === root) close(); });
+  document.addEventListener("keydown", function escHandler(e) {
+    if (e.key === "Escape") {
+      close();
+      document.removeEventListener("keydown", escHandler);
+    }
+  });
+
+  bindForm(root, n, close);
+}
+
+export function maybeStartNewsletterPopup(n: NewsletterConfig): void {
+  const popup = n.popup;
+  if (!popup) return;
+  const path = window.location.pathname;
+  if (isExcludedPath(popup, path)) return;
+  if (recentlyDismissed(popup.frequencyDays)) return;
+
+  if (popup.trigger === "delay") {
+    const ms = Math.max(0, popup.delaySeconds) * 1000;
+    setTimeout(() => showPopup(n), ms);
+  } else if (popup.trigger === "scroll") {
+    const target = Math.max(10, Math.min(100, popup.scrollPercent));
+    let fired = false;
+    const onScroll = () => {
+      if (fired) return;
+      const doc = document.documentElement;
+      const max = doc.scrollHeight - doc.clientHeight;
+      if (max <= 0) return;
+      const pct = (window.scrollY / max) * 100;
+      if (pct >= target) {
+        fired = true;
+        window.removeEventListener("scroll", onScroll);
+        showPopup(n);
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+  } else if (popup.trigger === "exit_intent") {
+    let fired = false;
+    const onLeave = (e: MouseEvent) => {
+      if (fired) return;
+      if (e.clientY <= 0) {
+        fired = true;
+        document.removeEventListener("mouseout", onLeave);
+        showPopup(n);
+      }
+    };
+    document.addEventListener("mouseout", onLeave);
+  }
 }
