@@ -58,6 +58,7 @@ export default function App() {
           <Link to="/app/bundles">Bundles</Link>
           <Link to="/app/quantity-breaks">Quantity breaks</Link>
           <Link to="/app/progressive-gifts">Progressive gifts</Link>
+          <Link to="/app/newsletter">Newsletter</Link>
           <Link to="/app/billing">Billing</Link>
           <Link to="/app/support">Support</Link>
         </NavMenu>

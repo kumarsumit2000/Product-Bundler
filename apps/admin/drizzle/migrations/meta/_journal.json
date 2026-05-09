@@ -71,6 +71,13 @@
       "when": 1778347900000,
       "tag": "0009_progressive_gifts",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1778349000000,
+      "tag": "0010_newsletter",
+      "breakpoints": true
     }
   ]
 }

@@ -267,7 +267,7 @@ const CARDS: CardSpec[] = [
   { key: "bxgy", title: "Buy X, get Y (BXGY) deal", href: "/app/quantity-breaks/new", preview: PreviewBxgy },
   { key: "qb_diff", title: "Quantity breaks for different products", href: "/app/quantity-breaks/new", preview: PreviewQbDifferent },
   { key: "bundle", title: "Complete the bundle", href: "/app/bundles/new", preview: PreviewBundle },
-  { key: "newsletter", title: "Newsletter signup", href: null, comingSoon: true, preview: PreviewNewsletter },
+  { key: "newsletter", title: "Newsletter signup", href: "/app/newsletter", preview: PreviewNewsletter },
   { key: "progressive", title: "Progressive gifts", href: "/app/progressive-gifts/new", preview: PreviewProgressive },
 ];
 

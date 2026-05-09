@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { schema } from "~/db.server";
 import * as bundleRepo from "./bundles/repo";
 import * as qbRepo from "./quantity-breaks/repo";
+import * as newsletterRepo from "./newsletter/repo";
 import {
   fetchProductDetails,
   fetchCollectionTopProducts,
@@ -18,7 +19,7 @@ export async function buildStorefrontConfig(
   admin: AdminGraphqlClient,
   shopId: string,
 ) {
-  const [bundlesAll, qbsAll, settingsRow, shopRow] = await Promise.all([
+  const [bundlesAll, qbsAll, settingsRow, shopRow, newsletter] = await Promise.all([
     bundleRepo.listByShop(db, shopId),
     qbRepo.listByShop(db, shopId),
     db
@@ -33,6 +34,7 @@ export async function buildStorefrontConfig(
       .where(eq(schema.shops.id, shopId))
       .limit(1)
       .then((r: { currency: string; primaryLocale: string }[]) => r[0] ?? null),
+    newsletterRepo.getOrDefault(db, shopId),
   ]);
 
   const bundles = bundlesAll.filter((b) => b.status === "active");
@@ -206,5 +208,15 @@ export async function buildStorefrontConfig(
       subscription: b.subscription ?? null,
     })),
     quantityBreaks: qbs.map(buildQb),
+    newsletter: newsletter.enabled
+      ? {
+          headline: newsletter.headline,
+          subtitle: newsletter.subtitle,
+          placeholder: newsletter.placeholder,
+          ctaLabel: newsletter.ctaLabel,
+          successMessage: newsletter.successMessage,
+          tags: newsletter.tags,
+        }
+      : null,
   };
 }

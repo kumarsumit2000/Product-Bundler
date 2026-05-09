@@ -172,6 +172,18 @@ export const quantityBreaks = sqliteTable("quantity_breaks", {
   productIdx: index("qb_product_idx").on(t.shopId, t.productId),
 }));
 
+export const newsletterSettings = sqliteTable("newsletter_settings", {
+  shopId: text("shop_id").primaryKey().references(() => shops.id, { onDelete: "cascade" }),
+  enabled: integer("enabled", { mode: "boolean" }).notNull().default(false),
+  headline: text("headline").notNull().default("Get 10% off your first order"),
+  subtitle: text("subtitle").notNull().default("Join our newsletter for early access and exclusive deals."),
+  placeholder: text("placeholder").notNull().default("you@email.com"),
+  ctaLabel: text("cta_label").notNull().default("Subscribe"),
+  successMessage: text("success_message").notNull().default("Thanks! Check your inbox for the discount code."),
+  tags: text("tags").notNull().default("newsletter,prospect"),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+});
+
 export type ProgressiveThreshold = {
   minSpendCents: number;
   giftVariantId: string;
@@ -213,6 +225,8 @@ export type NewBundle = typeof bundles.$inferInsert;
 export type QuantityBreak = typeof quantityBreaks.$inferSelect;
 export type ProgressiveGift = typeof progressiveGifts.$inferSelect;
 export type NewProgressiveGift = typeof progressiveGifts.$inferInsert;
+export type NewsletterSettings = typeof newsletterSettings.$inferSelect;
+export type NewNewsletterSettings = typeof newsletterSettings.$inferInsert;
 export type NewQuantityBreak = typeof quantityBreaks.$inferInsert;
 export type ShopSettings = typeof shopSettings.$inferSelect;
 

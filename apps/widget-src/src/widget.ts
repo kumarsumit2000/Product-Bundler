@@ -4,6 +4,7 @@ import { lookupBundle, lookupQb, lookupMixMatch } from "./lookup";
 import { renderBundle } from "./render-bundle";
 import { renderQb } from "./render-qb";
 import { renderMixMatch } from "./render-mix-match";
+import { renderNewsletter } from "./render-newsletter";
 import { configureAnalytics } from "./analytics";
 import { setLocale } from "./i18n";
 
@@ -204,10 +205,15 @@ function renderMount(mount: HTMLElement, cfg: WidgetConfig): void {
   mount.dataset.pumperRendered = "1";
 }
 
+function collectNewsletterMounts(): HTMLElement[] {
+  return Array.from(document.querySelectorAll<HTMLElement>("[data-pumper-newsletter]:not([data-pumper-rendered])"));
+}
+
 export async function initWidget(): Promise<void> {
   const mounts = Array.from(document.querySelectorAll<HTMLElement>(".pumper-mount:not([data-pumper-rendered])"));
   const shortcodes = collectShortcodes();
-  if (mounts.length === 0 && shortcodes.length === 0) return;
+  const newsletterMounts = collectNewsletterMounts();
+  if (mounts.length === 0 && shortcodes.length === 0 && newsletterMounts.length === 0) return;
 
   const apiBase = (window._pumperConfig?.apiBase) ?? "https://bundler.deepseatools.in/api/storefront";
   const shopFromGlobal = window._pumperConfig?.shop;
@@ -227,6 +233,7 @@ export async function initWidget(): Promise<void> {
     }
     mounts.forEach((m) => { m.innerHTML = ""; m.style.minHeight = ""; });
     shortcodes.forEach((s) => { s.el.innerHTML = ""; s.el.style.minHeight = ""; });
+    newsletterMounts.forEach((m) => { m.innerHTML = ""; });
     return;
   }
 
@@ -234,13 +241,23 @@ export async function initWidget(): Promise<void> {
 
   for (const m of mounts) renderMount(m, cfg);
   for (const sc of shortcodes) renderShortcode(sc.el, sc.kind, sc.id, cfg);
+  for (const nm of newsletterMounts) {
+    if (cfg.newsletter) {
+      applyCssVars(nm, cfg, null);
+      renderNewsletter(nm, cfg.newsletter);
+      nm.dataset.pumperRendered = "1";
+    } else {
+      nm.innerHTML = "";
+      nm.dataset.pumperRendered = "1";
+    }
+  }
 
   startObserver(cfg);
 
   // Expose re-render hook for preview iframe
   window._pumperRerender = () => {
     cachedConfig = null;
-    document.querySelectorAll<HTMLElement>(".pumper-mount, [data-pumper-bundle], [data-pumper-qb], [data-pumper-mix-match]").forEach((m) => {
+    document.querySelectorAll<HTMLElement>(".pumper-mount, [data-pumper-bundle], [data-pumper-qb], [data-pumper-mix-match], [data-pumper-newsletter]").forEach((m) => {
       m.removeAttribute("data-pumper-rendered");
     });
     void initWidget();

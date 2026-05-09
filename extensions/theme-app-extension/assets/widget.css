@@ -203,3 +203,18 @@
 [data-pumper-layout="grid"] .pumper-plus {
   display: none;
 }
+
+/* Newsletter signup widget */
+.pumper-newsletter { padding: 16px; }
+.pumper-newsletter-heading { font-size: 16px; font-weight: 700; margin: 0 0 4px; color: var(--pumper-text, #1a1a1a); }
+.pumper-newsletter-sub { font-size: 13px; color: #666; margin: 0 0 12px; }
+.pumper-newsletter-form { display: flex; gap: 6px; }
+.pumper-newsletter-input {
+  flex: 1; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: var(--pumper-radius, 6px);
+  font-size: 14px; background: #fff; color: var(--pumper-text, #1a1a1a);
+}
+.pumper-newsletter-input:focus { outline: 2px solid var(--pumper-primary, #7B1E2A); outline-offset: 1px; }
+.pumper-newsletter-cta { padding: 10px 16px; white-space: nowrap; }
+.pumper-newsletter-status { margin-top: 10px; padding: 10px 12px; border-radius: var(--pumper-radius, 6px); font-size: 13px; }
+.pumper-newsletter-status--success { background: #ecfdf5; color: #065f46; }
+.pumper-newsletter-status--error { background: #fef2f2; color: #b91c1c; }

@@ -167,11 +167,21 @@ export type Settings = {
   locale: string;
 };
 
+export type NewsletterConfig = {
+  headline: string;
+  subtitle: string;
+  placeholder: string;
+  ctaLabel: string;
+  successMessage: string;
+  tags: string;
+};
+
 export type WidgetConfig = {
   shop: string;
   settings: Settings;
   bundles: BundleConfig[];
   quantityBreaks: QbConfig[];
+  newsletter?: NewsletterConfig | null;
 };
 
 export type CartLine = {
