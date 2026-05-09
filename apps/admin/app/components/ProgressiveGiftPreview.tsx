@@ -37,11 +37,14 @@ export function ProgressiveGiftPreview({ values, demoCartTotal = 75 }: Props) {
   const t = styleToTokens(values.style);
 
   const tiers = values.thresholds
-    .map((t) => ({
-      minSpend: parseFloat(t.minSpend || "0") || 0,
-      label: t.label || "Free gift",
-      image: t.variant?.image,
-      strike: t.variant?.variantTitle ?? "",
+    .map((tier) => ({
+      minSpend: parseFloat(tier.minSpend || "0") || 0,
+      label: tier.label || "FREE",
+      lockedLabel: tier.lockedLabel || `$${parseFloat(tier.minSpend || "0") || 0}`,
+      title: tier.title || tier.variant?.productTitle || "Free gift",
+      lockedTitle: tier.lockedTitle || "Locked",
+      labelCrossedOut: tier.labelCrossedOut || "",
+      image: tier.variant?.image,
     }))
     .sort((a, b) => a.minSpend - b.minSpend);
 
@@ -63,12 +66,17 @@ export function ProgressiveGiftPreview({ values, demoCartTotal = 75 }: Props) {
             fontFamily: "system-ui, -apple-system, sans-serif",
           }}
         >
-          <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8, textAlign: "center", color: t.heading }}>
-            {values.headline || "Unlock free gifts with your order"}
+          <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 4, textAlign: "center", color: t.heading }}>
+            {values.headline || "🎁 Unlock free gifts with your order"}
           </div>
+          {values.subtitle && (
+            <div style={{ fontSize: 11, color: t.text, marginBottom: 6, textAlign: "center" }}>
+              {values.subtitle}
+            </div>
+          )}
           <div style={{ fontSize: 11, color: t.text, marginBottom: 10, textAlign: "center" }}>
             {nextTier
-              ? `Spend $${remaining.toFixed(2)} more to unlock ${nextTier.label}`
+              ? `Spend $${remaining.toFixed(2)} more to unlock ${nextTier.title || nextTier.label}`
               : tiers.length > 0
                 ? "All gifts unlocked!"
                 : "Add at least one threshold to see the preview"}
@@ -97,58 +105,140 @@ export function ProgressiveGiftPreview({ values, demoCartTotal = 75 }: Props) {
                 />
               </div>
 
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: `repeat(${Math.min(tiers.length, 4)}, 1fr)`,
-                  gap: 6,
-                }}
-              >
-                {tiers.map((tier, i) => {
-                  const unlocked = demoCartTotal >= tier.minSpend;
+              {(() => {
+                const visibleTiers = values.hideLocked
+                  ? tiers.filter((tier) => demoCartTotal >= tier.minSpend)
+                  : tiers;
+                if (visibleTiers.length === 0) {
                   return (
-                    <div
-                      key={i}
-                      style={{
+                    <div style={{ fontSize: 11, color: t.text, textAlign: "center", padding: "8px 0" }}>
+                      Hidden until unlocked
+                    </div>
+                  );
+                }
+                const layout = values.layout;
+                const isRow = layout === "inline";
+                const isStacked = layout === "stacked";
+                const containerStyle: React.CSSProperties = isRow
+                  ? { display: "flex", flexDirection: "column", gap: 6 }
+                  : isStacked
+                    ? { display: "flex", flexDirection: "column", gap: 6 }
+                    : {
+                        display: "grid",
+                        gridTemplateColumns: `repeat(${Math.min(visibleTiers.length, 4)}, 1fr)`,
+                        gap: 6,
+                      };
+                return (
+                  <div style={containerStyle}>
+                    {visibleTiers.map((tier, i) => {
+                      const unlocked = demoCartTotal >= tier.minSpend;
+                      const showBadge = unlocked || values.showLockedLabels;
+                      const badgeText = unlocked ? tier.label : tier.lockedLabel;
+                      const cardStyle: React.CSSProperties = {
                         border: `2px solid ${unlocked ? t.cardBorder : t.cardBorderInactive}`,
                         background: unlocked ? t.cardBg : t.cardBgInactive,
                         borderRadius: Math.max(0, t.radius - 2),
-                        padding: 6,
-                        fontSize: 9,
-                        textAlign: "center",
-                        opacity: unlocked ? 1 : 0.85,
                         color: t.heading,
-                      }}
-                    >
-                      <div
-                        style={{
-                          background: unlocked ? t.badgeBg : t.badgeBgInactive,
-                          color: t.badgeText,
-                          padding: "1px 4px",
-                          borderRadius: 3,
-                          fontSize: 8,
-                          fontWeight: 700,
-                          marginBottom: 4,
-                        }}
-                      >
-                        {unlocked ? "FREE" : `$${tier.minSpend.toFixed(0)}`}
-                      </div>
-                      {tier.image ? (
-                        <img
-                          src={tier.image}
-                          alt=""
-                          style={{ width: "100%", height: 36, objectFit: "cover", borderRadius: 4 }}
-                        />
-                      ) : (
-                        <div style={{ height: 36, background: "#cbd5e1", borderRadius: 4 }} />
-                      )}
-                      <div style={{ marginTop: 4, fontWeight: 600, lineHeight: 1.2 }}>
-                        {tier.label}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                      };
+                      // ─── Inline / Stacked: row layout (image left, content right) ───
+                      if (isRow || isStacked) {
+                        return (
+                          <div
+                            key={i}
+                            style={{
+                              ...cardStyle,
+                              padding: 8,
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 10,
+                              fontSize: 11,
+                            }}
+                          >
+                            {tier.image ? (
+                              <img
+                                src={tier.image}
+                                alt=""
+                                style={{ width: 32, height: 32, objectFit: "cover", borderRadius: 4, flexShrink: 0 }}
+                              />
+                            ) : (
+                              <div style={{ width: 32, height: 32, background: "#cbd5e1", borderRadius: 4, flexShrink: 0 }} />
+                            )}
+                            <div style={{ flex: 1, minWidth: 0, fontWeight: 600 }}>
+                              {unlocked ? tier.title : tier.lockedTitle}
+                            </div>
+                            {showBadge && (
+                              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                                <span
+                                  style={{
+                                    background: unlocked ? t.badgeBg : t.badgeBgInactive,
+                                    color: t.badgeText,
+                                    padding: "2px 6px",
+                                    borderRadius: 3,
+                                    fontSize: 10,
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  {badgeText}
+                                </span>
+                                {unlocked && tier.labelCrossedOut && (
+                                  <span style={{ textDecoration: "line-through", color: "#a3a3a3", fontSize: 10 }}>
+                                    {tier.labelCrossedOut}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }
+                      // ─── Grid (default): card with image on top ───
+                      return (
+                        <div
+                          key={i}
+                          style={{
+                            ...cardStyle,
+                            padding: 6,
+                            fontSize: 9,
+                            textAlign: "center",
+                          }}
+                        >
+                          {showBadge && (
+                            <div
+                              style={{
+                                background: unlocked ? t.badgeBg : t.badgeBgInactive,
+                                color: t.badgeText,
+                                padding: "1px 4px",
+                                borderRadius: 3,
+                                fontSize: 8,
+                                fontWeight: 700,
+                                marginBottom: 4,
+                              }}
+                            >
+                              {badgeText}
+                              {unlocked && tier.labelCrossedOut && (
+                                <span style={{ textDecoration: "line-through", marginLeft: 4, opacity: 0.8 }}>
+                                  {tier.labelCrossedOut}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          {tier.image ? (
+                            <img
+                              src={tier.image}
+                              alt=""
+                              style={{ width: "100%", height: 36, objectFit: "cover", borderRadius: 4 }}
+                            />
+                          ) : (
+                            <div style={{ height: 36, background: "#cbd5e1", borderRadius: 4 }} />
+                          )}
+                          <div style={{ marginTop: 4, fontWeight: 600, lineHeight: 1.2 }}>
+                            {unlocked ? tier.title : tier.lockedTitle}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </>
           )}
         </div>

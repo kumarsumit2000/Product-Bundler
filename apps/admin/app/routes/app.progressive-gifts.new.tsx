@@ -44,11 +44,17 @@ export async function action({ request, context }: ActionFunctionArgs) {
   } catch { /* ignore */ }
 
   const db = getDb(ctx.cloudflare.env.DB);
+  const layout = ((form.get("layout") as string) || "grid");
+  const subtitle = (form.get("subtitle") as string) || null;
   const created = await repo.create(db, session.shop, {
     name: input.name,
     status: input.status as "draft" | "active" | "paused",
     thresholds: input.thresholds,
     headline: input.headline,
+    subtitle,
+    layout: ["stacked", "grid", "inline"].includes(layout) ? layout : "grid",
+    hideLocked: form.get("hideLocked") === "on",
+    showLockedLabels: form.get("showLockedLabels") === "on",
     styleOverrides: styleOverrides as never,
   });
   await ctx.cloudflare.env.SHOP_SETTINGS_CACHE.delete(`config:${session.shop}`);

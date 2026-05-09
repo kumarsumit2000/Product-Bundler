@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Form, useSubmit } from "@remix-run/react";
 import {
-  BlockStack, Card, FormLayout, TextField, Select, Button, Text, InlineStack, Banner,
+  BlockStack, Card, FormLayout, TextField, Select, Button, Text, InlineStack, Banner, Checkbox,
 } from "@shopify/polaris";
 import { VariantPicker, type PickedVariant } from "./VariantPicker";
 import { ColorSwatchPicker } from "./ColorSwatchPicker";
@@ -10,7 +10,13 @@ export type ProgressiveGiftThresholdValue = {
   minSpend: string;
   variant: PickedVariant | null;
   label: string;
+  title: string;
+  lockedTitle: string;
+  labelCrossedOut: string;
+  lockedLabel: string;
 };
+
+export type ProgressiveLayout = "stacked" | "grid" | "inline";
 
 export type ProgressiveStyleForm = {
   backgroundColor: string;
@@ -35,6 +41,10 @@ export type ProgressiveGiftFormValues = {
   name: string;
   status: "draft" | "active" | "paused";
   headline: string;
+  subtitle: string;
+  layout: ProgressiveLayout;
+  hideLocked: boolean;
+  showLockedLabels: boolean;
   thresholds: ProgressiveGiftThresholdValue[];
   style: ProgressiveStyleForm;
 };
@@ -101,12 +111,24 @@ export function progressiveStyleToOverrides(s: ProgressiveStyleForm): Record<str
   return out;
 }
 
-const EMPTY_THRESHOLD: ProgressiveGiftThresholdValue = { minSpend: "50", variant: null, label: "" };
+const EMPTY_THRESHOLD: ProgressiveGiftThresholdValue = {
+  minSpend: "50",
+  variant: null,
+  label: "FREE",
+  title: "",
+  lockedTitle: "",
+  labelCrossedOut: "",
+  lockedLabel: "",
+};
 
 const DEFAULTS: ProgressiveGiftFormValues = {
   name: "",
   status: "draft",
-  headline: "Unlock free gifts with your order",
+  headline: "🎁 Unlock free gifts with your order",
+  subtitle: "",
+  layout: "grid",
+  hideLocked: false,
+  showLockedLabels: true,
   thresholds: [{ ...EMPTY_THRESHOLD }],
   style: EMPTY_PROGRESSIVE_STYLE,
 };
@@ -141,6 +163,14 @@ export function ProgressiveGiftForm({ submitLabel, initialValues, errors, onValu
     setValues((v) => ({ ...v, thresholds: [...v.thresholds, { ...EMPTY_THRESHOLD }] }));
   const removeThreshold = (idx: number) =>
     setValues((v) => ({ ...v, thresholds: v.thresholds.filter((_, i) => i !== idx) }));
+  const moveThreshold = (idx: number, direction: -1 | 1) =>
+    setValues((v) => {
+      const next = [...v.thresholds];
+      const target = idx + direction;
+      if (target < 0 || target >= next.length) return v;
+      [next[idx], next[target]] = [next[target]!, next[idx]!];
+      return { ...v, thresholds: next };
+    });
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -148,6 +178,10 @@ export function ProgressiveGiftForm({ submitLabel, initialValues, errors, onValu
     fd.set("name", values.name);
     fd.set("status", values.status);
     fd.set("headline", values.headline);
+    fd.set("subtitle", values.subtitle);
+    fd.set("layout", values.layout);
+    fd.set("hideLocked", values.hideLocked ? "on" : "");
+    fd.set("showLockedLabels", values.showLockedLabels ? "on" : "");
     fd.set(
       "thresholds",
       JSON.stringify(
@@ -155,6 +189,10 @@ export function ProgressiveGiftForm({ submitLabel, initialValues, errors, onValu
           minSpendCents: Math.round(parseFloat(t.minSpend || "0") * 100),
           giftVariantId: t.variant?.variantId ?? "",
           label: t.label,
+          title: t.title,
+          lockedTitle: t.lockedTitle,
+          labelCrossedOut: t.labelCrossedOut,
+          lockedLabel: t.lockedLabel,
         })),
       ),
     );
@@ -177,13 +215,44 @@ export function ProgressiveGiftForm({ submitLabel, initialValues, errors, onValu
                 autoComplete="off"
                 error={errors?.name}
               />
-              <TextField
-                label="Bar headline"
-                value={values.headline}
-                onChange={(headline) => setValues((v) => ({ ...v, headline }))}
-                autoComplete="off"
-                error={errors?.headline}
-                helpText="Shown above the unlocked gifts on the storefront"
+              <Select
+                label="Layout"
+                options={[
+                  { label: "Stacked (gifts below the bar)", value: "stacked" },
+                  { label: "Grid (gifts side-by-side)", value: "grid" },
+                  { label: "Inline (gifts in a single row)", value: "inline" },
+                ]}
+                value={values.layout}
+                onChange={(layout) => setValues((v) => ({ ...v, layout: layout as ProgressiveLayout }))}
+              />
+              <FormLayout.Group>
+                <TextField
+                  label="Title"
+                  value={values.headline}
+                  onChange={(headline) => setValues((v) => ({ ...v, headline }))}
+                  autoComplete="off"
+                  error={errors?.headline}
+                  placeholder="🎁 Unlock free gifts with your order"
+                />
+                <TextField
+                  label="Subtitle"
+                  value={values.subtitle}
+                  onChange={(subtitle) => setValues((v) => ({ ...v, subtitle }))}
+                  autoComplete="off"
+                  placeholder="Spend more to unlock"
+                />
+              </FormLayout.Group>
+              <Checkbox
+                label="Hide gifts until they're unlocked"
+                checked={values.hideLocked}
+                onChange={(hideLocked) => setValues((v) => ({ ...v, hideLocked }))}
+                helpText="Show only the gifts the customer has earned"
+              />
+              <Checkbox
+                label="Show labels for locked gifts"
+                checked={values.showLockedLabels}
+                onChange={(showLockedLabels) => setValues((v) => ({ ...v, showLockedLabels }))}
+                helpText="Display the dollar amount needed under each locked gift"
               />
               <Select
                 label="Status"
@@ -211,29 +280,32 @@ export function ProgressiveGiftForm({ submitLabel, initialValues, errors, onValu
               <Card key={i}>
                 <BlockStack gap="300">
                   <InlineStack align="space-between" blockAlign="center">
-                    <Text as="h3" variant="headingSm">Threshold {i + 1}</Text>
-                    {values.thresholds.length > 1 && (
-                      <Button variant="plain" tone="critical" onClick={() => removeThreshold(i)}>
-                        Remove
+                    <Text as="h3" variant="headingSm">Gift #{i + 1}</Text>
+                    <InlineStack gap="200">
+                      <Button
+                        variant="plain"
+                        disabled={i === 0}
+                        onClick={() => moveThreshold(i, -1)}
+                        accessibilityLabel="Move up"
+                      >
+                        ↑
                       </Button>
-                    )}
+                      <Button
+                        variant="plain"
+                        disabled={i === values.thresholds.length - 1}
+                        onClick={() => moveThreshold(i, 1)}
+                        accessibilityLabel="Move down"
+                      >
+                        ↓
+                      </Button>
+                      {values.thresholds.length > 1 && (
+                        <Button variant="plain" tone="critical" onClick={() => removeThreshold(i)}>
+                          Remove
+                        </Button>
+                      )}
+                    </InlineStack>
                   </InlineStack>
                   <FormLayout>
-                    <TextField
-                      label="Minimum cart spend ($)"
-                      type="number"
-                      value={t.minSpend}
-                      onChange={(minSpend) => updateThreshold(i, { minSpend })}
-                      autoComplete="off"
-                      min={0}
-                    />
-                    <TextField
-                      label="Label"
-                      value={t.label}
-                      onChange={(label) => updateThreshold(i, { label })}
-                      autoComplete="off"
-                      helpText="e.g. Free shipping, Free socks"
-                    />
                     <BlockStack gap="100">
                       <Text as="span" variant="bodyMd">Gift variant</Text>
                       <VariantPicker
@@ -241,6 +313,56 @@ export function ProgressiveGiftForm({ submitLabel, initialValues, errors, onValu
                         onChange={(variant) => updateThreshold(i, { variant })}
                       />
                     </BlockStack>
+                    <TextField
+                      label="Minimum cart spend ($)"
+                      type="number"
+                      value={t.minSpend}
+                      onChange={(minSpend) => updateThreshold(i, { minSpend })}
+                      autoComplete="off"
+                      min={0}
+                      helpText="Customer's cart subtotal needed to unlock this gift"
+                    />
+                    <FormLayout.Group>
+                      <TextField
+                        label="Unlocked label"
+                        value={t.label}
+                        onChange={(label) => updateThreshold(i, { label })}
+                        autoComplete="off"
+                        placeholder="FREE"
+                      />
+                      <TextField
+                        label="Crossed-out price"
+                        value={t.labelCrossedOut}
+                        onChange={(labelCrossedOut) => updateThreshold(i, { labelCrossedOut })}
+                        autoComplete="off"
+                        placeholder="$24.95"
+                        helpText="Shown struck-through next to FREE"
+                      />
+                    </FormLayout.Group>
+                    <FormLayout.Group>
+                      <TextField
+                        label="Title"
+                        value={t.title}
+                        onChange={(title) => updateThreshold(i, { title })}
+                        autoComplete="off"
+                        placeholder="Defaults to product name"
+                      />
+                      <TextField
+                        label="Locked title"
+                        value={t.lockedTitle}
+                        onChange={(lockedTitle) => updateThreshold(i, { lockedTitle })}
+                        autoComplete="off"
+                        placeholder="Locked"
+                      />
+                    </FormLayout.Group>
+                    <TextField
+                      label="Locked label"
+                      value={t.lockedLabel}
+                      onChange={(lockedLabel) => updateThreshold(i, { lockedLabel })}
+                      autoComplete="off"
+                      placeholder="$50"
+                      helpText="Defaults to the minimum cart spend"
+                    />
                   </FormLayout>
                 </BlockStack>
               </Card>

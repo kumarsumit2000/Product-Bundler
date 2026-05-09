@@ -216,6 +216,11 @@ export type ProgressiveThreshold = {
   minSpendCents: number;
   giftVariantId: string;
   label: string;
+  // Optional content overrides (per-threshold), modeled after competitor UX.
+  title?: string;
+  lockedTitle?: string;
+  labelCrossedOut?: string;
+  lockedLabel?: string;
 };
 
 export type ProgressiveGiftStyleOverrides = Partial<{
@@ -244,6 +249,10 @@ export const progressiveGifts = sqliteTable("progressive_gifts", {
   status: text("status").notNull().default("draft"),
   thresholds: text("thresholds", { mode: "json" }).$type<ProgressiveThreshold[]>().notNull(),
   headline: text("headline"),
+  subtitle: text("subtitle"),
+  layout: text("layout").notNull().default("grid"),
+  hideLocked: integer("hide_locked", { mode: "boolean" }).notNull().default(false),
+  showLockedLabels: integer("show_locked_labels", { mode: "boolean" }).notNull().default(true),
   styleOverrides: text("style_overrides", { mode: "json" }).$type<ProgressiveGiftStyleOverrides | null>(),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),

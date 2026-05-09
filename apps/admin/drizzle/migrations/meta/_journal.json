@@ -99,6 +99,13 @@
       "when": 1778352600000,
       "tag": "0013_newsletter_style",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1778353800000,
+      "tag": "0014_progressive_gifts_display",
+      "breakpoints": true
     }
   ]
 }

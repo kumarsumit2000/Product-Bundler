@@ -56,11 +56,17 @@ export async function action({ request, params, context }: ActionFunctionArgs) {
   } catch { /* ignore */ }
 
   const db = getDb(ctx.cloudflare.env.DB);
+  const layout = ((form.get("layout") as string) || "grid");
+  const subtitle = (form.get("subtitle") as string) || null;
   await repo.update(db, session.shop, params.id!, {
     name: input.name,
     status: input.status as "draft" | "active" | "paused",
     thresholds: input.thresholds,
     headline: input.headline,
+    subtitle,
+    layout: ["stacked", "grid", "inline"].includes(layout) ? layout : "grid",
+    hideLocked: form.get("hideLocked") === "on",
+    showLockedLabels: form.get("showLockedLabels") === "on",
     styleOverrides: styleOverrides as never,
   });
   await ctx.cloudflare.env.SHOP_SETTINGS_CACHE.delete(`config:${session.shop}`);
@@ -78,10 +84,18 @@ export default function ProgressiveGiftEdit() {
     name: pg.name,
     status: pg.status as ProgressiveGiftFormValues["status"],
     headline: pg.headline ?? "",
+    subtitle: pg.subtitle ?? "",
+    layout: (pg.layout as ProgressiveGiftFormValues["layout"]) ?? "grid",
+    hideLocked: pg.hideLocked ?? false,
+    showLockedLabels: pg.showLockedLabels ?? true,
     style: progressiveStyleFromOverrides(pg.styleOverrides),
     thresholds: pg.thresholds.map((t) => ({
       minSpend: (t.minSpendCents / 100).toString(),
       label: t.label,
+      title: t.title ?? "",
+      lockedTitle: t.lockedTitle ?? "",
+      labelCrossedOut: t.labelCrossedOut ?? "",
+      lockedLabel: t.lockedLabel ?? "",
       variant: t.giftVariantId && variantDetails[t.giftVariantId]
         ? {
             variantId: t.giftVariantId,
