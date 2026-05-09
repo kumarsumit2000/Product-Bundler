@@ -8,7 +8,8 @@ scopes = "write_products,write_orders,write_discounts,read_themes,write_metaobje
 
 [auth]
 redirect_urls = [
-  "https://bundler.deepseatools.in/auth/callback"
+  "https://bundler.deepseatools.in/auth/callback",
+  "https://bundler.deepseatools.in/app/billing/callback"
 ]
 
 [webhooks]
