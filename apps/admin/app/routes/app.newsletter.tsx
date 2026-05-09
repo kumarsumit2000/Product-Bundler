@@ -10,7 +10,8 @@ import { getDb } from "~/db.server";
 import * as repo from "~/lib/newsletter/repo";
 import { useSavedToast } from "~/lib/toast";
 import { EmbedCodeCard } from "~/components/EmbedCodeCard";
-import { PreviewPane } from "~/components/PreviewPane";
+import { useEffect, useRef } from "react";
+import { Box } from "@shopify/polaris";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
@@ -45,6 +46,47 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
   await ctx.cloudflare.env.SHOP_SETTINGS_CACHE.delete(`config:${session.shop}`);
   return redirect("/app/newsletter?saved=Newsletter");
+}
+
+function NewsletterLivePreview({ config }: { config: unknown }) {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const lastSentRef = useRef<string>("");
+
+  useEffect(() => {
+    const next = JSON.stringify(config);
+    if (next === lastSentRef.current) return;
+    const handle = setTimeout(() => {
+      lastSentRef.current = next;
+      iframeRef.current?.contentWindow?.postMessage(
+        { type: "pumper:preview", config },
+        "*",
+      );
+    }, 250);
+    return () => clearTimeout(handle);
+  }, [config]);
+
+  return (
+    <Card>
+      <BlockStack gap="200">
+        <Text as="h2" variant="headingMd">Live preview</Text>
+        <Text as="p" tone="subdued">This is how the signup widget will render on your storefront.</Text>
+        <Box
+          borderWidth="025"
+          borderColor="border"
+          borderRadius="200"
+          overflowX="hidden"
+          overflowY="hidden"
+        >
+          <iframe
+            ref={iframeRef}
+            src="/preview/newsletter/default"
+            style={{ width: "100%", height: "320px", border: "none", display: "block" }}
+            title="Newsletter preview"
+          />
+        </Box>
+      </BlockStack>
+    </Card>
+  );
 }
 
 export default function NewsletterPage() {
@@ -86,6 +128,8 @@ export default function NewsletterPage() {
                 marketing consent — directly inside your store. We don&apos;t
                 store any email addresses on our servers.
               </Banner>
+
+              <NewsletterLivePreview config={previewConfig} />
 
               <Card>
                 <BlockStack gap="300">
@@ -245,18 +289,13 @@ export default function NewsletterPage() {
                 </BlockStack>
               </Card>
 
+              <EmbedCodeCard plan="free" snippet={`<div data-pumper-newsletter></div>`} />
+
               <InlineStack align="end">
                 <Button submit variant="primary">Save</Button>
               </InlineStack>
             </BlockStack>
           </Form>
-        </Layout.Section>
-
-        <Layout.Section variant="oneThird">
-          <BlockStack gap="400">
-            <PreviewPane type="newsletter" id="default" config={previewConfig} />
-            <EmbedCodeCard plan="free" snippet={`<div data-pumper-newsletter></div>`} />
-          </BlockStack>
         </Layout.Section>
       </Layout>
     </Page>
