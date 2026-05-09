@@ -67,6 +67,21 @@ function bindForm(root: HTMLElement, n: NewsletterConfig, onDone?: () => void): 
     const original = button.textContent;
     button.textContent = "...";
 
+    const showSuccess = () => {
+      form.style.display = "none";
+      status.hidden = false;
+      status.className = "pumper-newsletter-status pumper-newsletter-status--success";
+      status.textContent = n.successMessage;
+      if (onDone) setTimeout(onDone, 2500);
+    };
+
+    // Preview mode (admin iframe) has no real Shopify storefront to POST to —
+    // simulate success so the merchant sees the success state.
+    if (typeof window !== "undefined" && window._pumperPreview) {
+      showSuccess();
+      return;
+    }
+
     // Submit to Shopify's native /contact endpoint. Shopify creates a customer
     // with marketing consent server-side. No backend needed on our end.
     const body = new URLSearchParams();
@@ -86,11 +101,7 @@ function bindForm(root: HTMLElement, n: NewsletterConfig, onDone?: () => void): 
       if (!res.ok && res.status !== 0 && res.type !== "opaqueredirect") {
         throw new Error(`HTTP ${res.status}`);
       }
-      form.style.display = "none";
-      status.hidden = false;
-      status.className = "pumper-newsletter-status pumper-newsletter-status--success";
-      status.textContent = n.successMessage;
-      if (onDone) setTimeout(onDone, 2500);
+      showSuccess();
     } catch (err) {
       console.error("[pumper newsletter]", err);
       button.disabled = false;
