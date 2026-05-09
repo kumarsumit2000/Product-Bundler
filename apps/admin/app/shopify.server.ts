@@ -65,7 +65,7 @@ export function createShopifyApp(context: AppLoadContext) {
   return shopifyApp({
     apiKey: env.SHOPIFY_API_KEY,
     apiSecretKey: env.SHOPIFY_API_SECRET,
-    apiVersion: ApiVersion.October25,
+    apiVersion: ApiVersion.January26,
     scopes: env.SCOPES.split(","),
     appUrl: env.SHOPIFY_APP_URL,
     authPathPrefix: "/auth",
