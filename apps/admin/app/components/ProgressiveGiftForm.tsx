@@ -387,6 +387,7 @@ export function ProgressiveGiftForm({ submitLabel, initialValues, errors, onValu
                     <InlineStack gap="0" wrap={false}>
                       <Button
                         variant={t.kind === "free_gift" ? "primary" : "secondary"}
+                        size="large"
                         onClick={() => updateThreshold(i, { kind: "free_gift" })}
                         fullWidth
                       >
@@ -394,6 +395,7 @@ export function ProgressiveGiftForm({ submitLabel, initialValues, errors, onValu
                       </Button>
                       <Button
                         variant={t.kind === "free_shipping" ? "primary" : "secondary"}
+                        size="large"
                         onClick={() => updateThreshold(i, { kind: "free_shipping" })}
                         fullWidth
                       >
@@ -486,9 +488,9 @@ export function ProgressiveGiftForm({ submitLabel, initialValues, errors, onValu
                 </BlockStack>
               </Card>
             ))}
-            <InlineStack>
-              <Button onClick={addThreshold}>Add threshold</Button>
-            </InlineStack>
+            <Button onClick={addThreshold} variant="primary" size="large" fullWidth>
+              + Add gift
+            </Button>
           </BlockStack>
         </Card>
 
@@ -624,7 +626,7 @@ export function ProgressiveGiftForm({ submitLabel, initialValues, errors, onValu
         </Card>
 
         <InlineStack align="end">
-          <Button submit variant="primary">{submitLabel}</Button>
+          <Button submit variant="primary" size="large">{submitLabel}</Button>
         </InlineStack>
       </BlockStack>
     </Form>
