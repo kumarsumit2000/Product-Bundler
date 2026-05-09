@@ -1,4 +1,4 @@
-import { Card, BlockStack, InlineStack, Text, TextField, Button, Badge } from "@shopify/polaris";
+import { Card, BlockStack, InlineStack, Text, TextField, Button } from "@shopify/polaris";
 import { useState } from "react";
 
 type Props = {
@@ -7,28 +7,8 @@ type Props = {
   snippet?: string;
 };
 
-export function EmbedCodeCard({ plan, snippet }: Props) {
-  if (plan === "free") {
-    return (
-      <Card>
-        <BlockStack gap="200">
-          <InlineStack gap="200" blockAlign="center">
-            <Text as="h2" variant="headingMd">Embed code</Text>
-            <Badge tone="info">Paid plans</Badge>
-          </InlineStack>
-          <Text as="p" tone="subdued">
-            Want to display this on your homepage, blog post, or any other page?
-            Embed codes let you paste this widget anywhere your theme accepts HTML.
-            Available on Starter, Growth, and Unlimited plans.
-          </Text>
-          <InlineStack align="end">
-            <Button variant="primary" url="/app/billing">Upgrade to use embed codes</Button>
-          </InlineStack>
-        </BlockStack>
-      </Card>
-    );
-  }
-
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function EmbedCodeCard({ plan: _plan, snippet }: Props) {
   if (!snippet) {
     return (
       <Card>
