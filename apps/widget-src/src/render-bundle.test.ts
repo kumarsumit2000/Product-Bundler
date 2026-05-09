@@ -73,4 +73,22 @@ describe("renderBundle", () => {
     renderBundle(el, bundle, CONFIG);
     expect(el.innerHTML).toContain("Total");
   });
+
+  it("renders bundle.savingsBadge with override when savings > 0", () => {
+    const el = document.createElement("div");
+    const bundle: BundleConfig = {
+      ...BUNDLE,
+      discountValue: 20,
+      textOverrides: { "bundle.savingsBadge": "You save {savings}!" },
+    };
+    renderBundle(el, bundle, CONFIG);
+    expect(el.innerHTML).toContain("You save");
+  });
+
+  it("renders default bundle.savingsBadge text when override absent", () => {
+    const el = document.createElement("div");
+    const bundle: BundleConfig = { ...BUNDLE, discountValue: 20, textOverrides: null };
+    renderBundle(el, bundle, CONFIG);
+    expect(el.innerHTML).toContain("Save"); // default i18n is "Save {savings}"
+  });
 });

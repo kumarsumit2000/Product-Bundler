@@ -40,12 +40,17 @@ export function renderBundle(mount: HTMLElement, bundle: BundleConfig, config: W
     `;
   }).join('<div class="pumper-plus">+</div>');
 
+  const savingsBadge = totals.savingsCents > 0
+    ? `<span class="pumper-bundle-savings">${escapeHtml(tWith(bundle.textOverrides, "bundle.savingsBadge", { savings: formatMoney(totals.savingsCents, config.settings.currency, config.settings.locale) }))}</span>`
+    : "";
+
   const totalLine = `
     <div class="pumper-total-row">
       <span class="pumper-total-label">${tWith(bundle.textOverrides, "bundle.totalLabel")}
         ${config.settings.showCompareAtPrice ? `<span class="pumper-strike">${formatMoney(totals.subtotalCents, config.settings.currency, config.settings.locale)}</span>` : ""}
       </span>
       <span class="pumper-total-value">${formatMoney(totals.discountedCents, config.settings.currency, config.settings.locale)}</span>
+      ${savingsBadge}
     </div>
   `;
 
