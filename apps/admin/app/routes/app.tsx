@@ -1,5 +1,5 @@
 import type { LoaderFunctionArgs, HeadersFunction } from "@remix-run/cloudflare";
-import { json } from "@remix-run/cloudflare";
+import { json, redirect } from "@remix-run/cloudflare";
 import { Link, Outlet, useLoaderData, useRouteError } from "@remix-run/react";
 import { boundary } from "@shopify/shopify-app-remix/server";
 import { AppProvider as ShopifyAppProvider } from "@shopify/shopify-app-remix/react";
@@ -17,6 +17,21 @@ export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
+
+  // When Shopify loads our app inside the embedded admin iframe, it sets
+  // shop + host + embedded=1. If embedded=1 is missing (which happens after
+  // some auth callback paths), shopify-app-remix returns a server-side 302
+  // to admin.shopify.com — that gets X-Frame-Options blocked because the
+  // iframe can't redirect out to admin.shopify.com. Detect that case and
+  // self-redirect with embedded=1 added so the bounce-page flow runs.
+  const url = new URL(request.url);
+  const hasShopHost = url.searchParams.get("shop") && url.searchParams.get("host");
+  const isEmbedded = url.searchParams.get("embedded") === "1";
+  if (hasShopHost && !isEmbedded) {
+    url.searchParams.set("embedded", "1");
+    throw redirect(url.pathname + url.search);
+  }
+
   await authenticate.admin(request, ctx);
   return json({ apiKey: ctx.cloudflare.env.SHOPIFY_API_KEY });
 }
