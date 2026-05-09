@@ -45,6 +45,7 @@ type BundleShape = {
   headline: string | null;
   ctaLabel: string | null;
   styleOverrides: Record<string, unknown> | null;
+  textOverrides: Record<string, string> | null;
 };
 
 type QbShape = {
@@ -57,6 +58,9 @@ type QbShape = {
   tiers: Array<{ qty: number; discountType: string; discountValue: number; label: string; isMostPopular: boolean; available: boolean }>;
   combinable: boolean;
   styleOverrides: Record<string, unknown> | null;
+  textOverrides: Record<string, string> | null;
+  headline: string | null;
+  ctaLabel: string | null;
 };
 
 type MockProduct = { productId: string; title: string; priceCents: number };

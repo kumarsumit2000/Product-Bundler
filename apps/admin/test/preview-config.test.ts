@@ -18,7 +18,7 @@ describe("buildPreviewBundleConfig", () => {
         collectionId: null, targetQty: null, collectionProducts: null,
         discountType: "percentage", discountValue: 10, combinable: false,
         triggerProductIds: ["gid://shopify/Product/1"],
-        headline: null, ctaLabel: null, styleOverrides: null,
+        headline: null, ctaLabel: null, styleOverrides: null, textOverrides: null,
       },
     });
     expect(cfg.bundles[0]?.id).toBe("preview");
@@ -40,10 +40,39 @@ describe("buildPreviewBundleConfig", () => {
         ],
         discountType: "percentage", discountValue: 20, combinable: false,
         triggerProductIds: ["gid://shopify/Product/9"],
-        headline: null, ctaLabel: null, styleOverrides: null,
+        headline: null, ctaLabel: null, styleOverrides: null, textOverrides: null,
       },
     });
     expect(cfg.bundles[0]?.collectionProducts?.length).toBe(1);
+  });
+});
+
+describe("buildPreviewBundleConfig with overrides", () => {
+  it("passes textOverrides through unchanged", () => {
+    const cfg = buildPreviewBundleConfig({
+      shop: "s",
+      mockProduct: { productId: "p", title: "T", priceCents: 100 },
+      settings: defaultPreviewSettings(),
+      bundle: {
+        id: "b1",
+        name: "n",
+        mode: "classic",
+        products: [],
+        collectionId: null,
+        targetQty: null,
+        collectionProducts: null,
+        discountType: "percentage",
+        discountValue: 10,
+        combinable: false,
+        triggerProductIds: [],
+        headline: null,
+        ctaLabel: null,
+        styleOverrides: { primaryColor: "#ABCDEF" },
+        textOverrides: { "bundle.totalLabel": "X" },
+      },
+    });
+    expect(cfg.bundles[0]!.textOverrides).toEqual({ "bundle.totalLabel": "X" });
+    expect(cfg.bundles[0]!.styleOverrides).toEqual({ primaryColor: "#ABCDEF" });
   });
 });
 
@@ -61,7 +90,7 @@ describe("buildPreviewQbConfig", () => {
           { qty: 1, discountType: "percentage", discountValue: 0, label: "Buy 1", isMostPopular: false, available: true },
           { qty: 2, discountType: "percentage", discountValue: 10, label: "10% off", isMostPopular: true, available: true },
         ],
-        combinable: false, styleOverrides: null,
+        combinable: false, styleOverrides: null, textOverrides: null, headline: null, ctaLabel: null,
       },
     });
     expect(cfg.quantityBreaks[0]?.id).toBe("preview");

@@ -112,6 +112,84 @@ describe("buildStorefrontConfig", () => {
     expect(tier.bogo!.targetAvailable).toBe(false);
   });
 
+  it("emits textOverrides on bundles and quantityBreaks", async () => {
+    const bundleId = crypto.randomUUID();
+    const qbId = crypto.randomUUID();
+    db.insert(schema.bundles).values({
+      id: bundleId,
+      shopId: SHOP,
+      name: "B",
+      status: "active",
+      products: [
+        { productId: "gid://shopify/Product/1", variantId: null, qty: 1 },
+        { productId: "gid://shopify/Product/2", variantId: null, qty: 1 },
+      ],
+      discountType: "percentage",
+      discountValue: 10,
+      combinable: false,
+      triggerProductIds: [],
+      styleOverrides: { primaryColor: "#FF0000" },
+      textOverrides: { "bundle.totalLabel": "Your cost" },
+      headline: "B-headline",
+      ctaLabel: "B-cta",
+      mode: "classic",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }).run();
+    db.insert(schema.quantityBreaks).values({
+      id: qbId,
+      shopId: SHOP,
+      name: "Q",
+      status: "active",
+      productId: "gid://shopify/Product/3",
+      tiers: [{ qty: 1, discountType: "percentage", discountValue: 10, label: "Buy 1", isMostPopular: false }],
+      combinable: false,
+      styleOverrides: { borderRadius: 4 },
+      textOverrides: { "qb.mostPopular": "Best" },
+      headline: "Q-headline",
+      ctaLabel: "Q-cta",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }).run();
+
+    const admin = mockAdmin({
+      data: {
+        nodes: [
+          {
+            __typename: "Product",
+            id: "gid://shopify/Product/1",
+            title: "P1",
+            featuredImage: { url: "img1" },
+            variants: { nodes: [{ id: "gid://shopify/ProductVariant/1", title: "Default", availableForSale: true, price: "10.00" }] },
+          },
+          {
+            __typename: "Product",
+            id: "gid://shopify/Product/2",
+            title: "P2",
+            featuredImage: { url: "img2" },
+            variants: { nodes: [{ id: "gid://shopify/ProductVariant/2", title: "Default", availableForSale: true, price: "10.00" }] },
+          },
+          {
+            __typename: "Product",
+            id: "gid://shopify/Product/3",
+            title: "P3",
+            featuredImage: { url: "img3" },
+            variants: { nodes: [{ id: "gid://shopify/ProductVariant/3", title: "Default", availableForSale: true, price: "10.00" }] },
+          },
+        ],
+      },
+    });
+
+    const cfg = await buildStorefrontConfig(db, admin, SHOP);
+
+    expect(cfg.bundles[0]!.textOverrides).toEqual({ "bundle.totalLabel": "Your cost" });
+    expect(cfg.bundles[0]!.styleOverrides).toEqual({ primaryColor: "#FF0000" });
+    expect(cfg.quantityBreaks[0]!.textOverrides).toEqual({ "qb.mostPopular": "Best" });
+    expect(cfg.quantityBreaks[0]!.styleOverrides).toEqual({ borderRadius: 4 });
+    expect(cfg.quantityBreaks[0]!.headline).toBe("Q-headline");
+    expect(cfg.quantityBreaks[0]!.ctaLabel).toBe("Q-cta");
+  });
+
   it("includes mix_match collectionProducts in payload", async () => {
     db.insert(schema.bundles).values({
       id: "mm1", shopId: SHOP, name: "MM", status: "active",

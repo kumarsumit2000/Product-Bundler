@@ -158,6 +158,9 @@ export default function QbNew() {
           })),
           combinable: values.combinable,
           styleOverrides: null,
+          textOverrides: null,
+          headline: null,
+          ctaLabel: null,
         },
       })
     : null;

@@ -205,6 +205,9 @@ export default function QbEdit() {
           })),
           combinable: values.combinable,
           styleOverrides: null,
+          textOverrides: null,
+          headline: null,
+          ctaLabel: null,
         },
       })
     : null;

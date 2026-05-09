@@ -276,6 +276,7 @@ export default function BundleEdit() {
           headline: values.headline || null,
           ctaLabel: values.ctaLabel || null,
           styleOverrides: null,
+          textOverrides: null,
         },
       })
     : null;

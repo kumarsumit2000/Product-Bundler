@@ -185,6 +185,7 @@ export default function BundleNew() {
           headline: values.headline || null,
           ctaLabel: values.ctaLabel || null,
           styleOverrides: null,
+          textOverrides: null,
         },
       })
     : null;

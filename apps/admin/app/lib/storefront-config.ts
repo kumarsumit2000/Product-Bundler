@@ -146,6 +146,9 @@ export async function buildStorefrontConfig(
       tiers,
       combinable: q.combinable,
       styleOverrides: q.styleOverrides,
+      textOverrides: q.textOverrides,
+      headline: q.headline,
+      ctaLabel: q.ctaLabel,
     };
   };
 
@@ -181,6 +184,7 @@ export async function buildStorefrontConfig(
       headline: b.headline,
       ctaLabel: b.ctaLabel,
       styleOverrides: b.styleOverrides,
+      textOverrides: b.textOverrides,
     })),
     quantityBreaks: qbs.map(buildQb),
   };
