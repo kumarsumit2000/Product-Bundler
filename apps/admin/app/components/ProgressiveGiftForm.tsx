@@ -3,7 +3,7 @@ import { Form, useSubmit } from "@remix-run/react";
 import {
   BlockStack, Card, FormLayout, TextField, Select, Button, Text, InlineStack, Banner, Checkbox,
 } from "@shopify/polaris";
-import { VariantPicker, type PickedVariant } from "./VariantPicker";
+import type { PickedVariant } from "./VariantPicker";
 import { ProductPicker, type PickedProduct } from "./ProductPicker";
 import { ColorSwatchPicker } from "./ColorSwatchPicker";
 import { ShopifyImagePicker } from "./ShopifyImagePicker";
@@ -352,32 +352,20 @@ export function ProgressiveGiftForm({ submitLabel, initialValues, errors, onValu
                         </BlockStack>
                       </>
                     ) : (
-                      <>
-                        <BlockStack gap="100">
-                          <Text as="span" variant="bodyMd">Gift product</Text>
-                          <Text as="p" tone="subdued" variant="bodySm">
-                            Pick a whole product (any variant qualifies)…
-                          </Text>
-                          <ProductPicker
-                            products={t.product ? [t.product] : []}
-                            onChange={(products) => updateThreshold(i, {
-                              product: products[0] ?? null,
-                              variant: products[0] ? null : t.variant,
-                            })}
-                            multiple={false}
-                          />
-                        </BlockStack>
-                        <BlockStack gap="100">
-                          <Text as="span" variant="bodyMd">Or pick a specific variant</Text>
-                          <VariantPicker
-                            variant={t.variant}
-                            onChange={(variant) => updateThreshold(i, {
-                              variant,
-                              product: variant ? null : t.product,
-                            })}
-                          />
-                        </BlockStack>
-                      </>
+                      <BlockStack gap="100">
+                        <Text as="span" variant="bodyMd">Gift product</Text>
+                        <Text as="p" tone="subdued" variant="bodySm">
+                          Any variant of this product qualifies as the free gift.
+                        </Text>
+                        <ProductPicker
+                          products={t.product ? [t.product] : []}
+                          onChange={(products) => updateThreshold(i, {
+                            product: products[0] ?? null,
+                            variant: null,
+                          })}
+                          multiple={false}
+                        />
+                      </BlockStack>
                     )}
                     <TextField
                       label="Minimum cart spend ($)"

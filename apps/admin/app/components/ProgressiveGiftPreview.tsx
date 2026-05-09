@@ -126,130 +126,78 @@ export function ProgressiveGiftPreview({ values, demoCartTotal = 75 }: Props) {
                   );
                 }
                 const layout = values.layout;
-                const isRow = layout === "inline";
-                const isStacked = layout === "stacked";
-                const containerStyle: React.CSSProperties = isRow
-                  ? { display: "flex", flexDirection: "column", gap: 6 }
-                  : isStacked
-                    ? { display: "flex", flexDirection: "column", gap: 6 }
-                    : {
+                const containerStyle: React.CSSProperties =
+                  layout === "grid"
+                    ? {
                         display: "grid",
-                        gridTemplateColumns: `repeat(${Math.min(visibleTiers.length, 4)}, 1fr)`,
-                        gap: 6,
-                      };
+                        gridTemplateColumns: `repeat(${Math.min(visibleTiers.length, 2)}, 1fr)`,
+                        gap: 8,
+                      }
+                    : layout === "inline"
+                      ? { display: "flex", flexWrap: "wrap", gap: 8 }
+                      : { display: "flex", flexDirection: "column", gap: 8 };
+
                 return (
                   <div style={containerStyle}>
                     {visibleTiers.map((tier, i) => {
                       const unlocked = demoCartTotal >= tier.minSpend;
                       const showBadge = unlocked || values.showLockedLabels;
                       const badgeText = unlocked ? tier.label : tier.lockedLabel;
-                      const cardStyle: React.CSSProperties = {
-                        border: `2px solid ${unlocked ? t.cardBorder : t.cardBorderInactive}`,
-                        background: unlocked ? t.cardBg : t.cardBgInactive,
-                        borderRadius: Math.max(0, t.radius - 2),
-                        color: t.heading,
-                      };
-                      // ─── Inline / Stacked: row layout (image left, content right) ───
-                      if (isRow || isStacked) {
-                        return (
-                          <div
-                            key={i}
-                            style={{
-                              ...cardStyle,
-                              padding: 8,
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 10,
-                              fontSize: 11,
-                            }}
-                          >
-                            {tier.image ? (
-                              <img
-                                src={tier.image}
-                                alt=""
-                                style={{ width: 32, height: 32, objectFit: "cover", borderRadius: 4, flexShrink: 0 }}
-                              />
-                            ) : tier.iconEmoji ? (
-                              <div style={{ width: 32, height: 32, fontSize: 22, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                {tier.iconEmoji}
-                              </div>
-                            ) : (
-                              <div style={{ width: 32, height: 32, background: "#cbd5e1", borderRadius: 4, flexShrink: 0 }} />
-                            )}
-                            <div style={{ flex: 1, minWidth: 0, fontWeight: 600 }}>
-                              {unlocked ? tier.title : tier.lockedTitle}
-                            </div>
-                            {showBadge && (
-                              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                                <span
-                                  style={{
-                                    background: unlocked ? t.badgeBg : t.badgeBgInactive,
-                                    color: t.badgeText,
-                                    padding: "2px 6px",
-                                    borderRadius: 3,
-                                    fontSize: 10,
-                                    fontWeight: 700,
-                                  }}
-                                >
-                                  {badgeText}
-                                </span>
-                                {unlocked && tier.labelCrossedOut && (
-                                  <span style={{ textDecoration: "line-through", color: "#a3a3a3", fontSize: 10 }}>
-                                    {tier.labelCrossedOut}
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      }
-                      // ─── Grid (default): card with image on top ───
                       return (
                         <div
                           key={i}
                           style={{
-                            ...cardStyle,
-                            padding: 6,
-                            fontSize: 9,
-                            textAlign: "center",
+                            border: `2px solid ${unlocked ? t.cardBorder : t.cardBorderInactive}`,
+                            background: unlocked ? t.cardBg : t.cardBgInactive,
+                            borderRadius: t.radius,
+                            color: t.heading,
+                            padding: "10px 12px",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 12,
+                            fontSize: 12,
+                            minWidth: 0,
                           }}
                         >
+                          {tier.image ? (
+                            <img
+                              src={tier.image}
+                              alt=""
+                              style={{ width: 36, height: 36, objectFit: "cover", borderRadius: 4, flexShrink: 0 }}
+                            />
+                          ) : tier.iconEmoji ? (
+                            <div style={{ width: 36, height: 36, fontSize: 26, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                              {tier.iconEmoji}
+                            </div>
+                          ) : (
+                            <div style={{ width: 36, height: 36, background: "#cbd5e1", borderRadius: 4, flexShrink: 0 }} />
+                          )}
+                          <div style={{ flex: 1, minWidth: 0, fontWeight: 600, lineHeight: 1.25 }}>
+                            {unlocked ? tier.title : tier.lockedTitle}
+                          </div>
                           {showBadge && (
                             <div
                               style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 6,
                                 background: unlocked ? t.badgeBg : t.badgeBgInactive,
                                 color: t.badgeText,
-                                padding: "1px 4px",
-                                borderRadius: 3,
-                                fontSize: 8,
+                                padding: "4px 8px",
+                                borderRadius: 6,
+                                fontSize: 11,
                                 fontWeight: 700,
-                                marginBottom: 4,
+                                flexShrink: 0,
                               }}
                             >
-                              {badgeText}
+                              <span>{badgeText}</span>
                               {unlocked && tier.labelCrossedOut && (
-                                <span style={{ textDecoration: "line-through", marginLeft: 4, opacity: 0.8 }}>
+                                <span style={{ textDecoration: "line-through", opacity: 0.85, fontWeight: 500 }}>
                                   {tier.labelCrossedOut}
                                 </span>
                               )}
                             </div>
                           )}
-                          {tier.image ? (
-                            <img
-                              src={tier.image}
-                              alt=""
-                              style={{ width: "100%", height: 36, objectFit: "cover", borderRadius: 4 }}
-                            />
-                          ) : tier.iconEmoji ? (
-                            <div style={{ height: 36, fontSize: 26, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                              {tier.iconEmoji}
-                            </div>
-                          ) : (
-                            <div style={{ height: 36, background: "#cbd5e1", borderRadius: 4 }} />
-                          )}
-                          <div style={{ marginTop: 4, fontWeight: 600, lineHeight: 1.2 }}>
-                            {unlocked ? tier.title : tier.lockedTitle}
-                          </div>
                         </div>
                       );
                     })}
