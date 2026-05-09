@@ -7,7 +7,7 @@ import { type AppLoadContext } from "~/shopify.server";
 export async function loader({ context, params }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
   const type = String(params.type ?? "bundle");
-  if (!["bundle", "qb", "mix_match"].includes(type)) {
+  if (!["bundle", "qb", "mix_match", "newsletter"].includes(type)) {
     return new Response("Bad type", { status: 400 });
   }
 
@@ -35,9 +35,11 @@ export async function loader({ context, params }: LoaderFunctionArgs) {
 </style>
 </head><body>
 <div class="pumper-preview-context">
-  <strong>Preview</strong> — this is how the widget will appear on a product page.
+  <strong>Preview</strong> — this is how the widget will appear on the storefront.
 </div>
-<div class="pumper-mount" data-pumper-type="${type}" data-product-id="0" data-shop="preview"></div>
+${type === "newsletter"
+    ? `<div data-pumper-newsletter></div>`
+    : `<div class="pumper-mount" data-pumper-type="${type}" data-product-id="0" data-shop="preview"></div>`}
 <script>
   window._pumperPreview = true;
   window._pumperPreviewConfig = { shop: "preview", settings: {
@@ -45,7 +47,7 @@ export async function loader({ context, params }: LoaderFunctionArgs) {
     borderRadius: 8, fontFamily: "inherit",
     bundleHeadline: "Frequently bought together", qbHeadline: "Choose your savings",
     showCompareAtPrice: true, currency: "USD", locale: "en"
-  }, bundles: [], quantityBreaks: [] };
+  }, bundles: [], quantityBreaks: [], newsletter: null };
   window.addEventListener("message", function (e) {
     if (e.data && e.data.type === "pumper:preview" && e.data.config) {
       window._pumperPreviewConfig = e.data.config;
@@ -57,6 +59,10 @@ export async function loader({ context, params }: LoaderFunctionArgs) {
       var mounts = document.querySelectorAll('.pumper-mount');
       mounts.forEach(function (m) {
         m.dataset.productId = bareId;
+        m.removeAttribute('data-pumper-rendered');
+      });
+      // Newsletter mount needs its rendered flag cleared too
+      document.querySelectorAll('[data-pumper-newsletter]').forEach(function (m) {
         m.removeAttribute('data-pumper-rendered');
       });
       if (window._pumperRerender) window._pumperRerender();

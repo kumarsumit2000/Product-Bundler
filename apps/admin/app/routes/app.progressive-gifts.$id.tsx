@@ -6,7 +6,9 @@ import { authenticate, type AppLoadContext } from "~/shopify.server";
 import { getDb } from "~/db.server";
 import * as repo from "~/lib/progressive-gifts/repo";
 import { validateProgressiveGift } from "~/lib/progressive-gifts/validate";
+import { useState } from "react";
 import { ProgressiveGiftForm, type ProgressiveGiftFormValues } from "~/components/ProgressiveGiftForm";
+import { ProgressiveGiftPreview } from "~/components/ProgressiveGiftPreview";
 import { fetchVariantDetails } from "~/lib/shopify-product-fetch";
 import { useSavedToast } from "~/lib/toast";
 import type { ProgressiveThreshold } from "../../drizzle/schema";
@@ -60,6 +62,7 @@ export default function ProgressiveGiftEdit() {
   useSavedToast();
   const actionData = useActionData<typeof action>();
   const errors = actionData && "errors" in actionData ? actionData.errors : undefined;
+  const [values, setValues] = useState<ProgressiveGiftFormValues | null>(null);
 
   const initial: Partial<ProgressiveGiftFormValues> = {
     name: pg.name,
@@ -87,7 +90,15 @@ export default function ProgressiveGiftEdit() {
     >
       <Layout>
         <Layout.Section>
-          <ProgressiveGiftForm submitLabel="Save changes" initialValues={initial} errors={errors} />
+          <ProgressiveGiftForm
+            submitLabel="Save changes"
+            initialValues={initial}
+            errors={errors}
+            onValuesChange={setValues}
+          />
+        </Layout.Section>
+        <Layout.Section variant="oneThird">
+          {values && <ProgressiveGiftPreview values={values} />}
         </Layout.Section>
       </Layout>
     </Page>

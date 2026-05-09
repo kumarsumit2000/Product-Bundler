@@ -1,12 +1,14 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/cloudflare";
 import { json, redirect } from "@remix-run/cloudflare";
 import { useActionData } from "@remix-run/react";
+import { useState } from "react";
 import { Page, Layout } from "@shopify/polaris";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
 import { getDb } from "~/db.server";
 import * as repo from "~/lib/progressive-gifts/repo";
 import { validateProgressiveGift } from "~/lib/progressive-gifts/validate";
-import { ProgressiveGiftForm } from "~/components/ProgressiveGiftForm";
+import { ProgressiveGiftForm, type ProgressiveGiftFormValues } from "~/components/ProgressiveGiftForm";
+import { ProgressiveGiftPreview } from "~/components/ProgressiveGiftPreview";
 import type { ProgressiveThreshold } from "../../drizzle/schema";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
@@ -47,6 +49,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
 export default function ProgressiveGiftNew() {
   const actionData = useActionData<typeof action>();
   const errors = actionData && "errors" in actionData ? actionData.errors : undefined;
+  const [values, setValues] = useState<ProgressiveGiftFormValues | null>(null);
   return (
     <Page
       title="Create progressive gift"
@@ -54,7 +57,14 @@ export default function ProgressiveGiftNew() {
     >
       <Layout>
         <Layout.Section>
-          <ProgressiveGiftForm submitLabel="Save progressive gift" errors={errors} />
+          <ProgressiveGiftForm
+            submitLabel="Save progressive gift"
+            errors={errors}
+            onValuesChange={setValues}
+          />
+        </Layout.Section>
+        <Layout.Section variant="oneThird">
+          {values && <ProgressiveGiftPreview values={values} />}
         </Layout.Section>
       </Layout>
     </Page>

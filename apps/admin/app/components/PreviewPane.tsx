@@ -2,7 +2,7 @@ import { Card, Text, BlockStack, Box } from "@shopify/polaris";
 import { useEffect, useRef } from "react";
 
 type Props = {
-  type: "bundle" | "qb" | "mix_match";
+  type: "bundle" | "qb" | "mix_match" | "newsletter";
   id: string;
   config: unknown;
 };

@@ -10,6 +10,7 @@ import { getDb } from "~/db.server";
 import * as repo from "~/lib/newsletter/repo";
 import { useSavedToast } from "~/lib/toast";
 import { EmbedCodeCard } from "~/components/EmbedCodeCard";
+import { PreviewPane } from "~/components/PreviewPane";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
@@ -50,6 +51,29 @@ export default function NewsletterPage() {
   const { settings } = useLoaderData<typeof loader>();
   useSavedToast();
   const [values, setValues] = useState(settings);
+
+  const previewConfig = {
+    shop: "preview",
+    settings: {
+      primaryColor: "#7B1E2A", textColor: "#1A1A1A", backgroundColor: "#FFFFFF",
+      borderRadius: 8, fontFamily: "inherit",
+      bundleHeadline: "Frequently bought together", qbHeadline: "Choose your savings",
+      showCompareAtPrice: true, currency: "USD", locale: "en",
+    },
+    bundles: [],
+    quantityBreaks: [],
+    newsletter: {
+      headline: values.headline,
+      subtitle: values.subtitle,
+      placeholder: values.placeholder,
+      ctaLabel: values.ctaLabel,
+      successMessage: values.successMessage,
+      tags: values.tags,
+      // Popup is intentionally omitted in preview — the iframe just renders
+      // the inline form so the merchant can see the copy + styling.
+      popup: null,
+    },
+  };
 
   return (
     <Page title="Newsletter signup" backAction={{ content: "Back", url: "/app" }}>
@@ -229,7 +253,10 @@ export default function NewsletterPage() {
         </Layout.Section>
 
         <Layout.Section variant="oneThird">
-          <EmbedCodeCard plan="free" snippet={`<div data-pumper-newsletter></div>`} />
+          <BlockStack gap="400">
+            <PreviewPane type="newsletter" id="default" config={previewConfig} />
+            <EmbedCodeCard plan="free" snippet={`<div data-pumper-newsletter></div>`} />
+          </BlockStack>
         </Layout.Section>
       </Layout>
     </Page>
