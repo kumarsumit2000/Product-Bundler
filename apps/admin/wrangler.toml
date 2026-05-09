@@ -5,7 +5,7 @@ pages_build_output_dir = "./build/client"
 
 [vars]
 SHOPIFY_APP_URL = "https://bundler.deepseatools.in"
-SCOPES = "read_products,write_products,read_orders,write_orders,write_discounts,read_discounts,read_themes,write_metaobjects,read_metaobjects,read_inventory,read_locales,read_markets"
+SCOPES = "write_products,write_orders,write_discounts,read_themes,write_metaobjects,read_inventory,read_locales,read_markets"
 
 # Secrets via `wrangler pages secret put` (already set):
 # - SHOPIFY_API_KEY
