@@ -9,6 +9,7 @@ import { validateProgressiveGift } from "~/lib/progressive-gifts/validate";
 import { useState } from "react";
 import { ProgressiveGiftForm, type ProgressiveGiftFormValues, progressiveStyleFromOverrides } from "~/components/ProgressiveGiftForm";
 import { ProgressiveGiftPreview } from "~/components/ProgressiveGiftPreview";
+import { EmbedCodeCard } from "~/components/EmbedCodeCard";
 import { fetchVariantDetails } from "~/lib/shopify-product-fetch";
 import { useSavedToast } from "~/lib/toast";
 import type { ProgressiveThreshold } from "../../drizzle/schema";
@@ -108,6 +109,8 @@ export default function ProgressiveGiftEdit() {
             errors={errors}
             onValuesChange={setValues}
           />
+          <div style={{ height: 16 }} />
+          <EmbedCodeCard plan="free" snippet={`<div data-pumper-progressive="${pg.id}"></div>`} />
         </Layout.Section>
       </Layout>
     </Page>

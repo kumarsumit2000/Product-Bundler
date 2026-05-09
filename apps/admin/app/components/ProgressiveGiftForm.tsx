@@ -21,7 +21,10 @@ export type ProgressiveStyleForm = {
   progressTrack: string;
   cardBg: string;
   cardBorder: string;
+  cardBgInactive: string;
+  cardBorderInactive: string;
   badgeBg: string;
+  badgeBgInactive: string;
   badgeText: string;
   borderRadius: string;
   paddingX: string;
@@ -45,7 +48,10 @@ export const EMPTY_PROGRESSIVE_STYLE: ProgressiveStyleForm = {
   progressTrack: "",
   cardBg: "",
   cardBorder: "",
+  cardBgInactive: "",
+  cardBorderInactive: "",
   badgeBg: "",
+  badgeBgInactive: "",
   badgeText: "",
   borderRadius: "",
   paddingX: "",
@@ -65,7 +71,10 @@ export function progressiveStyleFromOverrides(so: unknown): ProgressiveStyleForm
     progressTrack: str("progressTrack"),
     cardBg: str("cardBg"),
     cardBorder: str("cardBorder"),
+    cardBgInactive: str("cardBgInactive"),
+    cardBorderInactive: str("cardBorderInactive"),
     badgeBg: str("badgeBg"),
+    badgeBgInactive: str("badgeBgInactive"),
     badgeText: str("badgeText"),
     borderRadius: num("borderRadius"),
     paddingX: num("paddingX"),
@@ -77,7 +86,9 @@ export function progressiveStyleToOverrides(s: ProgressiveStyleForm): Record<str
   const out: Record<string, unknown> = {};
   for (const k of [
     "backgroundColor", "borderColor", "headingColor", "textColor",
-    "progressFill", "progressTrack", "cardBg", "cardBorder", "badgeBg", "badgeText",
+    "progressFill", "progressTrack",
+    "cardBg", "cardBorder", "cardBgInactive", "cardBorderInactive",
+    "badgeBg", "badgeBgInactive", "badgeText",
   ] as const) {
     if (s[k]) out[k] = s[k];
   }
@@ -287,34 +298,54 @@ export function ProgressiveGiftForm({ submitLabel, initialValues, errors, onValu
                   placeholder="#FCE4E7"
                 />
               </FormLayout.Group>
+              <Text as="h3" variant="headingSm">Unlocked gift cards</Text>
               <FormLayout.Group>
                 <ColorSwatchPicker
-                  label="Gift card background"
+                  label="Background"
                   value={values.style.cardBg}
                   onChange={(cardBg) => setStyle({ cardBg })}
                   placeholder="#FFFFFF"
                 />
                 <ColorSwatchPicker
-                  label="Gift card border"
+                  label="Border"
                   value={values.style.cardBorder}
                   onChange={(cardBorder) => setStyle({ cardBorder })}
                   placeholder="#D9263A"
                 />
-              </FormLayout.Group>
-              <FormLayout.Group>
                 <ColorSwatchPicker
-                  label="FREE badge background"
+                  label="FREE badge bg"
                   value={values.style.badgeBg}
                   onChange={(badgeBg) => setStyle({ badgeBg })}
                   placeholder="#D9263A"
                 />
+              </FormLayout.Group>
+              <Text as="h3" variant="headingSm">Locked gift cards</Text>
+              <FormLayout.Group>
                 <ColorSwatchPicker
-                  label="FREE badge text"
-                  value={values.style.badgeText}
-                  onChange={(badgeText) => setStyle({ badgeText })}
+                  label="Background"
+                  value={values.style.cardBgInactive}
+                  onChange={(cardBgInactive) => setStyle({ cardBgInactive })}
                   placeholder="#FFFFFF"
                 />
+                <ColorSwatchPicker
+                  label="Border"
+                  value={values.style.cardBorderInactive}
+                  onChange={(cardBorderInactive) => setStyle({ cardBorderInactive })}
+                  placeholder="#FBE4E7"
+                />
+                <ColorSwatchPicker
+                  label="$X badge bg"
+                  value={values.style.badgeBgInactive}
+                  onChange={(badgeBgInactive) => setStyle({ badgeBgInactive })}
+                  placeholder="#CBD5E1"
+                />
               </FormLayout.Group>
+              <ColorSwatchPicker
+                label="Badge text (both states)"
+                value={values.style.badgeText}
+                onChange={(badgeText) => setStyle({ badgeText })}
+                placeholder="#FFFFFF"
+              />
               <FormLayout.Group>
                 <TextField
                   label="Border radius (px)"

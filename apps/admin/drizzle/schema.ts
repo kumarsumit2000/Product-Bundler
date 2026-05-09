@@ -227,7 +227,10 @@ export type ProgressiveGiftStyleOverrides = Partial<{
   progressTrack: string;
   cardBg: string;
   cardBorder: string;
+  cardBgInactive: string;
+  cardBorderInactive: string;
   badgeBg: string;
+  badgeBgInactive: string;
   badgeText: string;
   borderRadius: number;
   paddingX: number;

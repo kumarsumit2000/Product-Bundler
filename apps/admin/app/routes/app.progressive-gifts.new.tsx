@@ -9,6 +9,7 @@ import * as repo from "~/lib/progressive-gifts/repo";
 import { validateProgressiveGift } from "~/lib/progressive-gifts/validate";
 import { ProgressiveGiftForm, type ProgressiveGiftFormValues } from "~/components/ProgressiveGiftForm";
 import { ProgressiveGiftPreview } from "~/components/ProgressiveGiftPreview";
+import { EmbedCodeCard } from "~/components/EmbedCodeCard";
 import type { ProgressiveThreshold } from "../../drizzle/schema";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
@@ -72,6 +73,8 @@ export default function ProgressiveGiftNew() {
             errors={errors}
             onValuesChange={setValues}
           />
+          <div style={{ height: 16 }} />
+          <EmbedCodeCard plan="free" />
         </Layout.Section>
       </Layout>
     </Page>

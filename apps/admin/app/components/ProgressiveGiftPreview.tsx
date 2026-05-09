@@ -22,9 +22,10 @@ function styleToTokens(s: ProgressiveStyleForm) {
     progressTrack: s.progressTrack || "#fce4e7",
     cardBg: s.cardBg || "#fff",
     cardBorder: s.cardBorder || "#d9263a",
-    cardBorderInactive: s.cardBorder || "#fbe4e7",
+    cardBgInactive: s.cardBgInactive || s.cardBg || "#fff",
+    cardBorderInactive: s.cardBorderInactive || "#fbe4e7",
     badgeBg: s.badgeBg || "#d9263a",
-    badgeBgInactive: "#cbd5e1",
+    badgeBgInactive: s.badgeBgInactive || "#cbd5e1",
     badgeText: s.badgeText || "#fff",
     radius: px(s.borderRadius, 10),
     paddingX: px(s.paddingX, 14),
@@ -110,12 +111,12 @@ export function ProgressiveGiftPreview({ values, demoCartTotal = 75 }: Props) {
                       key={i}
                       style={{
                         border: `2px solid ${unlocked ? t.cardBorder : t.cardBorderInactive}`,
-                        background: t.cardBg,
+                        background: unlocked ? t.cardBg : t.cardBgInactive,
                         borderRadius: Math.max(0, t.radius - 2),
                         padding: 6,
                         fontSize: 9,
                         textAlign: "center",
-                        opacity: unlocked ? 1 : 0.55,
+                        opacity: unlocked ? 1 : 0.85,
                         color: t.heading,
                       }}
                     >
