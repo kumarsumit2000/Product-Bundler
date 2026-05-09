@@ -248,10 +248,15 @@ export async function initWidget(): Promise<void> {
   for (const nm of newsletterMounts) {
     if (cfg.newsletter) {
       applyCssVars(nm, cfg, null);
-      // In preview, when the merchant has popup enabled, render the popup
-      // styling inline so they can see image position + close button + sizing.
-      if (window._pumperPreview && cfg.newsletter.popup) {
-        renderPopupInline(nm, cfg.newsletter);
+      // Mode attribute drives preview-side dual rendering. Without it, behavior
+      // matches storefront: render inline (popup is handled by the auto-popup hook).
+      const mode = nm.getAttribute("data-pumper-newsletter-mode");
+      if (mode === "popup") {
+        if (cfg.newsletter.popup) {
+          renderPopupInline(nm, cfg.newsletter);
+        } else {
+          nm.innerHTML = "";
+        }
       } else {
         renderNewsletter(nm, cfg.newsletter);
       }

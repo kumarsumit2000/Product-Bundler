@@ -12,6 +12,7 @@ import { useSavedToast } from "~/lib/toast";
 import { EmbedCodeCard } from "~/components/EmbedCodeCard";
 import { useEffect, useRef } from "react";
 import { Box } from "@shopify/polaris";
+import { ShopifyImagePicker } from "~/components/ShopifyImagePicker";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
@@ -280,16 +281,17 @@ export default function NewsletterPage() {
                         onChange={(popupImagePosition) => setValues((v) => ({ ...v, popupImagePosition }))}
                       />
                       {values.popupImagePosition !== "none" && (
-                        <TextField
-                          label="Image URL"
-                          name="popupImageUrl"
-                          value={values.popupImageUrl}
-                          onChange={(popupImageUrl) => setValues((v) => ({ ...v, popupImageUrl }))}
-                          autoComplete="off"
-                          maxLength={500}
-                          placeholder="https://cdn.shopify.com/.../newsletter.jpg"
-                          helpText="Paste any public image URL. For best results: 800×800px (square) for left/right, 1200×400px for top/bottom."
-                        />
+                        <BlockStack gap="100">
+                          <Text as="span" variant="bodyMd">Image</Text>
+                          <ShopifyImagePicker
+                            url={values.popupImageUrl}
+                            onChange={(popupImageUrl) => setValues((v) => ({ ...v, popupImageUrl }))}
+                          />
+                          <input type="hidden" name="popupImageUrl" value={values.popupImageUrl} />
+                          <Text as="p" tone="subdued" variant="bodySm">
+                            Pulls from Shopify admin → Content → Files. Recommended: 800×800px for left/right, 1200×400px for top/bottom.
+                          </Text>
+                        </BlockStack>
                       )}
                       <TextField
                         label="Hide popup on these pages"

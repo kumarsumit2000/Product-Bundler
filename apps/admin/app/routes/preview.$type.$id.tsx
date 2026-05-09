@@ -29,16 +29,26 @@ export async function loader({ context, params }: LoaderFunctionArgs) {
 <title>Preview</title>
 <link rel="stylesheet" href="${widgetCssUrl}">
 <style>
-  body { margin:0; padding:16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background:#fff; }
-  .pumper-preview-context { padding: 12px; background:#f6f6f7; border-radius:8px; margin-bottom:16px; font-size:13px; color:#666; }
+  body { margin:0; padding:16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background:#f6f6f7; }
+  .pumper-preview-context { padding: 12px; background:#fff; border-radius:8px; margin-bottom:16px; font-size:13px; color:#666; }
   .pumper-preview-context strong { color:#111; }
+  .preview-section { margin-bottom: 24px; }
+  .preview-label { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: #6b7280; font-weight: 600; margin-bottom: 8px; }
 </style>
 </head><body>
 <div class="pumper-preview-context">
   <strong>Preview</strong> — this is how the widget will appear on the storefront.
 </div>
 ${type === "newsletter"
-    ? `<div data-pumper-newsletter></div>`
+    ? `
+      <div class="preview-section">
+        <div class="preview-label">Static (inline)</div>
+        <div data-pumper-newsletter data-pumper-newsletter-mode="inline"></div>
+      </div>
+      <div class="preview-section" data-popup-section style="display:none">
+        <div class="preview-label">Popup</div>
+        <div data-pumper-newsletter data-pumper-newsletter-mode="popup"></div>
+      </div>`
     : `<div class="pumper-mount" data-pumper-type="${type}" data-product-id="0" data-shop="preview"></div>`}
 <script>
   window._pumperPreview = true;
@@ -65,6 +75,11 @@ ${type === "newsletter"
       document.querySelectorAll('[data-pumper-newsletter]').forEach(function (m) {
         m.removeAttribute('data-pumper-rendered');
       });
+      // Toggle popup section visibility based on whether popup is configured
+      var popupSection = document.querySelector('[data-popup-section]');
+      if (popupSection) {
+        popupSection.style.display = (e.data.config.newsletter && e.data.config.newsletter.popup) ? '' : 'none';
+      }
       if (window._pumperRerender) window._pumperRerender();
     }
   });
