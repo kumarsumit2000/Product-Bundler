@@ -7,37 +7,13 @@ type Props = {
   config: unknown;
 };
 
-// Inject once per page-load: force sticky-friendly overflow on Polaris layout
-// ancestors. CSS sticky breaks if any ancestor has overflow != visible, and
-// Polaris's Layout / Page wrappers default to constraints that kill it.
-const STICKY_FIX_CSS = `
-  /* Sticky positioning needs every ancestor up to the scroll container to
-     have overflow: visible. Polaris's Layout.Section / Page wrappers default
-     to clip/hidden in some Polaris versions which kills sticky outright. */
-  .Polaris-Page,
-  .Polaris-Page__Content,
-  .Polaris-Layout,
-  .Polaris-Layout__Section {
-    overflow: visible !important;
-  }
-  /* Polaris's CSS Grid Layout stretches each Section to the row's height by
-     default, so the sticky child has no scroll headroom. Pin the Section that
-     hosts our preview to the top of the row. */
-  .Polaris-Layout__Section:has(.pumper-sticky-preview) {
-    align-self: flex-start !important;
-  }
-  .pumper-sticky-preview {
-    position: sticky;
-    top: 16px;
-    align-self: flex-start;
-    height: fit-content;
-  }
-`;
-
 export function PreviewPane({ type, id, config }: Props) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const lastSentRef = useRef<string>("");
 
+  // Push config updates to the preview iframe (debounced).
   useEffect(() => {
     const next = JSON.stringify(config);
     if (next === lastSentRef.current) return;
@@ -51,14 +27,70 @@ export function PreviewPane({ type, id, config }: Props) {
     return () => clearTimeout(handle);
   }, [config]);
 
+  // JS-driven sticky. CSS sticky kept failing because Polaris's Layout grid
+  // applies overflow + align-self to the section in ways we couldn't override
+  // reliably. This watches the wrapper's position and pins the inner card
+  // with position: fixed when scrolled past 16px from the top.
+  useEffect(() => {
+    const wrapper = wrapperRef.current;
+    const card = cardRef.current;
+    if (!wrapper || !card) return;
+
+    let ticking = false;
+    function update() {
+      ticking = false;
+      const wrap = wrapper!;
+      const c = card!;
+      const wrapRect = wrap.getBoundingClientRect();
+      // wrapper height is what reserves the column space — keep it the same
+      // as the card's natural height so layout doesn't collapse when we
+      // switch the inner card to fixed positioning.
+      const cardHeight = c.offsetHeight;
+      wrap.style.height = `${cardHeight}px`;
+
+      if (wrapRect.top < 16) {
+        c.style.position = "fixed";
+        c.style.top = "16px";
+        c.style.width = `${wrap.offsetWidth}px`;
+        c.style.left = `${wrapRect.left}px`;
+        c.style.zIndex = "5";
+      } else {
+        c.style.position = "";
+        c.style.top = "";
+        c.style.width = "";
+        c.style.left = "";
+        c.style.zIndex = "";
+      }
+    }
+    function onScroll() {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(update);
+      }
+    }
+
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, []);
+
   return (
-    <>
-      <style dangerouslySetInnerHTML={{ __html: STICKY_FIX_CSS }} />
-      <div className="pumper-sticky-preview">
+    <div ref={wrapperRef}>
+      <div ref={cardRef}>
         <Card>
           <BlockStack gap="200">
             <Text as="h3" variant="headingSm">Live preview</Text>
-            <Box borderWidth="025" borderColor="border" borderRadius="200" overflowX="hidden" overflowY="hidden">
+            <Box
+              borderWidth="025"
+              borderColor="border"
+              borderRadius="200"
+              overflowX="hidden"
+              overflowY="hidden"
+            >
               <iframe
                 ref={iframeRef}
                 src={`/preview/${type}/${encodeURIComponent(id)}`}
@@ -69,6 +101,6 @@ export function PreviewPane({ type, id, config }: Props) {
           </BlockStack>
         </Card>
       </div>
-    </>
+    </div>
   );
 }
