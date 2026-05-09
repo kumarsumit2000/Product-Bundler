@@ -25,7 +25,7 @@ export function PreviewPane({ type, id, config }: Props) {
   }, [config]);
 
   return (
-    <div style={{ position: "sticky", top: 16 }}>
+    <div style={{ position: "sticky", top: 16, alignSelf: "flex-start", height: "fit-content" }}>
       <Card>
         <BlockStack gap="200">
           <Text as="h3" variant="headingSm">Live preview</Text>
