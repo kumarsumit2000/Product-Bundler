@@ -95,7 +95,10 @@ export async function action({ request, context }: ActionFunctionArgs) {
     growth: "Growth",
     unlimited: "Unlimited",
   };
-  const returnUrl = `${ctx.cloudflare.env.SHOPIFY_APP_URL}/app/billing/callback`;
+  // Shopify's billing approval only echoes ?charge_id=X back on this URL —
+  // it doesn't preserve `shop` or `host`. Pass shop ourselves so the callback
+  // can rebuild the embedded-admin URL and bounce the merchant back inside.
+  const returnUrl = `${ctx.cloudflare.env.SHOPIFY_APP_URL}/app/billing/callback?shop=${encodeURIComponent(session.shop)}`;
   await billing.request({
     plan: planNameMap[targetPlan],
     isTest: true, // flip to false when launching publicly with real charges
