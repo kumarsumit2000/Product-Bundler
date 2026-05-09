@@ -82,25 +82,43 @@ const r = {
 
 // ----- Per-type previews --------------------------------------------------
 
+type RowProps = {
+  selected?: boolean;
+  popular?: string;
+  title: string;
+  sub?: string;
+  save?: string;
+  price?: string;
+  strike?: string;
+};
+
+function Row({ selected = false, popular, title, sub, save, price, strike }: RowProps) {
+  return (
+    <div style={r.card(selected)}>
+      {popular && <span style={r.popularPill}>★ {popular}</span>}
+      <span style={r.radio(selected)} />
+      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+          <span style={{ fontWeight: 600 }}>{title}</span>
+          {save && <span style={r.saveTag()}>{save}</span>}
+        </div>
+        {sub && <span style={{ color: "#888", fontSize: 11 }}>{sub}</span>}
+      </div>
+      {price && (
+        <span style={{ fontWeight: 700, whiteSpace: "nowrap", textAlign: "right" }}>
+          {price}
+          {strike && <span style={r.strike}>{strike}</span>}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function PreviewQbSame() {
   return (
     <BlockStack gap="200">
-      <div style={r.card(false)}>
-        <span style={r.radio(false)} />
-        <span style={{ fontWeight: 600 }}>Single</span>
-        <span style={{ color: "#888", fontSize: 11 }}>Standard price</span>
-        <span style={{ marginLeft: "auto", fontWeight: 700 }}>$729.95</span>
-      </div>
-      <div style={r.card(true)}>
-        <span style={r.popularPill}>★ Most Popular</span>
-        <span style={r.radio(true)} />
-        <span style={{ fontWeight: 600 }}>Duo</span>
-        <span style={r.saveTag()}>SAVE $218.98</span>
-        <span style={{ color: "#888", fontSize: 11 }}>You save 15%</span>
-        <span style={{ marginLeft: "auto", fontWeight: 700 }}>
-          $1,240.92<span style={r.strike}>$1,459.90</span>
-        </span>
-      </div>
+      <Row title="Single" sub="Standard price" price="$729.95" />
+      <Row selected popular="Most Popular" title="Duo" sub="You save 15%" save="SAVE $218.98" price="$1,240.92" strike="$1,459.90" />
     </BlockStack>
   );
 }
@@ -108,31 +126,10 @@ function PreviewQbSame() {
 function PreviewBxgy() {
   return (
     <BlockStack gap="200">
-      <div style={r.card(false)}>
-        <span style={r.radio(false)} />
-        <span style={{ fontWeight: 600 }}>Buy 1, get 1 free</span>
-        <span style={r.saveTag()}>SAVE 50%</span>
-        <span style={{ marginLeft: "auto", fontWeight: 700 }}>
-          $729.95<span style={r.strike}>$1,459.90</span>
-        </span>
-      </div>
-      <div style={r.card(false)}>
-        <span style={r.radio(false)} />
-        <span style={{ fontWeight: 600 }}>Buy 2, get 3 free</span>
-        <span style={r.saveTag()}>SAVE 60%</span>
-        <span style={{ marginLeft: "auto", fontWeight: 700 }}>
-          $1,459.90<span style={r.strike}>$3,649.75</span>
-        </span>
-      </div>
+      <Row title="Buy 1, get 1 free" save="SAVE 50%" price="$729.95" strike="$1,459.90" />
+      <Row title="Buy 2, get 3 free" save="SAVE 60%" price="$1,459.90" strike="$3,649.75" />
       <div style={{ ...r.card(true), flexDirection: "column", alignItems: "stretch", gap: 6 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={r.radio(true)} />
-          <span style={{ fontWeight: 600 }}>Buy 3, get 6 free</span>
-          <span style={r.saveTag()}>SAVE 67%</span>
-          <span style={{ marginLeft: "auto", fontWeight: 700 }}>
-            $2,189.85<span style={r.strike}>$6,569.55</span>
-          </span>
-        </div>
+        <Row selected title="Buy 3, get 6 free" save="SAVE 67%" price="$2,189.85" strike="$6,569.55" />
         <div style={r.freeGiftBanner}>+ FREE special gift!</div>
       </div>
     </BlockStack>
@@ -144,29 +141,17 @@ function PreviewQbDifferent() {
     <BlockStack gap="200">
       <div style={r.card(true)}>
         <span style={r.radio(true)} />
-        <BlockStack gap="050">
+        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
           <span style={{ fontWeight: 600 }}>1 pack</span>
           <span style={{ color: "#888", fontSize: 11 }}>Standard price</span>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
-            <span style={{ ...r.thumb, width: 18, height: 36, background: "#86efac" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ ...r.thumb, width: 18, height: 24, background: "#86efac" }} />
             <span style={{ fontSize: 11, color: "#374151" }}>{SAMPLE_PRODUCT}</span>
           </div>
-        </BlockStack>
-        <span style={{ marginLeft: "auto", fontWeight: 700 }}>$729.95</span>
-      </div>
-      <div style={{ ...r.card(false), flexDirection: "column", alignItems: "stretch", gap: 4 }}>
-        <span style={{ ...r.popularPill, top: -8 }}>MOST POPULAR</span>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={r.radio(false)} />
-          <BlockStack gap="050">
-            <span style={{ fontWeight: 600 }}>2 pack</span>
-            <span style={{ color: "#888", fontSize: 11 }}>You save $218.98</span>
-          </BlockStack>
-          <span style={{ marginLeft: "auto", fontWeight: 700 }}>
-            $1,240.92<span style={r.strike}>$1,459.90</span>
-          </span>
         </div>
+        <span style={{ fontWeight: 700, whiteSpace: "nowrap" }}>$729.95</span>
       </div>
+      <Row popular="MOST POPULAR" title="2 pack" sub="You save $218.98" price="$1,240.92" strike="$1,459.90" />
     </BlockStack>
   );
 }
@@ -174,26 +159,10 @@ function PreviewQbDifferent() {
 function PreviewBundle() {
   return (
     <BlockStack gap="200">
-      <div style={r.card(false)}>
-        <span style={r.radio(false)} />
-        <BlockStack gap="050">
-          <span style={{ fontWeight: 600 }}>{SAMPLE_PRODUCT}</span>
-          <span style={{ color: "#888", fontSize: 11 }}>Standard price</span>
-        </BlockStack>
-        <span style={{ marginLeft: "auto", fontWeight: 700 }}>$729.95</span>
-      </div>
+      <Row title={SAMPLE_PRODUCT} sub="Standard price" price="$729.95" />
       <div style={{ ...r.card(true), flexDirection: "column", alignItems: "stretch", gap: 8 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={r.radio(true)} />
-          <BlockStack gap="050">
-            <span style={{ fontWeight: 600 }}>Complete the bundle</span>
-            <span style={{ color: "#888", fontSize: 11 }}>Save $271.98!</span>
-          </BlockStack>
-          <span style={{ marginLeft: "auto", fontWeight: 700 }}>
-            $1,087.92<span style={r.strike}>$1,359.90</span>
-          </span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px", background: "#fff", borderRadius: 6 }}>
+        <Row selected title="Complete the bundle" sub="Save $271.98!" price="$1,087.92" strike="$1,359.90" />
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: 8, background: "#fff", borderRadius: 6 }}>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
             <span style={{ ...r.thumb, width: 28, height: 36, background: "#86efac" }} />
             <span style={{ fontSize: 9, fontWeight: 600, textAlign: "center" }}>{SAMPLE_PRODUCT}</span>
@@ -214,22 +183,8 @@ function PreviewBundle() {
 function PreviewSubscription() {
   return (
     <BlockStack gap="200">
-      <div style={r.card(false)}>
-        <span style={r.radio(false)} />
-        <span style={{ fontWeight: 600 }}>Buy 1, get 1 free</span>
-        <span style={r.saveTag()}>SAVE 60%</span>
-        <span style={{ marginLeft: "auto", fontWeight: 700 }}>
-          $583.96<span style={r.strike}>$1,459.90</span>
-        </span>
-      </div>
-      <div style={r.card(true)}>
-        <span style={r.radio(true)} />
-        <span style={{ fontWeight: 600 }}>Buy 3, get 6 free</span>
-        <span style={r.saveTag()}>SAVE 73%</span>
-        <span style={{ marginLeft: "auto", fontWeight: 700 }}>
-          $1,751.88<span style={r.strike}>$6,569.55</span>
-        </span>
-      </div>
+      <Row title="Buy 1, get 1 free" save="SAVE 60%" price="$583.96" strike="$1,459.90" />
+      <Row selected title="Buy 3, get 6 free" save="SAVE 73%" price="$1,751.88" strike="$6,569.55" />
       <div style={r.freeGiftBanner}>+ FREE special gift!</div>
       <div
         style={{
@@ -255,27 +210,9 @@ function PreviewSubscription() {
 function PreviewProgressive() {
   return (
     <BlockStack gap="200">
-      <div style={r.card(false)}>
-        <span style={r.radio(false)} />
-        <span style={{ fontWeight: 600 }}>1 pack</span>
-        <span style={{ marginLeft: "auto", fontWeight: 700 }}>$729.95</span>
-      </div>
-      <div style={r.card(false)}>
-        <span style={r.radio(false)} />
-        <span style={{ fontWeight: 600 }}>2 pack</span>
-        <span style={r.saveTag()}>SAVE 15%</span>
-        <span style={{ marginLeft: "auto", fontWeight: 700 }}>
-          $1,240.92<span style={r.strike}>$1,459.90</span>
-        </span>
-      </div>
-      <div style={r.card(true)}>
-        <span style={r.radio(true)} />
-        <span style={{ fontWeight: 600 }}>3 pack</span>
-        <span style={r.saveTag()}>SAVE 15%</span>
-        <span style={{ marginLeft: "auto", fontWeight: 700 }}>
-          $1,861.38<span style={r.strike}>$2,189.85</span>
-        </span>
-      </div>
+      <Row title="1 pack" price="$729.95" />
+      <Row title="2 pack" save="SAVE 15%" price="$1,240.92" strike="$1,459.90" />
+      <Row selected title="3 pack" save="SAVE 15%" price="$1,861.38" strike="$2,189.85" />
       <Text as="h4" variant="headingSm" alignment="center">🎁 Unlock Free gifts with your order</Text>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
         {[
@@ -373,6 +310,7 @@ export default function ChooseDiscountType() {
           ["--pumper-theme" as string]: theme,
           display: "grid",
           gridTemplateColumns: "repeat(3, 1fr)",
+          alignItems: "start",
           gap: 16,
         }}
       >
