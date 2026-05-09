@@ -96,7 +96,6 @@ function Row({ selected = false, popular, title, sub, save, price, strike }: Row
   return (
     <div style={{ ...r.card(selected), alignItems: "flex-start" }}>
       {popular && <span style={r.popularPill}>★ {popular}</span>}
-      <span style={{ ...r.radio(selected), marginTop: 2 }} />
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
         <span style={{ fontWeight: 600 }}>{title}</span>
         {sub && <span style={{ color: "#888", fontSize: 11 }}>{sub}</span>}
@@ -142,7 +141,6 @@ function PreviewQbDifferent() {
   return (
     <BlockStack gap="200">
       <div style={r.card(true)}>
-        <span style={r.radio(true)} />
         <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
           <span style={{ fontWeight: 600 }}>1 pack</span>
           <span style={{ color: "#888", fontSize: 11 }}>Standard price</span>
