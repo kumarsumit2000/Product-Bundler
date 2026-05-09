@@ -372,7 +372,7 @@ export default function ChooseDiscountType() {
           // CSS variable consumed by every preview to tint accent colors
           ["--pumper-theme" as string]: theme,
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+          gridTemplateColumns: "repeat(3, 1fr)",
           gap: 16,
         }}
       >
@@ -400,7 +400,6 @@ export default function ChooseDiscountType() {
                 display: "flex",
                 flexDirection: "column",
                 gap: 16,
-                minHeight: 480,
               }}
               aria-pressed={isSelected}
             >
