@@ -45,7 +45,7 @@ ${type === "newsletter"
         <div class="preview-label">Static (inline)</div>
         <div data-pumper-newsletter data-pumper-newsletter-mode="inline"></div>
       </div>
-      <div class="preview-section" data-popup-section style="display:none">
+      <div class="preview-section">
         <div class="preview-label">Popup</div>
         <div data-pumper-newsletter data-pumper-newsletter-mode="popup"></div>
       </div>`
@@ -75,11 +75,6 @@ ${type === "newsletter"
       document.querySelectorAll('[data-pumper-newsletter]').forEach(function (m) {
         m.removeAttribute('data-pumper-rendered');
       });
-      // Toggle popup section visibility based on whether popup is configured
-      var popupSection = document.querySelector('[data-popup-section]');
-      if (popupSection) {
-        popupSection.style.display = (e.data.config.newsletter && e.data.config.newsletter.popup) ? '' : 'none';
-      }
       if (window._pumperRerender) window._pumperRerender();
     }
   });

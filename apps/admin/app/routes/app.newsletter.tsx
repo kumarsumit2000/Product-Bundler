@@ -115,17 +115,18 @@ export default function NewsletterPage() {
       ctaLabel: values.ctaLabel,
       successMessage: values.successMessage,
       tags: values.tags,
-      popup: values.popupEnabled
-        ? {
-            trigger: values.popupTrigger as "delay" | "exit_intent" | "scroll",
-            delaySeconds: values.popupDelaySeconds,
-            scrollPercent: values.popupScrollPercent,
-            frequencyDays: values.popupFrequencyDays,
-            imageUrl: values.popupImageUrl || null,
-            imagePosition: values.popupImagePosition as "none" | "top" | "bottom" | "left" | "right",
-            excludedPaths: [],
-          }
-        : null,
+      // Always send a popup block so the preview iframe can render the popup
+      // styling regardless of whether it's enabled. Enable/trigger only affects
+      // the auto-open behavior on the storefront.
+      popup: {
+        trigger: values.popupTrigger as "delay" | "exit_intent" | "scroll",
+        delaySeconds: values.popupDelaySeconds,
+        scrollPercent: values.popupScrollPercent,
+        frequencyDays: values.popupFrequencyDays,
+        imageUrl: values.popupImageUrl || null,
+        imagePosition: values.popupImagePosition as "none" | "top" | "bottom" | "left" | "right",
+        excludedPaths: [],
+      },
     },
   };
 
