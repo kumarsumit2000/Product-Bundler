@@ -50,6 +50,7 @@ export async function buildStorefrontConfig(
   const productMap = await fetchProductDetails(admin, [...allProductIds]);
 
   // Collect all gift / BOGO target variant ids referenced by any QB tier
+  // OR by a bundle's free-gift attachment.
   const tierVariantIds = new Set<string>();
   for (const q of qbs) {
     for (const tr of q.tiers) {
@@ -57,8 +58,12 @@ export async function buildStorefrontConfig(
       if (tr.bogo?.targetVariantId) tierVariantIds.add(tr.bogo.targetVariantId);
     }
   }
+  for (const b of bundles) {
+    if (b.freeGiftVariantId) tierVariantIds.add(b.freeGiftVariantId);
+  }
 
   const variantAvailability: Record<string, boolean> = {};
+  const variantTitles: Record<string, string> = {};
   if (tierVariantIds.size > 0) {
     const res = await admin.graphql(
       `query VariantsAvailable($ids: [ID!]!) {
@@ -66,6 +71,7 @@ export async function buildStorefrontConfig(
           ... on ProductVariant {
             __typename
             id
+            title
             availableForSale
           }
         }
@@ -73,11 +79,12 @@ export async function buildStorefrontConfig(
       { variables: { ids: [...tierVariantIds] } },
     );
     const data = (await res.json()) as {
-      data: { nodes: Array<{ __typename: string; id: string; availableForSale: boolean } | null> };
+      data: { nodes: Array<{ __typename: string; id: string; title: string; availableForSale: boolean } | null> };
     };
     for (const node of data.data.nodes) {
       if (node && node.__typename === "ProductVariant") {
         variantAvailability[node.id] = node.availableForSale;
+        variantTitles[node.id] = node.title;
       }
     }
   }
@@ -185,6 +192,9 @@ export async function buildStorefrontConfig(
       ctaLabel: b.ctaLabel,
       styleOverrides: b.styleOverrides,
       textOverrides: b.textOverrides,
+      freeGiftVariantId: b.freeGiftVariantId ?? null,
+      freeGiftVariantTitle: b.freeGiftVariantId ? (variantTitles[b.freeGiftVariantId] ?? null) : null,
+      freeGiftAvailable: b.freeGiftVariantId ? (variantAvailability[b.freeGiftVariantId] ?? false) : null,
     })),
     quantityBreaks: qbs.map(buildQb),
   };

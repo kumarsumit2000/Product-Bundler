@@ -34,7 +34,10 @@ const CONFIG: WidgetConfig = {
       headline: null,
       ctaLabel: null,
       styleOverrides: null,
-      textOverrides: null,
+      textOverrides: null,    freeGiftVariantId: null,
+    freeGiftVariantTitle: null,
+    freeGiftAvailable: null,
+
     },
     {
       id: "b2",
@@ -51,7 +54,10 @@ const CONFIG: WidgetConfig = {
       headline: null,
       ctaLabel: null,
       styleOverrides: null,
-      textOverrides: null,
+      textOverrides: null,    freeGiftVariantId: null,
+    freeGiftVariantTitle: null,
+    freeGiftAvailable: null,
+
     },
   ],
   quantityBreaks: [

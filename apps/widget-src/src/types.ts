@@ -93,6 +93,9 @@ export type BundleConfig = {
   ctaLabel: string | null;
   styleOverrides: StyleOverrides | null;
   textOverrides: TextOverrides | null;
+  freeGiftVariantId: string | null;
+  freeGiftVariantTitle: string | null;
+  freeGiftAvailable: boolean | null;
 };
 
 export type QbVariant = {

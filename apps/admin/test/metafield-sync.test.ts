@@ -80,6 +80,7 @@ describe("syncShopConfig", () => {
       textOverrides: null,
       headline: null,
       ctaLabel: null,
+      freeGiftVariantId: null,
     });
     const { admin, calls } = makeAdmin();
     await syncShopConfig(setup.db, admin, SHOP);
@@ -142,6 +143,7 @@ describe("syncShopConfig", () => {
       textOverrides: null,
       headline: null,
       ctaLabel: null,
+      freeGiftVariantId: null,
       mode: "mix_match",
       collectionId: "gid://shopify/Collection/9",
       targetQty: 3,
@@ -214,6 +216,7 @@ describe("syncShopConfig", () => {
       textOverrides: null,
       headline: "x".repeat(60_000),
       ctaLabel: null,
+      freeGiftVariantId: null,
     });
     const { admin } = makeAdmin();
     await expect(syncShopConfig(setup.db, admin, SHOP)).rejects.toThrow(

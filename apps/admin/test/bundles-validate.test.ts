@@ -19,6 +19,7 @@ const VALID: Parameters<typeof validateBundle>[0] = {
   targetQty: null,
   styleOverrides: null,
   textOverrides: null,
+  freeGiftVariantId: null,
 };
 
 describe("validateBundle", () => {
@@ -185,6 +186,7 @@ describe("validateBundle textOverrides + styleOverrides", () => {
     mode: "classic" as const,
     collectionId: null,
     targetQty: null,
+    freeGiftVariantId: null,
   };
 
   it("accepts null textOverrides + styleOverrides", () => {

@@ -18,6 +18,7 @@ export type BundleInput = {
   targetQty: number | null;
   styleOverrides: Record<string, unknown> | null;
   textOverrides: Record<string, unknown> | null;
+  freeGiftVariantId: string | null;
 };
 
 export type ValidationResult =

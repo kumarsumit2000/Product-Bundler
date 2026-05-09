@@ -17,7 +17,7 @@ import { useSavedToast } from "~/lib/toast";
 import { buildPreviewBundleConfig, defaultMockProduct, defaultPreviewSettings } from "~/lib/preview-config";
 import { buildStyleOverrides, buildTextOverrides, styleOverridesToFormFields } from "~/lib/preview-overrides";
 import type { PickedProduct } from "~/components/ProductPicker";
-import { fetchCollectionTopProducts, type CollectionProduct } from "~/lib/shopify-product-fetch";
+import { fetchCollectionTopProducts, fetchVariantDetails, type CollectionProduct } from "~/lib/shopify-product-fetch";
 
 type ProductDetails = { id: string; title: string; image: string | null };
 
@@ -103,8 +103,15 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
     }
   }
 
+  const giftVariantDetails = bundle.freeGiftVariantId
+    ? await fetchVariantDetails(admin, [bundle.freeGiftVariantId]).catch((err) => {
+        console.error("[app.bundles.$id] gift variant fetch failed (non-fatal):", err);
+        return {} as Awaited<ReturnType<typeof fetchVariantDetails>>;
+      })
+    : {};
+
   const usage = await getUsage(db, session.shop);
-  return json({ bundle, productDetails, collectionDetails, collectionTopProducts, plan: usage.plan });
+  return json({ bundle, productDetails, collectionDetails, collectionTopProducts, giftVariantDetails, plan: usage.plan });
 }
 
 export async function action({
@@ -174,6 +181,7 @@ export async function action({
     ctaLabel: (form.get("ctaLabel") as string) || null,
     styleOverrides: parsedStyleOverrides,
     textOverrides: parsedTextOverrides,
+    freeGiftVariantId: (form.get("freeGiftVariantId") as string) || null,
   };
 
   const v = validateBundle(input);
@@ -211,7 +219,7 @@ export async function action({
 }
 
 export default function BundleEdit() {
-  const { bundle, productDetails, collectionDetails, collectionTopProducts, plan } = useLoaderData<typeof loader>();
+  const { bundle, productDetails, collectionDetails, collectionTopProducts, giftVariantDetails, plan } = useLoaderData<typeof loader>();
   useSavedToast();
   const actionData = useActionData<typeof action>();
   const snippet = bundle.mode === "mix_match"
@@ -274,6 +282,18 @@ export default function BundleEdit() {
       "bundle.totalLabel": (bundle.textOverrides as Record<string, string> | null)?.["bundle.totalLabel"] ?? "",
       "bundle.savingsBadge": (bundle.textOverrides as Record<string, string> | null)?.["bundle.savingsBadge"] ?? "",
     },
+    freeGiftVariant: (() => {
+      const id = bundle.freeGiftVariantId;
+      const detail = id ? giftVariantDetails[id] : undefined;
+      if (!id || !detail) return null;
+      return {
+        variantId: id,
+        productId: "",
+        productTitle: detail.productTitle,
+        variantTitle: detail.variantTitle,
+        image: detail.image ?? undefined,
+      };
+    })(),
   };
 
   const previewConfig = values

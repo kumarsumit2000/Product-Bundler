@@ -24,6 +24,7 @@ const CONFIG: WidgetConfig = {
       discountType: "percentage", discountValue: 10, combinable: false,
       triggerProductIds: ["gid://shopify/Product/1"],
       headline: null, ctaLabel: null, styleOverrides: null, textOverrides: null,
+      freeGiftVariantId: null, freeGiftVariantTitle: null, freeGiftAvailable: null,
     },
     {
       id: "b2", name: "B2 Mix Match", mode: "mix_match",
@@ -32,6 +33,7 @@ const CONFIG: WidgetConfig = {
       discountType: "percentage", discountValue: 20, combinable: false,
       triggerProductIds: [],
       headline: null, ctaLabel: null, styleOverrides: null, textOverrides: null,
+      freeGiftVariantId: null, freeGiftVariantTitle: null, freeGiftAvailable: null,
     },
   ],
   quantityBreaks: [

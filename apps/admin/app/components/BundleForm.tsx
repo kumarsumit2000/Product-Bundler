@@ -16,6 +16,7 @@ import { ProductPicker, type PickedProduct } from "./ProductPicker";
 import { DiscountValueInput } from "./DiscountValueInput";
 import { CollectionPicker, type PickedCollection } from "./CollectionPicker";
 import { StylePanel, type StylePanelValues } from "./StylePanel";
+import { VariantPicker, type PickedVariant } from "./VariantPicker";
 import { EMPTY_STYLE_FORM, buildStyleOverrides } from "~/lib/preview-overrides";
 
 type DiscountType = "percentage" | "flat" | "fixed_total";
@@ -38,6 +39,7 @@ export type BundleFormValues = StylePanelValues & {
   headline: string;
   ctaLabel: string;
   textOverrides: Record<string, string>;
+  freeGiftVariant: PickedVariant | null;
 };
 
 type Props = {
@@ -63,6 +65,7 @@ const DEFAULTS: BundleFormValues = {
   headline: "",
   ctaLabel: "",
   textOverrides: { "bundle.totalLabel": "", "bundle.savingsBadge": "" },
+  freeGiftVariant: null,
 };
 
 export function BundleForm({ initialValues, errors, submitLabel, onValuesChange }: Props) {
@@ -98,6 +101,11 @@ export function BundleForm({ initialValues, errors, submitLabel, onValuesChange 
         value={JSON.stringify(
           Object.fromEntries(Object.entries(values.textOverrides).filter(([, v]) => v.length > 0)),
         )}
+      />
+      <input
+        type="hidden"
+        name="freeGiftVariantId"
+        value={values.freeGiftVariant?.variantId ?? ""}
       />
 
       <BlockStack gap="500">
@@ -195,6 +203,20 @@ export function BundleForm({ initialValues, errors, submitLabel, onValuesChange 
               checked={values.combinable}
               onChange={(c) => update("combinable", c)}
               name="combinable"
+            />
+          </BlockStack>
+        </Card>
+
+        <Card>
+          <BlockStack gap="400">
+            <Text as="h2" variant="headingMd">Free gift (optional)</Text>
+            <Text as="p" tone="subdued">
+              Pick a variant to include free with this bundle. The gift is added
+              alongside the bundle items at checkout.
+            </Text>
+            <VariantPicker
+              variant={values.freeGiftVariant}
+              onChange={(v) => update("freeGiftVariant", v)}
             />
           </BlockStack>
         </Card>

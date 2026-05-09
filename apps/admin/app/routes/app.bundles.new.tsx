@@ -91,6 +91,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     ctaLabel: (form.get("ctaLabel") as string) || null,
     styleOverrides: parsedStyleOverrides,
     textOverrides: parsedTextOverrides,
+    freeGiftVariantId: (form.get("freeGiftVariantId") as string) || null,
   };
 
   const v = validateBundle(input);

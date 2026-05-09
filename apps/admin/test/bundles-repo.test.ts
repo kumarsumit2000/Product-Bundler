@@ -30,6 +30,7 @@ const NEW_BUNDLE_INPUT = {
   textOverrides: null,
   headline: null,
   ctaLabel: null,
+  freeGiftVariantId: null,
   mode: "classic" as const,
   collectionId: null,
   targetQty: null,

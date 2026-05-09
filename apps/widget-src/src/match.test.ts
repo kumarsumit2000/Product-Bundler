@@ -33,6 +33,9 @@ describe("matchBundle (classic)", () => {
         discountType: "percentage", discountValue: 10, combinable: false,
         triggerProductIds: ["gid://shopify/Product/1"],
         headline: null, ctaLabel: null, styleOverrides: null, textOverrides: null,
+      freeGiftVariantId: null,
+      freeGiftVariantTitle: null,
+      freeGiftAvailable: null,
       }],
     };
     expect(matchBundle(config, "gid://shopify/Product/1")?.id).toBe("b1");
@@ -51,6 +54,9 @@ describe("matchBundle (classic)", () => {
         discountType: "percentage", discountValue: 10, combinable: false,
         triggerProductIds: [],
         headline: null, ctaLabel: null, styleOverrides: null, textOverrides: null,
+      freeGiftVariantId: null,
+      freeGiftVariantTitle: null,
+      freeGiftAvailable: null,
       }],
     };
     expect(matchBundle(config, "gid://shopify/Product/2")?.id).toBe("b1");
@@ -70,6 +76,9 @@ describe("matchBundle (classic)", () => {
         discountType: "percentage", discountValue: 20, combinable: false,
         triggerProductIds: ["gid://shopify/Product/1"],
         headline: null, ctaLabel: null, styleOverrides: null, textOverrides: null,
+      freeGiftVariantId: null,
+      freeGiftVariantTitle: null,
+      freeGiftAvailable: null,
       }],
     };
     expect(matchBundle(config, "gid://shopify/Product/1")).toBeNull();
@@ -107,6 +116,9 @@ describe("matchMixMatch", () => {
         discountType: "percentage", discountValue: 20, combinable: false,
         triggerProductIds: ["gid://shopify/Product/7"],
         headline: null, ctaLabel: null, styleOverrides: null, textOverrides: null,
+      freeGiftVariantId: null,
+      freeGiftVariantTitle: null,
+      freeGiftAvailable: null,
       }],
     };
     expect(matchMixMatch(config, "gid://shopify/Product/7")?.id).toBe("mm1");
@@ -122,6 +134,9 @@ describe("matchMixMatch", () => {
         discountType: "percentage", discountValue: 20, combinable: false,
         triggerProductIds: [],
         headline: null, ctaLabel: null, styleOverrides: null, textOverrides: null,
+      freeGiftVariantId: null,
+      freeGiftVariantTitle: null,
+      freeGiftAvailable: null,
       }],
     };
     expect(matchMixMatch(config, "gid://shopify/Product/8")?.id).toBe("mm1");

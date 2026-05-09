@@ -129,6 +129,7 @@ export const bundles = sqliteTable("bundles", {
   textOverrides: text("text_overrides", { mode: "json" }).$type<TextOverrides | null>(),
   headline: text("headline"),
   ctaLabel: text("cta_label"),
+  freeGiftVariantId: text("free_gift_variant_id"),
   mode: text("mode", { enum: ["classic", "mix_match"] }).notNull().default("classic"),
   collectionId: text("collection_id"),
   targetQty: integer("target_qty"),

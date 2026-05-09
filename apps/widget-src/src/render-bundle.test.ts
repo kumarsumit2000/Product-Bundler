@@ -20,6 +20,9 @@ const BUNDLE: BundleConfig = {
   collectionId: null, targetQty: null, collectionProducts: null,
   discountType: "percentage", discountValue: 10, combinable: false,
   triggerProductIds: [], headline: null, ctaLabel: null, styleOverrides: null, textOverrides: null,
+      freeGiftVariantId: null,
+      freeGiftVariantTitle: null,
+      freeGiftAvailable: null,
 };
 
 describe("renderBundle", () => {

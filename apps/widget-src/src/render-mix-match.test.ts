@@ -22,6 +22,9 @@ const MM: BundleConfig = {
   ],
   discountType: "percentage", discountValue: 20, combinable: false,
   triggerProductIds: [], headline: null, ctaLabel: null, styleOverrides: null, textOverrides: null,
+      freeGiftVariantId: null,
+      freeGiftVariantTitle: null,
+      freeGiftAvailable: null,
 };
 
 describe("renderMixMatch", () => {
