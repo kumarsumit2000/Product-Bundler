@@ -57,6 +57,10 @@ export async function action({ request, context }: ActionFunctionArgs) {
       })(),
     })),
     combinable: form.get("combinable") === "on",
+    headline: null,
+    ctaLabel: null,
+    styleOverrides: null,
+    textOverrides: null,
   };
 
   const v = validateQb(input);

@@ -90,6 +90,10 @@ export async function action({
       })(),
     })),
     combinable: form.get("combinable") === "on",
+    headline: null,
+    ctaLabel: null,
+    styleOverrides: null,
+    textOverrides: null,
   };
 
   const v = validateQb(input);

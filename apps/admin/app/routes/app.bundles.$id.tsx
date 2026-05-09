@@ -145,6 +145,8 @@ export async function action({
     triggerProductIds: mode === "mix_match" ? [] : triggerProductIds,
     headline: (form.get("headline") as string) || null,
     ctaLabel: (form.get("ctaLabel") as string) || null,
+    styleOverrides: null,
+    textOverrides: null,
   };
 
   const v = validateBundle(input);
