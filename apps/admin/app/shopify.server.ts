@@ -71,10 +71,14 @@ export function createShopifyApp(context: AppLoadContext) {
     authPathPrefix: "/auth",
     sessionStorage: new KvSessionStorage(env.SESSIONS, env.DATABASE_ENCRYPTION_KEY),
     distribution: AppDistribution.AppStore,
-    // Required in v4 too — without this the SDK falls back to the legacy auth-code
-    // OAuth path and Shopify rejects API calls made with the resulting permanent
-    // offline tokens (deprecated). Token Exchange is the only working path.
-    future: { unstable_newEmbeddedAuthStrategy: true },
+    // Token Exchange (unstable_newEmbeddedAuthStrategy) plus expiring offline
+    // tokens. Shopify rejects non-expiring offline tokens at the Admin API
+    // gateway with 403 — without expiringOfflineAccessTokens the SDK requests
+    // non-expiring tokens by default and every API call dies.
+    future: {
+      unstable_newEmbeddedAuthStrategy: true,
+      expiringOfflineAccessTokens: true,
+    },
     billing: BILLING_PLANS,
   });
 }
