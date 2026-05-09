@@ -115,6 +115,8 @@ type StyleForm = {
   buttonText: string;
   borderColor: string;
   borderRadius: string;
+  inlinePadding: string;
+  popupPadding: string;
 };
 
 const EMPTY_STYLE: StyleForm = {
@@ -125,6 +127,8 @@ const EMPTY_STYLE: StyleForm = {
   buttonText: "",
   borderColor: "",
   borderRadius: "",
+  inlinePadding: "",
+  popupPadding: "",
 };
 
 function styleFromSettings(so: unknown): StyleForm {
@@ -137,6 +141,8 @@ function styleFromSettings(so: unknown): StyleForm {
     buttonText: typeof s.buttonText === "string" ? s.buttonText : "",
     borderColor: typeof s.borderColor === "string" ? s.borderColor : "",
     borderRadius: typeof s.borderRadius === "number" ? String(s.borderRadius) : "",
+    inlinePadding: typeof s.inlinePadding === "number" ? String(s.inlinePadding) : "",
+    popupPadding: typeof s.popupPadding === "number" ? String(s.popupPadding) : "",
   };
 }
 
@@ -151,6 +157,14 @@ function buildStyleOverrides(s: StyleForm): Record<string, unknown> {
   if (s.borderRadius) {
     const n = parseInt(s.borderRadius, 10);
     if (Number.isFinite(n)) out.borderRadius = n;
+  }
+  if (s.inlinePadding) {
+    const n = parseInt(s.inlinePadding, 10);
+    if (Number.isFinite(n)) out.inlinePadding = n;
+  }
+  if (s.popupPadding) {
+    const n = parseInt(s.popupPadding, 10);
+    if (Number.isFinite(n)) out.popupPadding = n;
   }
   return out;
 }
@@ -431,16 +445,40 @@ export default function NewsletterPage() {
                         placeholder="#FFFFFF"
                       />
                     </FormLayout.Group>
-                    <TextField
-                      label="Border radius (px)"
-                      type="number"
-                      value={values.style.borderRadius}
-                      onChange={(borderRadius) => setStyle({ borderRadius })}
-                      autoComplete="off"
-                      min={0}
-                      max={48}
-                      placeholder="8"
-                    />
+                    <FormLayout.Group>
+                      <TextField
+                        label="Border radius (px)"
+                        type="number"
+                        value={values.style.borderRadius}
+                        onChange={(borderRadius) => setStyle({ borderRadius })}
+                        autoComplete="off"
+                        min={0}
+                        max={48}
+                        placeholder="8"
+                      />
+                      <TextField
+                        label="Inline padding (px)"
+                        type="number"
+                        value={values.style.inlinePadding}
+                        onChange={(inlinePadding) => setStyle({ inlinePadding })}
+                        autoComplete="off"
+                        min={0}
+                        max={80}
+                        placeholder="16"
+                        helpText="Padding inside the inline embed card"
+                      />
+                      <TextField
+                        label="Popup padding (px)"
+                        type="number"
+                        value={values.style.popupPadding}
+                        onChange={(popupPadding) => setStyle({ popupPadding })}
+                        autoComplete="off"
+                        min={0}
+                        max={80}
+                        placeholder="32"
+                        helpText="Padding inside the popup modal"
+                      />
+                    </FormLayout.Group>
                   </FormLayout>
                 </BlockStack>
               </Card>

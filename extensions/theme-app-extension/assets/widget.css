@@ -206,11 +206,13 @@
 
 /* Newsletter signup widget */
 .pumper-newsletter {
-  padding: 16px;
+  padding: var(--pumper-nl-inline-padding, 16px);
   background: var(--pumper-nl-bg, #fff);
   border-radius: var(--pumper-nl-radius, 8px);
   border: 1px solid var(--pumper-nl-border, #e5e7eb);
 }
+/* Inside a modal the wrapping .pumper-modal-content owns padding instead. */
+.pumper-modal .pumper-newsletter { padding: 0; border: 0; }
 .pumper-newsletter-heading {
   font-size: 16px; font-weight: 700; margin: 0 0 4px;
   color: var(--pumper-nl-heading, var(--pumper-text, #1a1a1a));
@@ -275,7 +277,10 @@
 }
 @keyframes pumper-pop { from { transform: translateY(8px) scale(.98); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
 
-.pumper-modal-content { padding: 32px 28px 28px; flex: 1; }
+.pumper-modal-content {
+  padding: var(--pumper-nl-popup-padding, 32px) var(--pumper-nl-popup-padding, 28px);
+  flex: 1;
+}
 .pumper-modal-image {
   background-size: cover;
   background-position: center;

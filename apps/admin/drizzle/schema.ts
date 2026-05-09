@@ -201,6 +201,8 @@ export type NewsletterStyleOverrides = Partial<{
   buttonText: string;
   borderColor: string;
   borderRadius: number;
+  inlinePadding: number;
+  popupPadding: number;
 }>;
 
 export type ProgressiveThreshold = {

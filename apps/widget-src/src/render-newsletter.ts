@@ -17,6 +17,8 @@ function applyNewsletterVars(target: HTMLElement, n: NewsletterConfig): void {
   set("--pumper-nl-btn-text", s.buttonText);
   set("--pumper-nl-border", s.borderColor);
   set("--pumper-nl-radius", s.borderRadius);
+  set("--pumper-nl-inline-padding", s.inlinePadding);
+  set("--pumper-nl-popup-padding", s.popupPadding);
 }
 
 function newsletterFormHtml(n: NewsletterConfig): string {
