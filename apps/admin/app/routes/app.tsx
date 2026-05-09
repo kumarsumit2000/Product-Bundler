@@ -9,6 +9,9 @@ import enTranslations from "@shopify/polaris/locales/en.json";
 import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 import { forwardRef, type AnchorHTMLAttributes } from "react";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
+import { CrispChat } from "~/components/CrispChat";
+
+const CRISP_WEBSITE_ID = "1bc3a4d6-454d-4054-b07c-10599fd26d10";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
@@ -57,6 +60,7 @@ export default function App() {
           <Link to="/app/support">Support</Link>
         </NavMenu>
         <Outlet />
+        <CrispChat websiteId={CRISP_WEBSITE_ID} />
       </PolarisAppProvider>
     </ShopifyAppProvider>
   );

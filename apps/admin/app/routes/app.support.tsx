@@ -2,9 +2,9 @@ import type { LoaderFunctionArgs } from "@remix-run/cloudflare";
 import { json } from "@remix-run/cloudflare";
 import { Page, Card, BlockStack, Text, Link as PolarisLink } from "@shopify/polaris";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
-import { CrispChat } from "~/components/CrispChat";
 
-const CRISP_WEBSITE_ID = "1bc3a4d6-454d-4054-b07c-10599fd26d10";
+// Crisp chat is mounted once at the app.tsx layout level so the bubble shows
+// on every admin page, including this one — no per-route mount needed.
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
@@ -71,7 +71,6 @@ export default function SupportPage() {
           </BlockStack>
         </Card>
       </BlockStack>
-      <CrispChat websiteId={CRISP_WEBSITE_ID} />
     </Page>
   );
 }
