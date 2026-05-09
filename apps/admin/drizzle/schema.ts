@@ -218,6 +218,22 @@ export type ProgressiveThreshold = {
   label: string;
 };
 
+export type ProgressiveGiftStyleOverrides = Partial<{
+  backgroundColor: string;
+  borderColor: string;
+  headingColor: string;
+  textColor: string;
+  progressFill: string;
+  progressTrack: string;
+  cardBg: string;
+  cardBorder: string;
+  badgeBg: string;
+  badgeText: string;
+  borderRadius: number;
+  paddingX: number;
+  paddingY: number;
+}>;
+
 export const progressiveGifts = sqliteTable("progressive_gifts", {
   id: text("id").primaryKey(),
   shopId: text("shop_id").notNull().references(() => shops.id, { onDelete: "cascade" }),
@@ -225,7 +241,7 @@ export const progressiveGifts = sqliteTable("progressive_gifts", {
   status: text("status").notNull().default("draft"),
   thresholds: text("thresholds", { mode: "json" }).$type<ProgressiveThreshold[]>().notNull(),
   headline: text("headline"),
-  styleOverrides: text("style_overrides", { mode: "json" }).$type<StyleOverrides | null>(),
+  styleOverrides: text("style_overrides", { mode: "json" }).$type<ProgressiveGiftStyleOverrides | null>(),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 }, (t) => ({

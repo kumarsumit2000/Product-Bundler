@@ -1,5 +1,5 @@
 import { Card, BlockStack, Text } from "@shopify/polaris";
-import type { ProgressiveGiftFormValues } from "./ProgressiveGiftForm";
+import type { ProgressiveGiftFormValues, ProgressiveStyleForm } from "./ProgressiveGiftForm";
 
 type Props = {
   values: ProgressiveGiftFormValues;
@@ -7,7 +7,34 @@ type Props = {
   demoCartTotal?: number;
 };
 
+const px = (s: string, fallback: number) => {
+  const n = parseInt(s, 10);
+  return Number.isFinite(n) ? n : fallback;
+};
+
+function styleToTokens(s: ProgressiveStyleForm) {
+  return {
+    bg: s.backgroundColor || "#fff7f8",
+    border: s.borderColor || "#fbe4e7",
+    heading: s.headingColor || "#1a1a1a",
+    text: s.textColor || "#666",
+    progressFill: s.progressFill || "#d9263a",
+    progressTrack: s.progressTrack || "#fce4e7",
+    cardBg: s.cardBg || "#fff",
+    cardBorder: s.cardBorder || "#d9263a",
+    cardBorderInactive: s.cardBorder || "#fbe4e7",
+    badgeBg: s.badgeBg || "#d9263a",
+    badgeBgInactive: "#cbd5e1",
+    badgeText: s.badgeText || "#fff",
+    radius: px(s.borderRadius, 10),
+    paddingX: px(s.paddingX, 14),
+    paddingY: px(s.paddingY, 14),
+  };
+}
+
 export function ProgressiveGiftPreview({ values, demoCartTotal = 75 }: Props) {
+  const t = styleToTokens(values.style);
+
   const tiers = values.thresholds
     .map((t) => ({
       minSpend: parseFloat(t.minSpend || "0") || 0,
@@ -28,17 +55,17 @@ export function ProgressiveGiftPreview({ values, demoCartTotal = 75 }: Props) {
         <Text as="h3" variant="headingSm">Live preview</Text>
         <div
           style={{
-            background: "#fff7f8",
-            border: "1px solid #fbe4e7",
-            borderRadius: 10,
-            padding: 14,
+            background: t.bg,
+            border: `1px solid ${t.border}`,
+            borderRadius: t.radius,
+            padding: `${t.paddingY}px ${t.paddingX}px`,
             fontFamily: "system-ui, -apple-system, sans-serif",
           }}
         >
-          <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8, textAlign: "center" }}>
+          <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8, textAlign: "center", color: t.heading }}>
             {values.headline || "Unlock free gifts with your order"}
           </div>
-          <div style={{ fontSize: 11, color: "#666", marginBottom: 10, textAlign: "center" }}>
+          <div style={{ fontSize: 11, color: t.text, marginBottom: 10, textAlign: "center" }}>
             {nextTier
               ? `Spend $${remaining.toFixed(2)} more to unlock ${nextTier.label}`
               : tiers.length > 0
@@ -52,7 +79,7 @@ export function ProgressiveGiftPreview({ values, demoCartTotal = 75 }: Props) {
                 style={{
                   position: "relative",
                   height: 6,
-                  background: "#fce4e7",
+                  background: t.progressTrack,
                   borderRadius: 999,
                   marginBottom: 12,
                 }}
@@ -62,7 +89,7 @@ export function ProgressiveGiftPreview({ values, demoCartTotal = 75 }: Props) {
                     position: "absolute",
                     inset: 0,
                     width: `${pct}%`,
-                    background: "#d9263a",
+                    background: t.progressFill,
                     borderRadius: 999,
                     transition: "width .3s",
                   }}
@@ -76,25 +103,26 @@ export function ProgressiveGiftPreview({ values, demoCartTotal = 75 }: Props) {
                   gap: 6,
                 }}
               >
-                {tiers.map((t, i) => {
-                  const unlocked = demoCartTotal >= t.minSpend;
+                {tiers.map((tier, i) => {
+                  const unlocked = demoCartTotal >= tier.minSpend;
                   return (
                     <div
                       key={i}
                       style={{
-                        border: `2px solid ${unlocked ? "#d9263a" : "#fbe4e7"}`,
-                        background: "#fff",
-                        borderRadius: 8,
+                        border: `2px solid ${unlocked ? t.cardBorder : t.cardBorderInactive}`,
+                        background: t.cardBg,
+                        borderRadius: Math.max(0, t.radius - 2),
                         padding: 6,
                         fontSize: 9,
                         textAlign: "center",
                         opacity: unlocked ? 1 : 0.55,
+                        color: t.heading,
                       }}
                     >
                       <div
                         style={{
-                          background: unlocked ? "#d9263a" : "#cbd5e1",
-                          color: "#fff",
+                          background: unlocked ? t.badgeBg : t.badgeBgInactive,
+                          color: t.badgeText,
                           padding: "1px 4px",
                           borderRadius: 3,
                           fontSize: 8,
@@ -102,11 +130,11 @@ export function ProgressiveGiftPreview({ values, demoCartTotal = 75 }: Props) {
                           marginBottom: 4,
                         }}
                       >
-                        {unlocked ? "FREE" : `$${t.minSpend.toFixed(0)}`}
+                        {unlocked ? "FREE" : `$${tier.minSpend.toFixed(0)}`}
                       </div>
-                      {t.image ? (
+                      {tier.image ? (
                         <img
-                          src={t.image}
+                          src={tier.image}
                           alt=""
                           style={{ width: "100%", height: 36, objectFit: "cover", borderRadius: 4 }}
                         />
@@ -114,7 +142,7 @@ export function ProgressiveGiftPreview({ values, demoCartTotal = 75 }: Props) {
                         <div style={{ height: 36, background: "#cbd5e1", borderRadius: 4 }} />
                       )}
                       <div style={{ marginTop: 4, fontWeight: 600, lineHeight: 1.2 }}>
-                        {t.label}
+                        {tier.label}
                       </div>
                     </div>
                   );

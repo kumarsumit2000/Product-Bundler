@@ -34,13 +34,21 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const v = validateProgressiveGift(input);
   if (!v.valid) return json({ errors: v.errors }, { status: 400 });
 
+  let styleOverrides: Record<string, unknown> | null = null;
+  try {
+    const parsed = JSON.parse((form.get("styleOverrides") as string) || "{}");
+    if (parsed && typeof parsed === "object" && Object.keys(parsed).length > 0) {
+      styleOverrides = parsed;
+    }
+  } catch { /* ignore */ }
+
   const db = getDb(ctx.cloudflare.env.DB);
   const created = await repo.create(db, session.shop, {
     name: input.name,
     status: input.status as "draft" | "active" | "paused",
     thresholds: input.thresholds,
     headline: input.headline,
-    styleOverrides: null,
+    styleOverrides: styleOverrides as never,
   });
   await ctx.cloudflare.env.SHOP_SETTINGS_CACHE.delete(`config:${session.shop}`);
   return redirect(`/app/progressive-gifts/${created.id}?saved=${encodeURIComponent(input.name)}`);
@@ -57,14 +65,13 @@ export default function ProgressiveGiftNew() {
     >
       <Layout>
         <Layout.Section>
+          {values && <ProgressiveGiftPreview values={values} />}
+          <div style={{ height: 16 }} />
           <ProgressiveGiftForm
             submitLabel="Save progressive gift"
             errors={errors}
             onValuesChange={setValues}
           />
-        </Layout.Section>
-        <Layout.Section variant="oneThird">
-          {values && <ProgressiveGiftPreview values={values} />}
         </Layout.Section>
       </Layout>
     </Page>

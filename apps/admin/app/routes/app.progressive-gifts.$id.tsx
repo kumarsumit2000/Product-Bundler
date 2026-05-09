@@ -7,7 +7,7 @@ import { getDb } from "~/db.server";
 import * as repo from "~/lib/progressive-gifts/repo";
 import { validateProgressiveGift } from "~/lib/progressive-gifts/validate";
 import { useState } from "react";
-import { ProgressiveGiftForm, type ProgressiveGiftFormValues } from "~/components/ProgressiveGiftForm";
+import { ProgressiveGiftForm, type ProgressiveGiftFormValues, progressiveStyleFromOverrides } from "~/components/ProgressiveGiftForm";
 import { ProgressiveGiftPreview } from "~/components/ProgressiveGiftPreview";
 import { fetchVariantDetails } from "~/lib/shopify-product-fetch";
 import { useSavedToast } from "~/lib/toast";
@@ -46,12 +46,21 @@ export async function action({ request, params, context }: ActionFunctionArgs) {
   const v = validateProgressiveGift(input);
   if (!v.valid) return json({ errors: v.errors }, { status: 400 });
 
+  let styleOverrides: Record<string, unknown> | null = null;
+  try {
+    const parsed = JSON.parse((form.get("styleOverrides") as string) || "{}");
+    if (parsed && typeof parsed === "object" && Object.keys(parsed).length > 0) {
+      styleOverrides = parsed;
+    }
+  } catch { /* ignore */ }
+
   const db = getDb(ctx.cloudflare.env.DB);
   await repo.update(db, session.shop, params.id!, {
     name: input.name,
     status: input.status as "draft" | "active" | "paused",
     thresholds: input.thresholds,
     headline: input.headline,
+    styleOverrides: styleOverrides as never,
   });
   await ctx.cloudflare.env.SHOP_SETTINGS_CACHE.delete(`config:${session.shop}`);
   return redirect(`/app/progressive-gifts/${params.id!}?saved=${encodeURIComponent(input.name)}`);
@@ -68,6 +77,7 @@ export default function ProgressiveGiftEdit() {
     name: pg.name,
     status: pg.status as ProgressiveGiftFormValues["status"],
     headline: pg.headline ?? "",
+    style: progressiveStyleFromOverrides(pg.styleOverrides),
     thresholds: pg.thresholds.map((t) => ({
       minSpend: (t.minSpendCents / 100).toString(),
       label: t.label,
@@ -90,15 +100,14 @@ export default function ProgressiveGiftEdit() {
     >
       <Layout>
         <Layout.Section>
+          {values && <ProgressiveGiftPreview values={values} />}
+          <div style={{ height: 16 }} />
           <ProgressiveGiftForm
             submitLabel="Save changes"
             initialValues={initial}
             errors={errors}
             onValuesChange={setValues}
           />
-        </Layout.Section>
-        <Layout.Section variant="oneThird">
-          {values && <ProgressiveGiftPreview values={values} />}
         </Layout.Section>
       </Layout>
     </Page>
