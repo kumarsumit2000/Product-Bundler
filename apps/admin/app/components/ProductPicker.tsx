@@ -3,6 +3,12 @@ import { ImageIcon } from "@shopify/polaris-icons";
 import { useCallback } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
 
+export type PickedProductVariant = {
+  variantId: string;
+  title: string;
+  available: boolean;
+};
+
 export type PickedProduct = {
   productId: string;
   variantId: string | null;
@@ -10,6 +16,7 @@ export type PickedProduct = {
   title?: string;
   image?: string;
   priceCents?: number;
+  variants?: PickedProductVariant[];
 };
 
 type Props = {
@@ -40,13 +47,25 @@ export function ProductPicker({
         id: string;
         title?: string;
         images?: { originalSrc?: string }[];
-        variants?: Array<{ price?: string | number }>;
+        variants?: Array<{
+          id: string;
+          title?: string;
+          price?: string | number;
+          availableForSale?: boolean;
+        }>;
       }) => {
         const existing = products.find((p) => p.productId === s.id);
         const rawPrice = s.variants?.[0]?.price;
         const priceCents = rawPrice != null && !Number.isNaN(parseFloat(String(rawPrice)))
           ? Math.round(parseFloat(String(rawPrice)) * 100)
           : existing?.priceCents;
+        const variants: PickedProductVariant[] | undefined = s.variants?.length
+          ? s.variants.map((v) => ({
+              variantId: v.id,
+              title: v.title ?? "",
+              available: v.availableForSale ?? true,
+            }))
+          : existing?.variants;
         return {
           productId: s.id,
           variantId: existing?.variantId ?? null,
@@ -54,6 +73,7 @@ export function ProductPicker({
           title: s.title,
           image: s.images?.[0]?.originalSrc,
           priceCents,
+          variants,
         };
       },
     );

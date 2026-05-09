@@ -50,6 +50,7 @@ export function ProgressiveGiftPreview({ values, demoCartTotal = 75 }: Props) {
       const autoStrike = !isShipping && tier.product?.priceCents != null
         ? `$${(tier.product.priceCents / 100).toFixed(2)}`
         : "";
+      const productVariants = !isShipping ? (tier.product?.variants ?? []) : [];
       return {
         minSpend,
         label: tier.label || "FREE",
@@ -60,6 +61,7 @@ export function ProgressiveGiftPreview({ values, demoCartTotal = 75 }: Props) {
         image: isShipping ? (tier.iconUrl || null) : (productImage ?? null),
         isShipping,
         iconEmoji: isShipping && !tier.iconUrl ? "🚚" : null,
+        variants: productVariants,
       };
     })
     .sort((a, b) => a.minSpend - b.minSpend);
@@ -183,8 +185,32 @@ export function ProgressiveGiftPreview({ values, demoCartTotal = 75 }: Props) {
                           ) : (
                             <div style={{ width: 36, height: 36, background: "#cbd5e1", borderRadius: 4, flexShrink: 0 }} />
                           )}
-                          <div style={{ flex: 1, minWidth: 0, fontWeight: 600, lineHeight: 1.25 }}>
-                            {unlocked ? tier.title : tier.lockedTitle}
+                          <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
+                            <div style={{ fontWeight: 600, lineHeight: 1.25 }}>
+                              {unlocked ? tier.title : tier.lockedTitle}
+                            </div>
+                            {tier.variants.length > 1 && (
+                              <select
+                                disabled={!unlocked}
+                                style={{
+                                  alignSelf: "flex-start",
+                                  fontSize: 11,
+                                  padding: "3px 6px",
+                                  border: "1px solid #d1d5db",
+                                  borderRadius: 4,
+                                  background: "#fff",
+                                  color: "#1a1a1a",
+                                  maxWidth: "100%",
+                                  cursor: unlocked ? "pointer" : "not-allowed",
+                                }}
+                              >
+                                {tier.variants.map((v) => (
+                                  <option key={v.variantId} value={v.variantId} disabled={!v.available}>
+                                    {v.title}{!v.available ? " (out of stock)" : ""}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
                           </div>
                           <span
                             style={{

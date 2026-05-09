@@ -124,6 +124,11 @@ export default function ProgressiveGiftEdit() {
             title: productMap[t.giftProductId]!.title,
             image: productMap[t.giftProductId]!.image ?? undefined,
             priceCents: productMap[t.giftProductId]!.variants?.[0]?.priceCents,
+            variants: productMap[t.giftProductId]!.variants?.map((v) => ({
+              variantId: v.variantId,
+              title: v.title ?? "",
+              available: v.available,
+            })),
           }
         : null,
     })),
