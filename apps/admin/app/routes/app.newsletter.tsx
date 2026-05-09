@@ -115,8 +115,10 @@ type StyleForm = {
   buttonText: string;
   borderColor: string;
   borderRadius: string;
-  inlinePadding: string;
-  popupPadding: string;
+  inlinePaddingX: string;
+  inlinePaddingY: string;
+  popupPaddingX: string;
+  popupPaddingY: string;
 };
 
 const EMPTY_STYLE: StyleForm = {
@@ -127,8 +129,10 @@ const EMPTY_STYLE: StyleForm = {
   buttonText: "",
   borderColor: "",
   borderRadius: "",
-  inlinePadding: "",
-  popupPadding: "",
+  inlinePaddingX: "",
+  inlinePaddingY: "",
+  popupPaddingX: "",
+  popupPaddingY: "",
 };
 
 function styleFromSettings(so: unknown): StyleForm {
@@ -141,8 +145,18 @@ function styleFromSettings(so: unknown): StyleForm {
     buttonText: typeof s.buttonText === "string" ? s.buttonText : "",
     borderColor: typeof s.borderColor === "string" ? s.borderColor : "",
     borderRadius: typeof s.borderRadius === "number" ? String(s.borderRadius) : "",
-    inlinePadding: typeof s.inlinePadding === "number" ? String(s.inlinePadding) : "",
-    popupPadding: typeof s.popupPadding === "number" ? String(s.popupPadding) : "",
+    inlinePaddingX: typeof s.inlinePaddingX === "number"
+      ? String(s.inlinePaddingX)
+      : (typeof s.inlinePadding === "number" ? String(s.inlinePadding) : ""),
+    inlinePaddingY: typeof s.inlinePaddingY === "number"
+      ? String(s.inlinePaddingY)
+      : (typeof s.inlinePadding === "number" ? String(s.inlinePadding) : ""),
+    popupPaddingX: typeof s.popupPaddingX === "number"
+      ? String(s.popupPaddingX)
+      : (typeof s.popupPadding === "number" ? String(s.popupPadding) : ""),
+    popupPaddingY: typeof s.popupPaddingY === "number"
+      ? String(s.popupPaddingY)
+      : (typeof s.popupPadding === "number" ? String(s.popupPadding) : ""),
   };
 }
 
@@ -158,13 +172,11 @@ function buildStyleOverrides(s: StyleForm): Record<string, unknown> {
     const n = parseInt(s.borderRadius, 10);
     if (Number.isFinite(n)) out.borderRadius = n;
   }
-  if (s.inlinePadding) {
-    const n = parseInt(s.inlinePadding, 10);
-    if (Number.isFinite(n)) out.inlinePadding = n;
-  }
-  if (s.popupPadding) {
-    const n = parseInt(s.popupPadding, 10);
-    if (Number.isFinite(n)) out.popupPadding = n;
+  for (const k of ["inlinePaddingX", "inlinePaddingY", "popupPaddingX", "popupPaddingY"] as const) {
+    if (s[k]) {
+      const n = parseInt(s[k], 10);
+      if (Number.isFinite(n)) out[k] = n;
+    }
   }
   return out;
 }
@@ -445,38 +457,64 @@ export default function NewsletterPage() {
                         placeholder="#FFFFFF"
                       />
                     </FormLayout.Group>
+                    <TextField
+                      label="Border radius (px)"
+                      type="number"
+                      value={values.style.borderRadius}
+                      onChange={(borderRadius) => setStyle({ borderRadius })}
+                      autoComplete="off"
+                      min={0}
+                      max={48}
+                      placeholder="8"
+                    />
+                    <Text as="h3" variant="headingSm">Inline padding</Text>
                     <FormLayout.Group>
                       <TextField
-                        label="Border radius (px)"
+                        label="Horizontal (px)"
                         type="number"
-                        value={values.style.borderRadius}
-                        onChange={(borderRadius) => setStyle({ borderRadius })}
-                        autoComplete="off"
-                        min={0}
-                        max={48}
-                        placeholder="8"
-                      />
-                      <TextField
-                        label="Inline padding (px)"
-                        type="number"
-                        value={values.style.inlinePadding}
-                        onChange={(inlinePadding) => setStyle({ inlinePadding })}
+                        value={values.style.inlinePaddingX}
+                        onChange={(inlinePaddingX) => setStyle({ inlinePaddingX })}
                         autoComplete="off"
                         min={0}
                         max={80}
                         placeholder="16"
-                        helpText="Padding inside the inline embed card"
+                        helpText="Left + right"
                       />
                       <TextField
-                        label="Popup padding (px)"
+                        label="Vertical (px)"
                         type="number"
-                        value={values.style.popupPadding}
-                        onChange={(popupPadding) => setStyle({ popupPadding })}
+                        value={values.style.inlinePaddingY}
+                        onChange={(inlinePaddingY) => setStyle({ inlinePaddingY })}
+                        autoComplete="off"
+                        min={0}
+                        max={80}
+                        placeholder="16"
+                        helpText="Top + bottom"
+                      />
+                    </FormLayout.Group>
+                    <Text as="h3" variant="headingSm">Popup padding</Text>
+                    <FormLayout.Group>
+                      <TextField
+                        label="Horizontal (px)"
+                        type="number"
+                        value={values.style.popupPaddingX}
+                        onChange={(popupPaddingX) => setStyle({ popupPaddingX })}
+                        autoComplete="off"
+                        min={0}
+                        max={80}
+                        placeholder="28"
+                        helpText="Left + right"
+                      />
+                      <TextField
+                        label="Vertical (px)"
+                        type="number"
+                        value={values.style.popupPaddingY}
+                        onChange={(popupPaddingY) => setStyle({ popupPaddingY })}
                         autoComplete="off"
                         min={0}
                         max={80}
                         placeholder="32"
-                        helpText="Padding inside the popup modal"
+                        helpText="Top + bottom"
                       />
                     </FormLayout.Group>
                   </FormLayout>

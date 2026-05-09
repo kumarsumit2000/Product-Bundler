@@ -206,7 +206,7 @@
 
 /* Newsletter signup widget */
 .pumper-newsletter {
-  padding: var(--pumper-nl-inline-padding, 16px);
+  padding: var(--pumper-nl-inline-py, 16px) var(--pumper-nl-inline-px, 16px);
   background: var(--pumper-nl-bg, #fff);
   border-radius: var(--pumper-nl-radius, 8px);
   border: 1px solid var(--pumper-nl-border, #e5e7eb);
@@ -277,7 +277,7 @@
 @keyframes pumper-pop { from { transform: translateY(8px) scale(.98); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
 
 .pumper-modal-content {
-  padding: var(--pumper-nl-popup-padding, 32px) var(--pumper-nl-popup-padding, 28px);
+  padding: var(--pumper-nl-popup-py, 32px) var(--pumper-nl-popup-px, 28px);
   flex: 1;
   display: flex;
   flex-direction: column;

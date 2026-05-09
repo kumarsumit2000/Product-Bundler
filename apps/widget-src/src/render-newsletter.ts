@@ -17,8 +17,11 @@ function applyNewsletterVars(target: HTMLElement, n: NewsletterConfig): void {
   set("--pumper-nl-btn-text", s.buttonText);
   set("--pumper-nl-border", s.borderColor);
   set("--pumper-nl-radius", s.borderRadius);
-  set("--pumper-nl-inline-padding", s.inlinePadding);
-  set("--pumper-nl-popup-padding", s.popupPadding);
+  // Per-axis padding takes precedence; fall back to legacy single-axis values.
+  set("--pumper-nl-inline-px", s.inlinePaddingX ?? s.inlinePadding);
+  set("--pumper-nl-inline-py", s.inlinePaddingY ?? s.inlinePadding);
+  set("--pumper-nl-popup-px", s.popupPaddingX ?? s.popupPadding);
+  set("--pumper-nl-popup-py", s.popupPaddingY ?? s.popupPadding);
 }
 
 function newsletterFormHtml(n: NewsletterConfig): string {
