@@ -39,8 +39,6 @@
 .pumper-qb-tier { background: #fff; border: 1px solid #e3e3e3; border-radius: 8px; padding: 10px; display: flex; align-items: center; gap: 10px; cursor: pointer; position: relative; }
 .pumper-qb-tier--selected { border-color: var(--pumper-primary, #7B1E2A); border-width: 2px; padding: 9px; }
 .pumper-qb-tier--unavailable { opacity: .5; cursor: not-allowed; }
-.pumper-qb-tier-radio { width: 14px; height: 14px; border: 2px solid #ccc; border-radius: 50%; flex-shrink: 0; }
-.pumper-qb-tier--selected .pumper-qb-tier-radio { border-color: var(--pumper-primary, #7B1E2A); background: var(--pumper-primary, #7B1E2A); box-shadow: inset 0 0 0 2px #fff; }
 .pumper-qb-tier-meta { flex: 1; }
 .pumper-qb-tier-title { font-size: 13px; font-weight: 600; }
 .pumper-qb-tier-sub { font-size: 11px; color: #888; }
