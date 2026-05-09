@@ -2,7 +2,7 @@ import type { BundleConfig, WidgetConfig } from "./types";
 import { addToCart } from "./add-to-cart";
 import { emit } from "./analytics";
 import { computeBundleTotals, formatMoney } from "./format";
-import { t } from "./i18n";
+import { t, tWith } from "./i18n";
 
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
@@ -42,7 +42,7 @@ export function renderBundle(mount: HTMLElement, bundle: BundleConfig, config: W
 
   const totalLine = `
     <div class="pumper-total-row">
-      <span class="pumper-total-label">${t("bundle.totalLabel")}
+      <span class="pumper-total-label">${tWith(bundle.textOverrides, "bundle.totalLabel")}
         ${config.settings.showCompareAtPrice ? `<span class="pumper-strike">${formatMoney(totals.subtotalCents, config.settings.currency, config.settings.locale)}</span>` : ""}
       </span>
       <span class="pumper-total-value">${formatMoney(totals.discountedCents, config.settings.currency, config.settings.locale)}</span>

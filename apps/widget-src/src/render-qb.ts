@@ -3,20 +3,20 @@ import { addToCart } from "./add-to-cart";
 import type { CartLineInput } from "./add-to-cart";
 import { emit } from "./analytics";
 import { formatMoney } from "./format";
-import { t } from "./i18n";
+import { t, tWith } from "./i18n";
 
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 }
 
-function renderGiftBadges(tier: QbTier): string {
+function renderGiftBadges(tier: QbTier, textOverrides: Record<string, string> | null | undefined): string {
   const badges: string[] = [];
 
   if (tier.freeGiftVariantId) {
     if (tier.freeGiftAvailable === false) {
       badges.push(`<div class="pumper-qb-gift-badge pumper-qb-gift-badge--unavailable">${escapeHtml(t("qb.giftBadgeUnavailable"))}</div>`);
     } else {
-      badges.push(`<div class="pumper-qb-gift-badge">${escapeHtml(t("qb.giftBadge", { variantTitle: tier.freeGiftVariantTitle ?? "gift" }))}</div>`);
+      badges.push(`<div class="pumper-qb-gift-badge">${escapeHtml(tWith(textOverrides, "qb.giftBadge", { variantTitle: tier.freeGiftVariantTitle ?? "gift" }))}</div>`);
     }
   }
 
@@ -65,7 +65,7 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
   let selectedIndex = popularIndex >= 0 ? popularIndex : qb.tiers.findIndex((tr) => tr.available);
   if (selectedIndex < 0) selectedIndex = 0;
 
-  const heading = config.settings.qbHeadline || t("qb.heading");
+  const heading = qb.headline || config.settings.qbHeadline || t("qb.heading");
 
   const renderRows = () => qb.tiers.map((tr, i) => {
     const unitCents = tierUnitCents(tr, variant.priceCents);
@@ -73,10 +73,10 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
     const baseTotal = variant.priceCents * tr.qty;
     const savings = Math.max(0, baseTotal - totalCents);
     const popularBadge = tr.isMostPopular
-      ? `<span class="pumper-qb-popular-badge">${t("qb.mostPopular")}</span>`
+      ? `<span class="pumper-qb-popular-badge">${tWith(qb.textOverrides, "qb.mostPopular")}</span>`
       : "";
     const savingsBadge = savings > 0
-      ? `<span class="pumper-qb-savings">${t("qb.savingsBadge", { savings: formatMoney(savings, config.settings.currency, config.settings.locale) })}</span>`
+      ? `<span class="pumper-qb-savings">${tWith(qb.textOverrides, "qb.savingsBadge", { savings: formatMoney(savings, config.settings.currency, config.settings.locale) })}</span>`
       : "";
     const classes = [
       "pumper-qb-tier",
@@ -88,11 +88,11 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
         ${popularBadge}
         <div class="pumper-qb-tier-radio"></div>
         <div class="pumper-qb-tier-meta">
-          <div class="pumper-qb-tier-title">${escapeHtml(t("qb.tierLabel", { qty: tr.qty }))}${tr.discountValue > 0 ? ` — ${escapeHtml(tr.label)}` : ""}</div>
+          <div class="pumper-qb-tier-title">${escapeHtml(tWith(qb.textOverrides, "qb.tierLabel", { qty: tr.qty }))}${tr.discountValue > 0 ? ` — ${escapeHtml(tr.label)}` : ""}</div>
           <div class="pumper-qb-tier-sub">${formatMoney(unitCents, config.settings.currency, config.settings.locale)} each · ${formatMoney(totalCents, config.settings.currency, config.settings.locale)} total</div>
         </div>
         ${savingsBadge}
-        ${renderGiftBadges(tr)}
+        ${renderGiftBadges(tr, qb.textOverrides)}
       </div>
     `;
   }).join("");
@@ -102,8 +102,8 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
     const unitCents = tierUnitCents(tr, variant.priceCents);
     const savings = Math.max(0, (variant.priceCents - unitCents) * tr.qty);
     const label = savings > 0
-      ? t("qb.ctaSavings", { qty: tr.qty, savings: formatMoney(savings, config.settings.currency, config.settings.locale) })
-      : t("qb.cta", { qty: tr.qty });
+      ? (qb.ctaLabel || t("qb.ctaSavings", { qty: tr.qty, savings: formatMoney(savings, config.settings.currency, config.settings.locale) }))
+      : (qb.ctaLabel || t("qb.cta", { qty: tr.qty }));
     return `<button class="pumper-cta" data-action="add-to-cart" ${tr.available ? "" : "disabled"}>${escapeHtml(label)}</button>`;
   };
 

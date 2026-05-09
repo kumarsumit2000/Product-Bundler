@@ -103,4 +103,34 @@ describe("renderQb", () => {
     const tierRow = mount.querySelectorAll(".pumper-qb-tier")[1] as HTMLElement;
     expect(tierRow.querySelector(".pumper-qb-gift-badge--unavailable")).not.toBeNull();
   });
+
+  it("renders override for qb.mostPopular when set", () => {
+    const el = document.createElement("div");
+    const q: QbConfig = {
+      ...QB,
+      tiers: [{ qty: 2, discountType: "percentage", discountValue: 10, label: "10%", isMostPopular: true, available: true, freeGiftVariantId: null, freeGiftAvailable: null, bogo: null }],
+      textOverrides: { "qb.mostPopular": "Best value" },
+    };
+    renderQb(el, q, CONFIG);
+    expect(el.innerHTML).toContain("Best value");
+    expect(el.innerHTML).not.toContain("MOST POPULAR");
+  });
+
+  it("falls back to default qb.mostPopular when override absent", () => {
+    const el = document.createElement("div");
+    const q: QbConfig = {
+      ...QB,
+      tiers: [{ qty: 2, discountType: "percentage", discountValue: 10, label: "10%", isMostPopular: true, available: true, freeGiftVariantId: null, freeGiftAvailable: null, bogo: null }],
+      textOverrides: null,
+    };
+    renderQb(el, q, CONFIG);
+    expect(el.innerHTML).toContain("MOST POPULAR");
+  });
+
+  it("uses qb.headline column when set", () => {
+    const el = document.createElement("div");
+    const q: QbConfig = { ...QB, headline: "Volume savings", textOverrides: null };
+    renderQb(el, q, CONFIG);
+    expect(el.innerHTML).toContain("Volume savings");
+  });
 });

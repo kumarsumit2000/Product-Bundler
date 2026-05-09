@@ -59,4 +59,18 @@ describe("renderBundle", () => {
     // savings = 10% of (72995 + 62995) = 13599 cents
     expect((cta?.textContent ?? "").toLowerCase()).toMatch(/save/);
   });
+
+  it("renders bundle with textOverrides for totalLabel", () => {
+    const el = document.createElement("div");
+    const bundle: BundleConfig = { ...BUNDLE, textOverrides: { "bundle.totalLabel": "Your cost" } };
+    renderBundle(el, bundle, CONFIG);
+    expect(el.innerHTML).toContain("Your cost");
+  });
+
+  it("falls back to default totalLabel when override absent", () => {
+    const el = document.createElement("div");
+    const bundle: BundleConfig = { ...BUNDLE, textOverrides: null };
+    renderBundle(el, bundle, CONFIG);
+    expect(el.innerHTML).toContain("Total");
+  });
 });
