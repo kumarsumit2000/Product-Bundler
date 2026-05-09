@@ -15,12 +15,11 @@ import { useEffect, useState } from "react";
 import { ProductPicker, type PickedProduct } from "./ProductPicker";
 import { QbTierBuilder, type TierFormValue } from "./QbTierBuilder";
 import { StylePanel, type StylePanelValues } from "./StylePanel";
-import { SubscriptionPanel, EMPTY_SUBSCRIPTION, type SubscriptionFormValues } from "./SubscriptionPanel";
 import { EMPTY_STYLE_FORM, buildStyleOverrides } from "~/lib/preview-overrides";
 
 type Status = "draft" | "active" | "paused";
 
-export type QbFormValues = StylePanelValues & SubscriptionFormValues & {
+export type QbFormValues = StylePanelValues & {
   name: string;
   product: PickedProduct[];
   tiers: TierFormValue[];
@@ -40,7 +39,6 @@ type Props = {
 
 const DEFAULTS: QbFormValues = {
   ...EMPTY_STYLE_FORM,
-  ...EMPTY_SUBSCRIPTION,
   name: "",
   product: [],
   tiers: [{ qty: 1, discountType: "percentage", discountValue: 0, label: "Buy 1", isMostPopular: false }],
@@ -87,19 +85,7 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange }: P
           Object.fromEntries(Object.entries(values.textOverrides).filter(([, v]) => v.length > 0)),
         )}
       />
-      <input
-        type="hidden"
-        name="subscription"
-        value={JSON.stringify(
-          values.subEnabled
-            ? {
-                enabled: true,
-                discountPercent: parseInt(values.subDiscountPercent, 10) || 0,
-                interval: values.subInterval,
-              }
-            : null,
-        )}
-      />
+      <input type="hidden" name="subscription" value="null" />
       <input
         type="hidden"
         name="tiers"
@@ -213,8 +199,6 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange }: P
             />
           </BlockStack>
         </Card>
-
-        <SubscriptionPanel values={values} onChange={(next) => setValues((s) => ({ ...s, ...next }))} />
 
         <StylePanel values={values} onChange={(next) => setValues((s) => ({ ...s, ...next }))} />
 

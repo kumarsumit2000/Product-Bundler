@@ -17,7 +17,6 @@ import { DiscountValueInput } from "./DiscountValueInput";
 import { CollectionPicker, type PickedCollection } from "./CollectionPicker";
 import { StylePanel, type StylePanelValues } from "./StylePanel";
 import { VariantPicker, type PickedVariant } from "./VariantPicker";
-import { SubscriptionPanel, EMPTY_SUBSCRIPTION, type SubscriptionFormValues } from "./SubscriptionPanel";
 import { EMPTY_STYLE_FORM, buildStyleOverrides } from "~/lib/preview-overrides";
 
 type DiscountType = "percentage" | "flat" | "fixed_total";
@@ -25,7 +24,7 @@ type Status = "draft" | "active" | "paused";
 type TriggerMode = "same_as_members" | "specific";
 type Mode = "classic" | "mix_match";
 
-export type BundleFormValues = StylePanelValues & SubscriptionFormValues & {
+export type BundleFormValues = StylePanelValues & {
   name: string;
   mode: Mode;
   products: PickedProduct[];
@@ -52,7 +51,6 @@ type Props = {
 
 const DEFAULTS: BundleFormValues = {
   ...EMPTY_STYLE_FORM,
-  ...EMPTY_SUBSCRIPTION,
   name: "",
   mode: "classic",
   products: [],
@@ -109,19 +107,7 @@ export function BundleForm({ initialValues, errors, submitLabel, onValuesChange 
         name="freeGiftVariantId"
         value={values.freeGiftVariant?.variantId ?? ""}
       />
-      <input
-        type="hidden"
-        name="subscription"
-        value={JSON.stringify(
-          values.subEnabled
-            ? {
-                enabled: true,
-                discountPercent: parseInt(values.subDiscountPercent, 10) || 0,
-                interval: values.subInterval,
-              }
-            : null,
-        )}
-      />
+      <input type="hidden" name="subscription" value="null" />
 
       <BlockStack gap="500">
         {hasErrors && (
@@ -304,8 +290,6 @@ export function BundleForm({ initialValues, errors, submitLabel, onValuesChange 
             />
           </BlockStack>
         </Card>
-
-        <SubscriptionPanel values={values} onChange={(next) => setValues((s) => ({ ...s, ...next }))} />
 
         <StylePanel values={values} onChange={(next) => setValues((s) => ({ ...s, ...next }))} />
 

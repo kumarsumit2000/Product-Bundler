@@ -11,7 +11,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   return json({});
 }
 
-type CardKey = "qb_same" | "bxgy" | "qb_diff" | "bundle" | "subscription" | "progressive";
+type CardKey = "qb_same" | "bxgy" | "qb_diff" | "bundle" | "newsletter" | "progressive";
 type CardSpec = {
   key: CardKey;
   title: string;
@@ -180,28 +180,57 @@ function PreviewBundle() {
   );
 }
 
-function PreviewSubscription() {
+function PreviewNewsletter() {
   return (
     <BlockStack gap="200">
-      <Row title="Buy 1, get 1 free" save="SAVE 60%" price="$583.96" strike="$1,459.90" />
-      <Row selected title="Buy 3, get 6 free" save="SAVE 73%" price="$1,751.88" strike="$6,569.55" />
-      <div style={r.freeGiftBanner}>+ FREE special gift!</div>
-      <div
-        style={{
-          border: "1px dashed var(--pumper-theme, #d9263a)",
-          borderRadius: 8,
-          padding: 10,
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          fontSize: 12,
-        }}
-      >
-        <span style={{ width: 14, height: 14, border: "2px solid var(--pumper-theme, #d9263a)", borderRadius: 3, background: "var(--pumper-theme, #d9263a)" }} />
-        <BlockStack gap="050">
-          <span style={{ fontWeight: 600 }}>Subscribe & Save 20%</span>
-          <span style={{ color: "#888", fontSize: 10 }}>Delivered weekly</span>
-        </BlockStack>
+      <div style={{
+        background: "#fff7f8",
+        border: "2px solid #fbe4e7",
+        borderRadius: 10,
+        padding: 14,
+        display: "flex",
+        flexDirection: "column",
+        gap: 10,
+      }}>
+        <div style={{ fontWeight: 700, fontSize: 14 }}>Get 10% off your first order</div>
+        <div style={{ color: "#666", fontSize: 11 }}>
+          Join our newsletter for early access to drops and exclusive deals.
+        </div>
+        <div style={{ display: "flex", gap: 6 }}>
+          <div style={{
+            flex: 1,
+            background: "#fff",
+            border: "1px solid #d1d5db",
+            borderRadius: 6,
+            padding: "8px 10px",
+            fontSize: 11,
+            color: "#9ca3af",
+          }}>
+            you@email.com
+          </div>
+          <div style={{
+            background: "var(--pumper-theme, #d9263a)",
+            color: "#fff",
+            borderRadius: 6,
+            padding: "8px 14px",
+            fontSize: 11,
+            fontWeight: 700,
+            whiteSpace: "nowrap",
+          }}>
+            Subscribe
+          </div>
+        </div>
+      </div>
+      <div style={{
+        background: "#fce4e7",
+        color: "var(--pumper-theme, #d9263a)",
+        borderRadius: 6,
+        padding: "8px 10px",
+        fontSize: 11,
+        fontWeight: 600,
+        textAlign: "center",
+      }}>
+        ✉ 1,284 customers already subscribed
       </div>
     </BlockStack>
   );
@@ -238,7 +267,7 @@ const CARDS: CardSpec[] = [
   { key: "bxgy", title: "Buy X, get Y (BXGY) deal", href: "/app/quantity-breaks/new", preview: PreviewBxgy },
   { key: "qb_diff", title: "Quantity breaks for different products", href: "/app/quantity-breaks/new", preview: PreviewQbDifferent },
   { key: "bundle", title: "Complete the bundle", href: "/app/bundles/new", preview: PreviewBundle },
-  { key: "subscription", title: "Subscription", href: "/app/bundles/new", preview: PreviewSubscription },
+  { key: "newsletter", title: "Newsletter signup", href: null, comingSoon: true, preview: PreviewNewsletter },
   { key: "progressive", title: "Progressive gifts", href: "/app/progressive-gifts/new", preview: PreviewProgressive },
 ];
 

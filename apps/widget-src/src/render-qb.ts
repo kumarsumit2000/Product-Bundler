@@ -106,20 +106,11 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
     return `<button class="pumper-cta" data-action="add-to-cart" ${tr.available ? "" : "disabled"}>${escapeHtml(label)}</button>`;
   };
 
-  const sub = qb.subscription;
-  const renderSubRow = () => sub && sub.enabled
-    ? `<label class="pumper-sub-row">
-         <input type="checkbox" data-pumper-subscribe />
-         <span>Subscribe & save ${sub.discountPercent}% (${sub.interval})</span>
-       </label>`
-    : "";
-
   const renderAll = () => {
     mount.innerHTML = `
       <section class="pumper-card pumper-qb">
         <h3 class="pumper-qb-heading">${escapeHtml(heading)}</h3>
         <div class="pumper-qb-tiers">${renderRows()}</div>
-        ${renderSubRow()}
         ${renderCta()}
       </section>
     `;
@@ -145,18 +136,8 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
         cta.disabled = true;
         const unitCents = tierUnitCents(tr, variant.priceCents);
 
-        const subBox = mount.querySelector<HTMLInputElement>("[data-pumper-subscribe]");
-        const subActive = !!(sub && sub.enabled && subBox?.checked);
-        const subProps: Record<string, string> | undefined = subActive
-          ? {
-              _pumper_subscribe: "1",
-              _pumper_subscribe_pct: String(sub!.discountPercent),
-              _pumper_subscribe_interval: sub!.interval,
-            }
-          : undefined;
-
         const lines: CartLineInput[] = [
-          { variantId: variant.variantId, qty: tr.qty, bundleId: qb.id, extraProperties: subProps },
+          { variantId: variant.variantId, qty: tr.qty, bundleId: qb.id },
         ];
 
         if (tr.freeGiftVariantId && tr.freeGiftAvailable !== false) {
@@ -165,7 +146,6 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
             qty: 1,
             bundleId: qb.id,
             giftBundleId: qb.id,
-            extraProperties: subProps,
           });
         }
 
@@ -178,7 +158,6 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
             qty: tr.bogo.bonusQty,
             bundleId: qb.id,
             giftBundleId: qb.id,
-            extraProperties: subProps,
           });
         }
         // bogo.mode === "nth_free" → no extra line; Discount Function handles the math.
@@ -191,7 +170,6 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
               variantId: ep.variantId,
               qty: ep.qty,
               bundleId: qb.id,
-              extraProperties: subProps,
             });
           }
         }

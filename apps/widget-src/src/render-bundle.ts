@@ -60,14 +60,6 @@ export function renderBundle(mount: HTMLElement, bundle: BundleConfig, config: W
       ? `<div class="pumper-qb-gift-badge pumper-qb-gift-badge--unavailable">🎁 Free gift unavailable — out of stock</div>`
       : "";
 
-  const sub = bundle.subscription;
-  const subRow = sub && sub.enabled
-    ? `<label class="pumper-sub-row">
-         <input type="checkbox" data-pumper-subscribe />
-         <span>Subscribe & save ${sub.discountPercent}% (${sub.interval})</span>
-       </label>`
-    : "";
-
   const ctaLabel = anyOOS
     ? t("bundle.unavailable")
     : (bundle.ctaLabel ?? (totals.savingsCents > 0
@@ -80,7 +72,6 @@ export function renderBundle(mount: HTMLElement, bundle: BundleConfig, config: W
       <div class="pumper-bundle-rows">${rows}</div>
       ${giftBadge}
       ${totalLine}
-      ${subRow}
       <button class="pumper-cta" data-action="add-to-cart" ${anyOOS ? "disabled" : ""}>${escapeHtml(ctaLabel)}</button>
     </section>
   `;
@@ -92,20 +83,11 @@ export function renderBundle(mount: HTMLElement, bundle: BundleConfig, config: W
     cta.addEventListener("click", async () => {
       cta.disabled = true;
       emit("widget_click", { widgetType: "bundle", widgetId: bundle.id, productId: bundle.products[0]?.productId ?? "" });
-      const subBox = mount.querySelector<HTMLInputElement>("[data-pumper-subscribe]");
-      const subActive = !!(sub && sub.enabled && subBox?.checked);
-      const subProps: Record<string, string> | undefined = subActive
-        ? {
-            _pumper_subscribe: "1",
-            _pumper_subscribe_pct: String(sub!.discountPercent),
-            _pumper_subscribe_interval: sub!.interval,
-          }
-        : undefined;
       const lines = bundle.products
         .filter((p) => p.variantId)
-        .map((p) => ({ variantId: p.variantId!, qty: p.qty, bundleId: bundle.id, extraProperties: subProps }));
+        .map((p) => ({ variantId: p.variantId!, qty: p.qty, bundleId: bundle.id }));
       if (bundle.freeGiftVariantId && bundle.freeGiftAvailable) {
-        lines.push({ variantId: bundle.freeGiftVariantId, qty: 1, bundleId: bundle.id, extraProperties: subProps });
+        lines.push({ variantId: bundle.freeGiftVariantId, qty: 1, bundleId: bundle.id });
       }
       const result = await addToCart(bundle.id, lines);
       if (!result.ok) {
