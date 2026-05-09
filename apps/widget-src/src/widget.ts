@@ -43,17 +43,88 @@ function toGid(productIdRaw: string): string {
   return `gid://shopify/Product/${productIdRaw}`;
 }
 
+const FONT_WEIGHT: Record<string, string> = {
+  regular: "400",
+  medium: "500",
+  semibold: "600",
+  bold: "700",
+};
+
+function setVar(target: HTMLElement, name: string, value: string | number | undefined): void {
+  if (value === undefined || value === null || value === "") return;
+  target.style.setProperty(name, typeof value === "number" ? `${value}px` : value);
+}
+
 export function applyCssVars(
   target: HTMLElement,
   cfg: WidgetConfig,
   override: StyleOverrides | null,
 ): void {
   const s = cfg.settings;
-  target.style.setProperty("--pumper-primary",  override?.primaryColor    ?? s.primaryColor);
-  target.style.setProperty("--pumper-text",     override?.textColor       ?? s.textColor);
-  target.style.setProperty("--pumper-bg",       override?.backgroundColor ?? s.backgroundColor);
-  target.style.setProperty("--pumper-radius",   `${override?.borderRadius ?? s.borderRadius}px`);
-  target.style.setProperty("--pumper-font",     s.fontFamily);
+  const o = override ?? {};
+
+  // Legacy shorthand (still applies broadly to widget chrome)
+  setVar(target, "--pumper-primary", o.primaryColor ?? s.primaryColor);
+  setVar(target, "--pumper-text",    o.textColor    ?? s.textColor);
+  setVar(target, "--pumper-bg",      o.backgroundColor ?? s.backgroundColor);
+  target.style.setProperty("--pumper-radius",  `${o.borderRadius ?? s.borderRadius}px`);
+  target.style.setProperty("--pumper-spacing", `${o.spacing ?? 6}px`);
+  target.style.setProperty("--pumper-font",    s.fontFamily);
+
+  // General
+  setVar(target, "--pumper-cards-bg",         o.cardsBg);
+  setVar(target, "--pumper-selected-bg",      o.selectedBg);
+  setVar(target, "--pumper-border",           o.borderColor);
+  setVar(target, "--pumper-block-title-color", o.blockTitleColor);
+
+  // Bar texts
+  setVar(target, "--pumper-title-color",      o.titleColor);
+  setVar(target, "--pumper-subtitle-color",   o.subtitleColor);
+  setVar(target, "--pumper-price-color",      o.priceColor);
+  setVar(target, "--pumper-full-price-color", o.fullPriceColor);
+
+  // Label
+  setVar(target, "--pumper-label-bg",   o.labelBg);
+  setVar(target, "--pumper-label-text", o.labelText);
+
+  // Badge
+  setVar(target, "--pumper-badge-bg",   o.badgeBg);
+  setVar(target, "--pumper-badge-text", o.badgeText);
+
+  // Free gift
+  setVar(target, "--pumper-fg-bg",       o.freeGiftBg);
+  setVar(target, "--pumper-fg-text",     o.freeGiftText);
+  setVar(target, "--pumper-fg-sel-bg",   o.freeGiftSelectedBg);
+  setVar(target, "--pumper-fg-sel-text", o.freeGiftSelectedText);
+
+  // Upsell (vars set even though widget doesn't render an upsell yet)
+  setVar(target, "--pumper-upsell-bg",       o.upsellBg);
+  setVar(target, "--pumper-upsell-text",     o.upsellText);
+  setVar(target, "--pumper-upsell-sel-bg",   o.upsellSelectedBg);
+  setVar(target, "--pumper-upsell-sel-text", o.upsellSelectedText);
+
+  // Typography — sizes in px, font-style enum mapped to CSS weight
+  setVar(target, "--pumper-block-title-fs",  o.blockTitleFontSize);
+  setVar(target, "--pumper-block-title-fw",  o.blockTitleFontStyle ? FONT_WEIGHT[o.blockTitleFontStyle] : undefined);
+  setVar(target, "--pumper-title-fs",        o.titleFontSize);
+  setVar(target, "--pumper-title-fw",        o.titleFontStyle ? FONT_WEIGHT[o.titleFontStyle] : undefined);
+  setVar(target, "--pumper-subtitle-fs",     o.subtitleFontSize);
+  setVar(target, "--pumper-subtitle-fw",     o.subtitleFontStyle ? FONT_WEIGHT[o.subtitleFontStyle] : undefined);
+  setVar(target, "--pumper-label-fs",        o.labelFontSize);
+  setVar(target, "--pumper-label-fw",        o.labelFontStyle ? FONT_WEIGHT[o.labelFontStyle] : undefined);
+  setVar(target, "--pumper-fg-fs",           o.freeGiftFontSize);
+  setVar(target, "--pumper-fg-fw",           o.freeGiftFontStyle ? FONT_WEIGHT[o.freeGiftFontStyle] : undefined);
+  setVar(target, "--pumper-upsell-fs",       o.upsellFontSize);
+  setVar(target, "--pumper-upsell-fw",       o.upsellFontStyle ? FONT_WEIGHT[o.upsellFontStyle] : undefined);
+  setVar(target, "--pumper-unit-label-fs",   o.unitLabelFontSize);
+  setVar(target, "--pumper-unit-label-fw",   o.unitLabelFontStyle ? FONT_WEIGHT[o.unitLabelFontStyle] : undefined);
+
+  // Layout variant — drives the data-layout attribute the CSS targets.
+  if (o.layoutVariant) {
+    target.setAttribute("data-pumper-layout", o.layoutVariant);
+  } else {
+    target.removeAttribute("data-pumper-layout");
+  }
 }
 
 type ShortcodeKind = "bundle" | "qb" | "mix";

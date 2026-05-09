@@ -90,3 +90,132 @@
 .pumper-qb-tier .pumper-qb-gift-badge {
   align-self: flex-start;
 }
+
+/* ============================================================
+   Customization vars (Phase 9.A.1.5 — chunk 2)
+   Each rule below uses var(--name, fallback) so the existing
+   styling above keeps working when no override is set.
+   ============================================================ */
+
+/* Card surfaces honor cardsBg + borderColor when set */
+.pumper-card {
+  background: var(--pumper-cards-bg, var(--pumper-bg, #fff));
+  border-color: var(--pumper-border, #e3e3e3);
+}
+.pumper-bundle-row,
+.pumper-qb-tier {
+  background: var(--pumper-cards-bg, #fff);
+  border-color: var(--pumper-border, #e3e3e3);
+}
+
+/* Block / section title (the heading at the top of the widget) */
+.pumper-bundle-heading,
+.pumper-qb-heading,
+.pumper-mm-heading {
+  color: var(--pumper-block-title-color, inherit);
+  font-size: var(--pumper-block-title-fs, 14px);
+  font-weight: var(--pumper-block-title-fw, 600);
+}
+
+/* Bar texts — title / subtitle / price / strike */
+.pumper-row-title,
+.pumper-qb-tier-title {
+  color: var(--pumper-title-color, inherit);
+  font-size: var(--pumper-title-fs, 13px);
+  font-weight: var(--pumper-title-fw, 500);
+}
+.pumper-row-sub,
+.pumper-qb-tier-sub {
+  color: var(--pumper-subtitle-color, #888);
+  font-size: var(--pumper-subtitle-fs, 11px);
+  font-weight: var(--pumper-subtitle-fw, 400);
+}
+.pumper-total-value {
+  color: var(--pumper-price-color, var(--pumper-primary, #7B1E2A));
+}
+.pumper-strike {
+  color: var(--pumper-full-price-color, #aaa);
+}
+
+/* Label (e.g. "Total" caption) */
+.pumper-total-row {
+  background: var(--pumper-label-bg, #fafafa);
+}
+.pumper-total-label {
+  color: var(--pumper-label-text, inherit);
+  font-size: var(--pumper-label-fs, 12px);
+  font-weight: var(--pumper-label-fw, 400);
+}
+
+/* Badge ("Most popular" + tier savings pill) */
+.pumper-qb-popular-badge {
+  background: var(--pumper-badge-bg, var(--pumper-primary, #7B1E2A));
+  color: var(--pumper-badge-text, #fff);
+}
+.pumper-qb-savings,
+.pumper-bundle-savings {
+  background: var(--pumper-badge-bg, #fde7ea);
+  color: var(--pumper-badge-text, var(--pumper-primary, #7B1E2A));
+}
+
+/* Free gift badge */
+.pumper-qb-gift-badge {
+  background: var(--pumper-fg-bg, #fff7e6);
+  color: var(--pumper-fg-text, #7c3a00);
+  font-size: var(--pumper-fg-fs, 11px);
+  font-weight: var(--pumper-fg-fw, 600);
+}
+.pumper-qb-tier--selected .pumper-qb-gift-badge {
+  background: var(--pumper-fg-sel-bg, var(--pumper-fg-bg, #fff7e6));
+  color: var(--pumper-fg-sel-text, var(--pumper-fg-text, #7c3a00));
+}
+
+/* Selected QB tier surface uses selectedBg if set */
+.pumper-qb-tier--selected {
+  background: var(--pumper-selected-bg, var(--pumper-cards-bg, #fff));
+}
+
+/* Spacing — gap between tier rows / bundle rows */
+.pumper-qb-tiers,
+.pumper-bundle-rows,
+.pumper-mm-grid {
+  gap: var(--pumper-spacing, 6px);
+}
+
+/* ============================================================
+   Layout variants (data-pumper-layout="list|cards|grid|compact")
+   Default rendering is the existing "list" style.
+   ============================================================ */
+
+/* Cards: each tier becomes a wider card with extra vertical padding */
+[data-pumper-layout="cards"] .pumper-qb-tier,
+[data-pumper-layout="cards"] .pumper-bundle-row {
+  padding: 16px;
+  border-radius: calc(var(--pumper-radius, 8px) + 2px);
+}
+
+/* Grid: tiers laid out in columns */
+[data-pumper-layout="grid"] .pumper-qb-tiers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+[data-pumper-layout="grid"] .pumper-qb-tier {
+  flex-direction: column;
+  align-items: stretch;
+  text-align: left;
+}
+
+/* Compact: tighter rows, smaller text */
+[data-pumper-layout="compact"] .pumper-qb-tier,
+[data-pumper-layout="compact"] .pumper-bundle-row {
+  padding: 6px 10px;
+  gap: 6px;
+}
+[data-pumper-layout="compact"] .pumper-qb-tier-title,
+[data-pumper-layout="compact"] .pumper-row-title {
+  font-size: calc(var(--pumper-title-fs, 13px) - 1px);
+}
+[data-pumper-layout="compact"] .pumper-qb-tier-sub,
+[data-pumper-layout="compact"] .pumper-row-sub {
+  font-size: calc(var(--pumper-subtitle-fs, 11px) - 1px);
+}

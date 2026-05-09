@@ -19,11 +19,59 @@ export type CollectionProduct = {
   priceCents: number;
 };
 
+export type LayoutVariant = "list" | "cards" | "grid" | "compact";
+export type FontStyle = "regular" | "medium" | "semibold" | "bold";
+
 export type StyleOverrides = Partial<{
+  // Layout
+  layoutVariant: LayoutVariant;
+  borderRadius: number;
+  spacing: number;
+  // Legacy 3-color shorthand
   primaryColor: string;
   textColor: string;
   backgroundColor: string;
-  borderRadius: number;
+  // General
+  cardsBg: string;
+  selectedBg: string;
+  borderColor: string;
+  blockTitleColor: string;
+  // Bar texts
+  titleColor: string;
+  subtitleColor: string;
+  priceColor: string;
+  fullPriceColor: string;
+  // Label
+  labelBg: string;
+  labelText: string;
+  // Badge
+  badgeBg: string;
+  badgeText: string;
+  // Free gift
+  freeGiftBg: string;
+  freeGiftText: string;
+  freeGiftSelectedBg: string;
+  freeGiftSelectedText: string;
+  // Upsell
+  upsellBg: string;
+  upsellText: string;
+  upsellSelectedBg: string;
+  upsellSelectedText: string;
+  // Typography
+  blockTitleFontSize: number;
+  blockTitleFontStyle: FontStyle;
+  titleFontSize: number;
+  titleFontStyle: FontStyle;
+  subtitleFontSize: number;
+  subtitleFontStyle: FontStyle;
+  labelFontSize: number;
+  labelFontStyle: FontStyle;
+  freeGiftFontSize: number;
+  freeGiftFontStyle: FontStyle;
+  upsellFontSize: number;
+  upsellFontStyle: FontStyle;
+  unitLabelFontSize: number;
+  unitLabelFontStyle: FontStyle;
 }>;
 
 export type TextOverrides = Record<string, string>;
