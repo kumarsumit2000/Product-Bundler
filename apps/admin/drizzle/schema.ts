@@ -41,6 +41,10 @@ export type QbTier = {
     targetVariantId?: string;
     bonusQty: number;
   };
+  // Extra products bundled into this tier — drives the "Pack QB" pattern
+  // ("3 pack" includes 1× base product + the listed extras). All extras get
+  // added to cart with the tier's bundleId attribute when the tier is chosen.
+  extraProducts?: BundleProduct[];
 };
 
 export type LayoutVariant = "list" | "grid";

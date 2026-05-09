@@ -122,6 +122,13 @@ export type QbTier = {
     targetVariantTitle?: string | null;
     targetAvailable?: boolean | null;
   } | null;
+  extraProducts?: Array<{
+    productId: string;
+    variantId: string | null;
+    qty: number;
+    title?: string;
+    image?: string | null;
+  }>;
 };
 
 export type QbConfig = {

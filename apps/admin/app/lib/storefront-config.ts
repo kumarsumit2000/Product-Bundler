@@ -142,6 +142,13 @@ export async function buildStorefrontConfig(
               : null,
           }
         : null,
+      extraProducts: (tr.extraProducts ?? []).map((p) => ({
+        productId: p.productId,
+        variantId: p.variantId ?? null,
+        qty: p.qty,
+        title: p.title,
+        image: p.image,
+      })),
     }));
     return {
       id: q.id,

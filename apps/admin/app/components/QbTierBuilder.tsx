@@ -1,6 +1,7 @@
 import { Button, BlockStack, InlineStack, TextField, Select, Checkbox, Text, Collapsible, Box } from "@shopify/polaris";
 import { useState } from "react";
 import { VariantPicker, type PickedVariant } from "./VariantPicker";
+import { ProductPicker, type PickedProduct } from "./ProductPicker";
 
 export type TierFormValue = {
   qty: number;
@@ -12,6 +13,9 @@ export type TierFormValue = {
   bogoMode?: "" | "add_same" | "add_different" | "nth_free";
   bogoTargetVariant?: PickedVariant | null;
   bogoBonusQty?: number;
+  // Pack QB ("different products" pattern): extra products bundled into the
+  // tier — added to cart when this tier is chosen.
+  extraProducts?: PickedProduct[];
 };
 
 type Props = {
@@ -45,6 +49,7 @@ const DEFAULT_TIER: TierFormValue = {
   bogoMode: "",
   bogoTargetVariant: null,
   bogoBonusQty: 1,
+  extraProducts: [],
 };
 
 export function QbTierBuilder({ tiers, onChange, maxTiers = 10, restrictToProductId }: Props) {
@@ -130,8 +135,20 @@ export function QbTierBuilder({ tiers, onChange, maxTiers = 10, restrictToProduc
               Remove
             </Button>
           </InlineStack>
-          <AdvancedSection id={String(i)} initialOpen={!!(tier.freeGiftVariant || tier.bogoMode)}>
+          <AdvancedSection id={String(i)} initialOpen={!!(tier.freeGiftVariant || tier.bogoMode || (tier.extraProducts && tier.extraProducts.length > 0))}>
             <BlockStack gap="300" inlineAlign="stretch">
+              <BlockStack gap="100">
+                <Text as="h4" variant="headingSm">Bundled products in this tier</Text>
+                <Text as="p" variant="bodySm" tone="subdued">
+                  Optional. Products added to cart alongside the base product when this tier is selected — use for "1 pack / 2 pack / 3 pack" style discounts.
+                </Text>
+                <ProductPicker
+                  products={tier.extraProducts ?? []}
+                  onChange={(p) => updateTier(i, { extraProducts: p })}
+                  multiple
+                />
+              </BlockStack>
+
               <BlockStack gap="100">
                 <Text as="h4" variant="headingSm">Free gift</Text>
                 <VariantPicker

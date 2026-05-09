@@ -102,6 +102,11 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange }: P
                 bonusQty: t.bogoBonusQty ?? 1,
               }
             : null,
+          extraProducts: (t.extraProducts ?? []).map((p) => ({
+            productId: p.productId,
+            variantId: p.variantId ?? null,
+            qty: p.qty,
+          })),
         })))}
       />
 

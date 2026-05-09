@@ -163,6 +163,18 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
         }
         // bogo.mode === "nth_free" → no extra line; Discount Function handles the math.
 
+        // Pack QB extras — tier-attached bundled products.
+        if (tr.extraProducts) {
+          for (const ep of tr.extraProducts) {
+            if (!ep.variantId) continue;
+            lines.push({
+              variantId: ep.variantId,
+              qty: ep.qty,
+              bundleId: qb.id,
+            });
+          }
+        }
+
         const result = await addToCart(qb.id, lines);
         if (!result.ok) {
           cta.disabled = false;

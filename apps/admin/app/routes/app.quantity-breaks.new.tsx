@@ -57,6 +57,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
           bonusQty: raw.bonusQty,
         };
       })(),
+      extraProducts: ((t as { extraProducts?: Array<{ productId: string; variantId: string | null; qty: number }> }).extraProducts ?? []),
     })),
     combinable: form.get("combinable") === "on",
     headline: null as string | null,
