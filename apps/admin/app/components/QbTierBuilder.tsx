@@ -144,8 +144,8 @@ export function QbTierBuilder({ tiers, onChange, maxTiers = 10, restrictToProduc
                 </Text>
                 <ProductPicker
                   products={tier.extraProducts ?? []}
-                  onChange={(p) => updateTier(i, { extraProducts: p })}
-                  multiple
+                  onChange={(p) => updateTier(i, { extraProducts: p.slice(0, 1) })}
+                  multiple={false}
                 />
               </BlockStack>
 

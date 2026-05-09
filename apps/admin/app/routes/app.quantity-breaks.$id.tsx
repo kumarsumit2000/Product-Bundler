@@ -276,19 +276,17 @@ export default function QbEdit() {
     >
       <Layout>
         <Layout.Section>
+          {previewConfig && (
+            <PreviewPane type="qb" id={qb.id} config={previewConfig} />
+          )}
+          <div style={{ height: 16 }} />
           <QbForm
             submitLabel="Save changes"
             errors={errors}
             initialValues={initial}
             onValuesChange={setValues}
           />
-        </Layout.Section>
-        <Layout.Section variant="oneThird">
-          {previewConfig && (
-            <PreviewPane type="qb" id={qb.id} config={previewConfig} />
-          )}
-        </Layout.Section>
-        <Layout.Section>
+          <div style={{ height: 16 }} />
           <EmbedCodeCard plan={plan} snippet={snippet} />
         </Layout.Section>
       </Layout>

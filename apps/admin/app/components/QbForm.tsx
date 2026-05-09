@@ -14,7 +14,8 @@ import {
 import { useEffect, useState } from "react";
 import { ProductPicker, type PickedProduct } from "./ProductPicker";
 import { QbTierBuilder, type TierFormValue } from "./QbTierBuilder";
-import { StylePanel, type StylePanelValues } from "./StylePanel";
+import { type StylePanelValues } from "./StylePanel";
+import { SimpleQbStylePanel } from "./SimpleQbStylePanel";
 import { EMPTY_STYLE_FORM, buildStyleOverrides } from "~/lib/preview-overrides";
 
 type Status = "draft" | "active" | "paused";
@@ -200,7 +201,7 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange }: P
           </BlockStack>
         </Card>
 
-        <StylePanel values={values} onChange={(next) => setValues((s) => ({ ...s, ...next }))} />
+        <SimpleQbStylePanel values={values} onChange={(next) => setValues((s) => ({ ...s, ...next }))} />
 
         <Card>
           <BlockStack gap="400">

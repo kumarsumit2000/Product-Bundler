@@ -210,18 +210,16 @@ export default function QbNew() {
     >
       <Layout>
         <Layout.Section>
+          {previewConfig && (
+            <PreviewPane type="qb" id="new" config={previewConfig} />
+          )}
+          <div style={{ height: 16 }} />
           <QbForm
             submitLabel="Save quantity break"
             errors={errors}
             onValuesChange={setValues}
           />
-        </Layout.Section>
-        <Layout.Section variant="oneThird">
-          {previewConfig && (
-            <PreviewPane type="qb" id="new" config={previewConfig} />
-          )}
-        </Layout.Section>
-        <Layout.Section>
+          <div style={{ height: 16 }} />
           <EmbedCodeCard plan={plan} />
         </Layout.Section>
       </Layout>
