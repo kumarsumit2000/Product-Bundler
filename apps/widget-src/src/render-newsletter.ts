@@ -22,6 +22,9 @@ function applyNewsletterVars(target: HTMLElement, n: NewsletterConfig): void {
   set("--pumper-nl-inline-py", s.inlinePaddingY ?? s.inlinePadding);
   set("--pumper-nl-popup-px", s.popupPaddingX ?? s.popupPadding);
   set("--pumper-nl-popup-py", s.popupPaddingY ?? s.popupPadding);
+  set("--pumper-nl-text-align", s.textAlign);
+  set("--pumper-nl-inline-max", s.inlineMaxWidth);
+  set("--pumper-nl-popup-max", s.popupMaxWidth);
 }
 
 function newsletterFormHtml(n: NewsletterConfig): string {

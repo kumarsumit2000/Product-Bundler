@@ -210,7 +210,12 @@
   background: var(--pumper-nl-bg, #fff);
   border-radius: var(--pumper-nl-radius, 8px);
   border: 1px solid var(--pumper-nl-border, #e5e7eb);
+  max-width: var(--pumper-nl-inline-max, 100%);
+  margin-left: auto;
+  margin-right: auto;
+  text-align: var(--pumper-nl-text-align, left);
 }
+.pumper-newsletter .pumper-newsletter-form { text-align: left; }
 /* Inside a modal the wrapping .pumper-modal-content owns padding instead. */
 .pumper-modal .pumper-newsletter { padding: 0; border: 0; }
 .pumper-newsletter-heading {
@@ -256,7 +261,7 @@
 @keyframes pumper-fade-in { from { opacity: 0; } to { opacity: 1; } }
 .pumper-modal {
   position: relative;
-  max-width: 440px; width: 100%;
+  max-width: var(--pumper-nl-popup-max, 440px); width: 100%;
   padding: 0;
   overflow: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
@@ -266,7 +271,7 @@
   border: 1px solid var(--pumper-nl-border, transparent);
   border-radius: var(--pumper-nl-radius, 12px);
 }
-.pumper-modal--wide { max-width: 760px; }
+.pumper-modal--wide { max-width: var(--pumper-nl-popup-max, 760px); }
 .pumper-modal--left { flex-direction: row; }
 .pumper-modal--right { flex-direction: row-reverse; }
 @media (max-width: 600px) {
@@ -282,7 +287,9 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+  text-align: var(--pumper-nl-text-align, left);
 }
+.pumper-modal-content .pumper-newsletter-form { text-align: left; }
 .pumper-modal-image {
   background-size: cover;
   background-position: center;

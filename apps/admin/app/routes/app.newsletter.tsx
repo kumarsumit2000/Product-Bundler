@@ -119,6 +119,9 @@ type StyleForm = {
   inlinePaddingY: string;
   popupPaddingX: string;
   popupPaddingY: string;
+  textAlign: string;
+  inlineMaxWidth: string;
+  popupMaxWidth: string;
 };
 
 const EMPTY_STYLE: StyleForm = {
@@ -133,6 +136,9 @@ const EMPTY_STYLE: StyleForm = {
   inlinePaddingY: "",
   popupPaddingX: "",
   popupPaddingY: "",
+  textAlign: "",
+  inlineMaxWidth: "",
+  popupMaxWidth: "",
 };
 
 function styleFromSettings(so: unknown): StyleForm {
@@ -157,6 +163,9 @@ function styleFromSettings(so: unknown): StyleForm {
     popupPaddingY: typeof s.popupPaddingY === "number"
       ? String(s.popupPaddingY)
       : (typeof s.popupPadding === "number" ? String(s.popupPadding) : ""),
+    textAlign: typeof s.textAlign === "string" ? s.textAlign : "",
+    inlineMaxWidth: typeof s.inlineMaxWidth === "number" ? String(s.inlineMaxWidth) : "",
+    popupMaxWidth: typeof s.popupMaxWidth === "number" ? String(s.popupMaxWidth) : "",
   };
 }
 
@@ -172,11 +181,17 @@ function buildStyleOverrides(s: StyleForm): Record<string, unknown> {
     const n = parseInt(s.borderRadius, 10);
     if (Number.isFinite(n)) out.borderRadius = n;
   }
-  for (const k of ["inlinePaddingX", "inlinePaddingY", "popupPaddingX", "popupPaddingY"] as const) {
+  for (const k of [
+    "inlinePaddingX", "inlinePaddingY", "popupPaddingX", "popupPaddingY",
+    "inlineMaxWidth", "popupMaxWidth",
+  ] as const) {
     if (s[k]) {
       const n = parseInt(s[k], 10);
       if (Number.isFinite(n)) out[k] = n;
     }
+  }
+  if (s.textAlign && ["left", "center", "right"].includes(s.textAlign)) {
+    out.textAlign = s.textAlign;
   }
   return out;
 }
@@ -467,6 +482,44 @@ export default function NewsletterPage() {
                       max={48}
                       placeholder="8"
                     />
+                    <FormLayout.Group>
+                      <Select
+                        label="Text alignment"
+                        options={[
+                          { label: "Left", value: "left" },
+                          { label: "Center", value: "center" },
+                          { label: "Right", value: "right" },
+                          { label: "Default", value: "" },
+                        ]}
+                        value={values.style.textAlign}
+                        onChange={(textAlign) => setStyle({ textAlign })}
+                        helpText="Heading + subtitle"
+                      />
+                    </FormLayout.Group>
+                    <FormLayout.Group>
+                      <TextField
+                        label="Inline max width (px)"
+                        type="number"
+                        value={values.style.inlineMaxWidth}
+                        onChange={(inlineMaxWidth) => setStyle({ inlineMaxWidth })}
+                        autoComplete="off"
+                        min={200}
+                        max={1200}
+                        placeholder="full width"
+                        helpText="Caps width of the inline embed"
+                      />
+                      <TextField
+                        label="Popup max width (px)"
+                        type="number"
+                        value={values.style.popupMaxWidth}
+                        onChange={(popupMaxWidth) => setStyle({ popupMaxWidth })}
+                        autoComplete="off"
+                        min={300}
+                        max={1200}
+                        placeholder="440 (760 with side image)"
+                        helpText="Caps width of the popup modal"
+                      />
+                    </FormLayout.Group>
                     <Text as="h3" variant="headingSm">Inline padding</Text>
                     <FormLayout.Group>
                       <TextField

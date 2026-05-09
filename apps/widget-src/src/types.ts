@@ -191,6 +191,9 @@ export type NewsletterStyleOverrides = Partial<{
   inlinePaddingY: number;
   popupPaddingX: number;
   popupPaddingY: number;
+  textAlign: "left" | "center" | "right";
+  inlineMaxWidth: number;
+  popupMaxWidth: number;
 }>;
 
 export type NewsletterConfig = {
