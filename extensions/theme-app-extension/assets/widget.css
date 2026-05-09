@@ -200,3 +200,8 @@
   align-items: stretch;
   text-align: left;
 }
+/* The "+" separator only makes sense between vertically-stacked rows.
+   Hide it when bundle members are laid out in a grid. */
+[data-pumper-layout="grid"] .pumper-plus {
+  display: none;
+}
