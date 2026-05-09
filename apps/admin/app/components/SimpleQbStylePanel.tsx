@@ -1,5 +1,6 @@
 import { BlockStack, Card, FormLayout, TextField, Text } from "@shopify/polaris";
 import { ColorSwatchPicker } from "./ColorSwatchPicker";
+import { LayoutPresetPicker } from "./LayoutPresetPicker";
 import type { StylePanelValues } from "./StylePanel";
 
 type Props = {
@@ -15,7 +16,26 @@ export function SimpleQbStylePanel({ values, onChange }: Props) {
     <Card>
       <BlockStack gap="300">
         <Text as="h2" variant="headingMd">Appearance</Text>
-        <Text as="p" tone="subdued">Override colors and shape. Leave any field blank to use defaults.</Text>
+        <Text as="p" tone="subdued">Override layout, colors and shape. Leave any field blank to use defaults.</Text>
+        <BlockStack gap="200">
+          <Text as="h3" variant="headingSm">Layout</Text>
+          <LayoutPresetPicker
+            value={values.layoutVariant}
+            onChange={(layoutVariant) => onChange({ layoutVariant })}
+          />
+          {values.layoutVariant === "grid" && (
+            <TextField
+              label="Items per row"
+              type="number"
+              value={values.gridColumns}
+              onChange={(gridColumns) => onChange({ gridColumns })}
+              autoComplete="off"
+              min={1}
+              max={6}
+              placeholder="3"
+            />
+          )}
+        </BlockStack>
         <FormLayout>
           <FormLayout.Group>
             <ColorSwatchPicker
