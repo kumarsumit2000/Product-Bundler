@@ -94,22 +94,24 @@ type RowProps = {
 
 function Row({ selected = false, popular, title, sub, save, price, strike }: RowProps) {
   return (
-    <div style={r.card(selected)}>
+    <div style={{ ...r.card(selected), alignItems: "flex-start" }}>
       {popular && <span style={r.popularPill}>★ {popular}</span>}
-      <span style={r.radio(selected)} />
-      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-          <span style={{ fontWeight: 600 }}>{title}</span>
-          {save && <span style={r.saveTag()}>{save}</span>}
-        </div>
+      <span style={{ ...r.radio(selected), marginTop: 2 }} />
+      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
+        <span style={{ fontWeight: 600 }}>{title}</span>
         {sub && <span style={{ color: "#888", fontSize: 11 }}>{sub}</span>}
+        {(save || price) && (
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            {save && <span style={r.saveTag()}>{save}</span>}
+            {price && (
+              <span style={{ fontWeight: 700, marginLeft: "auto", whiteSpace: "nowrap" }}>
+                {price}
+                {strike && <span style={r.strike}>{strike}</span>}
+              </span>
+            )}
+          </div>
+        )}
       </div>
-      {price && (
-        <span style={{ fontWeight: 700, whiteSpace: "nowrap", textAlign: "right" }}>
-          {price}
-          {strike && <span style={r.strike}>{strike}</span>}
-        </span>
-      )}
     </div>
   );
 }
