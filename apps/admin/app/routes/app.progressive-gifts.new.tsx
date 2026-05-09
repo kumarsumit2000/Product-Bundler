@@ -1,0 +1,62 @@
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/cloudflare";
+import { json, redirect } from "@remix-run/cloudflare";
+import { useActionData } from "@remix-run/react";
+import { Page, Layout } from "@shopify/polaris";
+import { authenticate, type AppLoadContext } from "~/shopify.server";
+import { getDb } from "~/db.server";
+import * as repo from "~/lib/progressive-gifts/repo";
+import { validateProgressiveGift } from "~/lib/progressive-gifts/validate";
+import { ProgressiveGiftForm } from "~/components/ProgressiveGiftForm";
+import type { ProgressiveThreshold } from "../../drizzle/schema";
+
+export async function loader({ request, context }: LoaderFunctionArgs) {
+  const ctx = context as AppLoadContext;
+  await authenticate.admin(request, ctx);
+  return json({});
+}
+
+export async function action({ request, context }: ActionFunctionArgs) {
+  const ctx = context as AppLoadContext;
+  const { session } = await authenticate.admin(request, ctx);
+  const form = await request.formData();
+  const thresholdsRaw = (form.get("thresholds") as string) || "[]";
+  const thresholds: ProgressiveThreshold[] = JSON.parse(thresholdsRaw);
+
+  const input = {
+    name: (form.get("name") as string) || "",
+    status: (form.get("status") as string) || "draft",
+    thresholds,
+    headline: (form.get("headline") as string) || null,
+  };
+
+  const v = validateProgressiveGift(input);
+  if (!v.valid) return json({ errors: v.errors }, { status: 400 });
+
+  const db = getDb(ctx.cloudflare.env.DB);
+  const created = await repo.create(db, session.shop, {
+    name: input.name,
+    status: input.status as "draft" | "active" | "paused",
+    thresholds: input.thresholds,
+    headline: input.headline,
+    styleOverrides: null,
+  });
+  await ctx.cloudflare.env.SHOP_SETTINGS_CACHE.delete(`config:${session.shop}`);
+  return redirect(`/app/progressive-gifts/${created.id}?saved=${encodeURIComponent(input.name)}`);
+}
+
+export default function ProgressiveGiftNew() {
+  const actionData = useActionData<typeof action>();
+  const errors = actionData && "errors" in actionData ? actionData.errors : undefined;
+  return (
+    <Page
+      title="Create progressive gift"
+      backAction={{ content: "Progressive gifts", url: "/app/progressive-gifts" }}
+    >
+      <Layout>
+        <Layout.Section>
+          <ProgressiveGiftForm submitLabel="Save progressive gift" errors={errors} />
+        </Layout.Section>
+      </Layout>
+    </Page>
+  );
+}

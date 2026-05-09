@@ -172,6 +172,26 @@ export const quantityBreaks = sqliteTable("quantity_breaks", {
   productIdx: index("qb_product_idx").on(t.shopId, t.productId),
 }));
 
+export type ProgressiveThreshold = {
+  minSpendCents: number;
+  giftVariantId: string;
+  label: string;
+};
+
+export const progressiveGifts = sqliteTable("progressive_gifts", {
+  id: text("id").primaryKey(),
+  shopId: text("shop_id").notNull().references(() => shops.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  status: text("status").notNull().default("draft"),
+  thresholds: text("thresholds", { mode: "json" }).$type<ProgressiveThreshold[]>().notNull(),
+  headline: text("headline"),
+  styleOverrides: text("style_overrides", { mode: "json" }).$type<StyleOverrides | null>(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+}, (t) => ({
+  shopIdx: index("pg_shop_idx").on(t.shopId),
+}));
+
 export const shopSettings = sqliteTable("shop_settings", {
   shopId: text("shop_id").primaryKey().references(() => shops.id, { onDelete: "cascade" }),
   primaryColor: text("primary_color").notNull().default("#7B1E2A"),
@@ -191,6 +211,8 @@ export type NewShop = typeof shops.$inferInsert;
 export type Bundle = typeof bundles.$inferSelect;
 export type NewBundle = typeof bundles.$inferInsert;
 export type QuantityBreak = typeof quantityBreaks.$inferSelect;
+export type ProgressiveGift = typeof progressiveGifts.$inferSelect;
+export type NewProgressiveGift = typeof progressiveGifts.$inferInsert;
 export type NewQuantityBreak = typeof quantityBreaks.$inferInsert;
 export type ShopSettings = typeof shopSettings.$inferSelect;
 

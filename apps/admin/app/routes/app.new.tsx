@@ -302,7 +302,7 @@ const CARDS: CardSpec[] = [
   { key: "qb_diff", title: "Quantity breaks for different products", href: "/app/quantity-breaks/new", preview: PreviewQbDifferent },
   { key: "bundle", title: "Complete the bundle", href: "/app/bundles/new", preview: PreviewBundle },
   { key: "subscription", title: "Subscription", href: "/app/bundles/new", preview: PreviewSubscription },
-  { key: "progressive", title: "Progressive gifts", href: null, comingSoon: true, preview: PreviewProgressive },
+  { key: "progressive", title: "Progressive gifts", href: "/app/progressive-gifts/new", preview: PreviewProgressive },
 ];
 
 const THEMES = [
