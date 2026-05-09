@@ -221,6 +221,14 @@ export type ProgressiveThreshold = {
   lockedTitle?: string;
   labelCrossedOut?: string;
   lockedLabel?: string;
+  // Gift kind. "free_gift" attaches a product/variant. "free_shipping" applies
+  // a 100% discount to shipping at checkout (handled at checkout, not on PDP).
+  kind?: "free_gift" | "free_shipping";
+  // Optional product-level pick (any variant of this product qualifies as the
+  // gift). Used in addition to / instead of giftVariantId.
+  giftProductId?: string;
+  // Free-shipping icon URL override. Defaults to a built-in truck icon.
+  iconUrl?: string;
 };
 
 export type ProgressiveGiftStyleOverrides = Partial<{

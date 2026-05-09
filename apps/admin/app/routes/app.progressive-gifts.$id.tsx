@@ -10,7 +10,7 @@ import { useState } from "react";
 import { ProgressiveGiftForm, type ProgressiveGiftFormValues, progressiveStyleFromOverrides } from "~/components/ProgressiveGiftForm";
 import { ProgressiveGiftPreview } from "~/components/ProgressiveGiftPreview";
 import { EmbedCodeCard } from "~/components/EmbedCodeCard";
-import { fetchVariantDetails } from "~/lib/shopify-product-fetch";
+import { fetchVariantDetails, fetchProductDetails } from "~/lib/shopify-product-fetch";
 import { useSavedToast } from "~/lib/toast";
 import type { ProgressiveThreshold } from "../../drizzle/schema";
 
@@ -22,12 +22,21 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
   if (!pg) throw new Response("Not found", { status: 404 });
 
   const variantIds = pg.thresholds.map((t) => t.giftVariantId).filter(Boolean);
-  const variantDetails = await fetchVariantDetails(admin, variantIds).catch((err) => {
-    console.error("[progressive-gifts.$id] fetchVariantDetails failed (non-fatal):", err);
-    return {} as Awaited<ReturnType<typeof fetchVariantDetails>>;
-  });
+  const productIds = pg.thresholds.map((t) => t.giftProductId).filter((x): x is string => Boolean(x));
+  const [variantDetails, productMap] = await Promise.all([
+    fetchVariantDetails(admin, variantIds).catch((err) => {
+      console.error("[progressive-gifts.$id] fetchVariantDetails failed:", err);
+      return {} as Awaited<ReturnType<typeof fetchVariantDetails>>;
+    }),
+    productIds.length > 0
+      ? fetchProductDetails(admin, productIds).catch((err) => {
+          console.error("[progressive-gifts.$id] fetchProductDetails failed:", err);
+          return {} as Awaited<ReturnType<typeof fetchProductDetails>>;
+        })
+      : Promise.resolve({} as Awaited<ReturnType<typeof fetchProductDetails>>),
+  ]);
 
-  return json({ pg, variantDetails });
+  return json({ pg, variantDetails, productMap });
 }
 
 export async function action({ request, params, context }: ActionFunctionArgs) {
@@ -74,7 +83,7 @@ export async function action({ request, params, context }: ActionFunctionArgs) {
 }
 
 export default function ProgressiveGiftEdit() {
-  const { pg, variantDetails } = useLoaderData<typeof loader>();
+  const { pg, variantDetails, productMap } = useLoaderData<typeof loader>();
   useSavedToast();
   const actionData = useActionData<typeof action>();
   const errors = actionData && "errors" in actionData ? actionData.errors : undefined;
@@ -96,6 +105,8 @@ export default function ProgressiveGiftEdit() {
       lockedTitle: t.lockedTitle ?? "",
       labelCrossedOut: t.labelCrossedOut ?? "",
       lockedLabel: t.lockedLabel ?? "",
+      kind: (t.kind ?? "free_gift") as "free_gift" | "free_shipping",
+      iconUrl: t.iconUrl ?? "",
       variant: t.giftVariantId && variantDetails[t.giftVariantId]
         ? {
             variantId: t.giftVariantId,
@@ -103,6 +114,15 @@ export default function ProgressiveGiftEdit() {
             productTitle: variantDetails[t.giftVariantId]!.productTitle,
             variantTitle: variantDetails[t.giftVariantId]!.variantTitle,
             image: variantDetails[t.giftVariantId]!.image ?? undefined,
+          }
+        : null,
+      product: t.giftProductId && productMap[t.giftProductId]
+        ? {
+            productId: t.giftProductId,
+            variantId: null,
+            qty: 1,
+            title: productMap[t.giftProductId]!.title,
+            image: productMap[t.giftProductId]!.image ?? undefined,
           }
         : null,
     })),

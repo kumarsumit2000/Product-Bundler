@@ -23,8 +23,9 @@ export function validateProgressiveGift(input: ProgressiveGiftInput): Validation
     errors.thresholds = "Add at least one gift threshold";
   } else {
     for (const t of input.thresholds) {
-      if (!t.giftVariantId) {
-        errors.thresholds = "Each threshold needs a gift variant";
+      const isShipping = t.kind === "free_shipping";
+      if (!isShipping && !t.giftVariantId && !t.giftProductId) {
+        errors.thresholds = "Each free-gift threshold needs a product or variant";
         break;
       }
       if (typeof t.minSpendCents !== "number" || t.minSpendCents < 0) {

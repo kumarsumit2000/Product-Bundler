@@ -37,15 +37,24 @@ export function ProgressiveGiftPreview({ values, demoCartTotal = 75 }: Props) {
   const t = styleToTokens(values.style);
 
   const tiers = values.thresholds
-    .map((tier) => ({
-      minSpend: parseFloat(tier.minSpend || "0") || 0,
-      label: tier.label || "FREE",
-      lockedLabel: tier.lockedLabel || `$${parseFloat(tier.minSpend || "0") || 0}`,
-      title: tier.title || tier.variant?.productTitle || "Free gift",
-      lockedTitle: tier.lockedTitle || "Locked",
-      labelCrossedOut: tier.labelCrossedOut || "",
-      image: tier.variant?.image,
-    }))
+    .map((tier) => {
+      const isShipping = tier.kind === "free_shipping";
+      const productImage = tier.variant?.image ?? tier.product?.image;
+      const defaultTitle = isShipping
+        ? "Free shipping"
+        : (tier.product?.title ?? tier.variant?.productTitle ?? "Free gift");
+      return {
+        minSpend: parseFloat(tier.minSpend || "0") || 0,
+        label: tier.label || "FREE",
+        lockedLabel: tier.lockedLabel || `$${parseFloat(tier.minSpend || "0") || 0}`,
+        title: tier.title || defaultTitle,
+        lockedTitle: tier.lockedTitle || "Locked",
+        labelCrossedOut: tier.labelCrossedOut || "",
+        image: isShipping ? (tier.iconUrl || null) : (productImage ?? null),
+        isShipping,
+        iconEmoji: isShipping && !tier.iconUrl ? "🚚" : null,
+      };
+    })
     .sort((a, b) => a.minSpend - b.minSpend);
 
   const maxSpend = tiers.length > 0 ? tiers[tiers.length - 1]!.minSpend : 0;
@@ -160,6 +169,10 @@ export function ProgressiveGiftPreview({ values, demoCartTotal = 75 }: Props) {
                                 alt=""
                                 style={{ width: 32, height: 32, objectFit: "cover", borderRadius: 4, flexShrink: 0 }}
                               />
+                            ) : tier.iconEmoji ? (
+                              <div style={{ width: 32, height: 32, fontSize: 22, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                {tier.iconEmoji}
+                              </div>
                             ) : (
                               <div style={{ width: 32, height: 32, background: "#cbd5e1", borderRadius: 4, flexShrink: 0 }} />
                             )}
@@ -227,6 +240,10 @@ export function ProgressiveGiftPreview({ values, demoCartTotal = 75 }: Props) {
                               alt=""
                               style={{ width: "100%", height: 36, objectFit: "cover", borderRadius: 4 }}
                             />
+                          ) : tier.iconEmoji ? (
+                            <div style={{ height: 36, fontSize: 26, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                              {tier.iconEmoji}
+                            </div>
                           ) : (
                             <div style={{ height: 36, background: "#cbd5e1", borderRadius: 4 }} />
                           )}

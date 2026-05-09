@@ -4,16 +4,23 @@ import {
   BlockStack, Card, FormLayout, TextField, Select, Button, Text, InlineStack, Banner, Checkbox,
 } from "@shopify/polaris";
 import { VariantPicker, type PickedVariant } from "./VariantPicker";
+import { ProductPicker, type PickedProduct } from "./ProductPicker";
 import { ColorSwatchPicker } from "./ColorSwatchPicker";
+import { ShopifyImagePicker } from "./ShopifyImagePicker";
+
+export type ProgressiveGiftKind = "free_gift" | "free_shipping";
 
 export type ProgressiveGiftThresholdValue = {
   minSpend: string;
   variant: PickedVariant | null;
+  product: PickedProduct | null;
   label: string;
   title: string;
   lockedTitle: string;
   labelCrossedOut: string;
   lockedLabel: string;
+  kind: ProgressiveGiftKind;
+  iconUrl: string;
 };
 
 export type ProgressiveLayout = "stacked" | "grid" | "inline";
@@ -114,11 +121,14 @@ export function progressiveStyleToOverrides(s: ProgressiveStyleForm): Record<str
 const EMPTY_THRESHOLD: ProgressiveGiftThresholdValue = {
   minSpend: "50",
   variant: null,
+  product: null,
   label: "FREE",
   title: "",
   lockedTitle: "",
   labelCrossedOut: "",
   lockedLabel: "",
+  kind: "free_gift",
+  iconUrl: "",
 };
 
 const DEFAULTS: ProgressiveGiftFormValues = {
@@ -187,12 +197,15 @@ export function ProgressiveGiftForm({ submitLabel, initialValues, errors, onValu
       JSON.stringify(
         values.thresholds.map((t) => ({
           minSpendCents: Math.round(parseFloat(t.minSpend || "0") * 100),
-          giftVariantId: t.variant?.variantId ?? "",
+          giftVariantId: t.kind === "free_gift" ? (t.variant?.variantId ?? "") : "",
+          giftProductId: t.kind === "free_gift" ? (t.product?.productId ?? "") : "",
           label: t.label,
           title: t.title,
           lockedTitle: t.lockedTitle,
           labelCrossedOut: t.labelCrossedOut,
           lockedLabel: t.lockedLabel,
+          kind: t.kind,
+          iconUrl: t.kind === "free_shipping" ? t.iconUrl : "",
         })),
       ),
     );
@@ -306,13 +319,66 @@ export function ProgressiveGiftForm({ submitLabel, initialValues, errors, onValu
                     </InlineStack>
                   </InlineStack>
                   <FormLayout>
-                    <BlockStack gap="100">
-                      <Text as="span" variant="bodyMd">Gift variant</Text>
-                      <VariantPicker
-                        variant={t.variant}
-                        onChange={(variant) => updateThreshold(i, { variant })}
-                      />
-                    </BlockStack>
+                    <InlineStack gap="0" wrap={false}>
+                      <Button
+                        variant={t.kind === "free_gift" ? "primary" : "secondary"}
+                        onClick={() => updateThreshold(i, { kind: "free_gift" })}
+                        fullWidth
+                      >
+                        🎁 Free gift
+                      </Button>
+                      <Button
+                        variant={t.kind === "free_shipping" ? "primary" : "secondary"}
+                        onClick={() => updateThreshold(i, { kind: "free_shipping" })}
+                        fullWidth
+                      >
+                        🚚 Free shipping
+                      </Button>
+                    </InlineStack>
+                    {t.kind === "free_shipping" ? (
+                      <>
+                        <Banner tone="info">
+                          We&apos;ll apply a 100% discount to shipping when the cart subtotal hits this threshold.
+                        </Banner>
+                        <BlockStack gap="100">
+                          <Text as="span" variant="bodyMd">Icon</Text>
+                          <ShopifyImagePicker
+                            url={t.iconUrl}
+                            onChange={(iconUrl) => updateThreshold(i, { iconUrl })}
+                          />
+                          <Text as="p" tone="subdued" variant="bodySm">
+                            Defaults to a 🚚 truck icon. Pick any image from Shopify Files (recommended: 80×80 transparent PNG).
+                          </Text>
+                        </BlockStack>
+                      </>
+                    ) : (
+                      <>
+                        <BlockStack gap="100">
+                          <Text as="span" variant="bodyMd">Gift product</Text>
+                          <Text as="p" tone="subdued" variant="bodySm">
+                            Pick a whole product (any variant qualifies)…
+                          </Text>
+                          <ProductPicker
+                            products={t.product ? [t.product] : []}
+                            onChange={(products) => updateThreshold(i, {
+                              product: products[0] ?? null,
+                              variant: products[0] ? null : t.variant,
+                            })}
+                            multiple={false}
+                          />
+                        </BlockStack>
+                        <BlockStack gap="100">
+                          <Text as="span" variant="bodyMd">Or pick a specific variant</Text>
+                          <VariantPicker
+                            variant={t.variant}
+                            onChange={(variant) => updateThreshold(i, {
+                              variant,
+                              product: variant ? null : t.product,
+                            })}
+                          />
+                        </BlockStack>
+                      </>
+                    )}
                     <TextField
                       label="Minimum cart spend ($)"
                       type="number"
@@ -320,7 +386,7 @@ export function ProgressiveGiftForm({ submitLabel, initialValues, errors, onValu
                       onChange={(minSpend) => updateThreshold(i, { minSpend })}
                       autoComplete="off"
                       min={0}
-                      helpText="Customer's cart subtotal needed to unlock this gift"
+                      helpText="Customer's cart subtotal needed to unlock this"
                     />
                     <FormLayout.Group>
                       <TextField
