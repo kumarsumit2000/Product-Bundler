@@ -149,7 +149,11 @@ export function ProgressiveGiftPreview({ values, demoCartTotal = 75 }: Props) {
                     {visibleTiers.map((tier, i) => {
                       const unlocked = demoCartTotal >= tier.minSpend;
                       const showBadge = unlocked || values.showLockedLabels;
-                      const badgeText = unlocked ? tier.label : tier.lockedLabel;
+                      // Show the same FREE + strike style for both locked & unlocked
+                      // so the merchant can see what the gift IS, not just the spend
+                      // requirement. Locked-only spend amount stays in the title.
+                      const badgeText = tier.label;
+                      const showStrike = !!tier.labelCrossedOut;
                       return (
                         <div
                           key={i}
@@ -188,7 +192,7 @@ export function ProgressiveGiftPreview({ values, demoCartTotal = 75 }: Props) {
                                 display: "inline-flex",
                                 alignItems: "center",
                                 gap: 6,
-                                background: unlocked ? t.badgeBg : t.badgeBgInactive,
+                                background: t.badgeBg,
                                 color: t.badgeText,
                                 padding: "5px 10px",
                                 borderRadius: 6,
@@ -198,7 +202,7 @@ export function ProgressiveGiftPreview({ values, demoCartTotal = 75 }: Props) {
                               }}
                             >
                               <span>{badgeText}</span>
-                              {unlocked && tier.labelCrossedOut && (
+                              {showStrike && (
                                 <span style={{ textDecoration: "line-through", opacity: 0.85, fontWeight: 600 }}>
                                   {tier.labelCrossedOut}
                                 </span>
