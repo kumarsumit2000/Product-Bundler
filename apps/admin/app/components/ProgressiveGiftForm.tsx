@@ -228,16 +228,81 @@ export function ProgressiveGiftForm({ submitLabel, initialValues, errors, onValu
                 autoComplete="off"
                 error={errors?.name}
               />
-              <Select
-                label="Layout"
-                options={[
-                  { label: "Stacked (gifts below the bar)", value: "stacked" },
-                  { label: "Grid (gifts side-by-side)", value: "grid" },
-                  { label: "Inline (gifts in a single row)", value: "inline" },
-                ]}
-                value={values.layout}
-                onChange={(layout) => setValues((v) => ({ ...v, layout: layout as ProgressiveLayout }))}
-              />
+              <BlockStack gap="100">
+                <Text as="span" variant="bodyMd">Layout</Text>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+                  {([
+                    {
+                      value: "stacked" as const,
+                      label: "Stacked",
+                      mock: (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 3, padding: 6, height: 50, justifyContent: "center" }}>
+                          <div style={{ height: 7, background: "#cbd5e1", borderRadius: 2 }} />
+                          <div style={{ height: 7, background: "#cbd5e1", borderRadius: 2 }} />
+                          <div style={{ height: 7, background: "#cbd5e1", borderRadius: 2 }} />
+                        </div>
+                      ),
+                    },
+                    {
+                      value: "grid" as const,
+                      label: "Grid",
+                      mock: (
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4, padding: 6, height: 50, alignContent: "center" }}>
+                          <div style={{ height: 14, background: "#cbd5e1", borderRadius: 2 }} />
+                          <div style={{ height: 14, background: "#cbd5e1", borderRadius: 2 }} />
+                          <div style={{ height: 14, background: "#cbd5e1", borderRadius: 2 }} />
+                          <div style={{ height: 14, background: "#cbd5e1", borderRadius: 2 }} />
+                        </div>
+                      ),
+                    },
+                    {
+                      value: "inline" as const,
+                      label: "Inline",
+                      mock: (
+                        <div style={{ display: "flex", gap: 3, padding: 6, height: 50, alignItems: "center", justifyContent: "center" }}>
+                          <div style={{ width: 18, height: 18, background: "#cbd5e1", borderRadius: 2 }} />
+                          <div style={{ width: 18, height: 18, background: "#cbd5e1", borderRadius: 2 }} />
+                          <div style={{ width: 18, height: 18, background: "#cbd5e1", borderRadius: 2 }} />
+                        </div>
+                      ),
+                    },
+                  ]).map((opt) => {
+                    const selected = values.layout === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setValues((v) => ({ ...v, layout: opt.value }))}
+                        style={{
+                          background: "#fff",
+                          border: `2px solid ${selected ? "#008060" : "#d1d5db"}`,
+                          borderRadius: 8,
+                          padding: 0,
+                          cursor: "pointer",
+                          display: "flex",
+                          flexDirection: "column",
+                          overflow: "hidden",
+                        }}
+                        aria-pressed={selected}
+                      >
+                        {opt.mock}
+                        <div
+                          style={{
+                            background: selected ? "#e3f1ec" : "#f6f6f7",
+                            color: selected ? "#008060" : "#6b7280",
+                            fontSize: 11,
+                            fontWeight: 600,
+                            padding: "4px 6px",
+                            textAlign: "center",
+                          }}
+                        >
+                          {opt.label}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </BlockStack>
               <FormLayout.Group>
                 <TextField
                   label="Title"
@@ -492,7 +557,7 @@ export function ProgressiveGiftForm({ submitLabel, initialValues, errors, onValu
                   label="FREE badge bg"
                   value={values.style.badgeBg}
                   onChange={(badgeBg) => setStyle({ badgeBg })}
-                  placeholder="#D9263A"
+                  placeholder="#FCE4E7"
                 />
               </FormLayout.Group>
               <Text as="h3" variant="headingSm">Locked gift cards</Text>
@@ -513,14 +578,14 @@ export function ProgressiveGiftForm({ submitLabel, initialValues, errors, onValu
                   label="$X badge bg"
                   value={values.style.badgeBgInactive}
                   onChange={(badgeBgInactive) => setStyle({ badgeBgInactive })}
-                  placeholder="#CBD5E1"
+                  placeholder="#E5E7EB"
                 />
               </FormLayout.Group>
               <ColorSwatchPicker
                 label="Badge text (both states)"
                 value={values.style.badgeText}
                 onChange={(badgeText) => setStyle({ badgeText })}
-                placeholder="#FFFFFF"
+                placeholder="#D9263A"
               />
               <FormLayout.Group>
                 <TextField

@@ -24,9 +24,9 @@ function styleToTokens(s: ProgressiveStyleForm) {
     cardBorder: s.cardBorder || "#d9263a",
     cardBgInactive: s.cardBgInactive || s.cardBg || "#fff",
     cardBorderInactive: s.cardBorderInactive || "#fbe4e7",
-    badgeBg: s.badgeBg || "#d9263a",
-    badgeBgInactive: s.badgeBgInactive || "#cbd5e1",
-    badgeText: s.badgeText || "#fff",
+    badgeBg: s.badgeBg || "#fce4e7",
+    badgeBgInactive: s.badgeBgInactive || "#e5e7eb",
+    badgeText: s.badgeText || "#d9263a",
     radius: px(s.borderRadius, 10),
     paddingX: px(s.paddingX, 14),
     paddingY: px(s.paddingY, 14),
@@ -183,7 +183,7 @@ export function ProgressiveGiftPreview({ values, demoCartTotal = 75 }: Props) {
                                 gap: 6,
                                 background: unlocked ? t.badgeBg : t.badgeBgInactive,
                                 color: t.badgeText,
-                                padding: "4px 8px",
+                                padding: "5px 10px",
                                 borderRadius: 6,
                                 fontSize: 11,
                                 fontWeight: 700,
@@ -192,7 +192,7 @@ export function ProgressiveGiftPreview({ values, demoCartTotal = 75 }: Props) {
                             >
                               <span>{badgeText}</span>
                               {unlocked && tier.labelCrossedOut && (
-                                <span style={{ textDecoration: "line-through", opacity: 0.85, fontWeight: 500 }}>
+                                <span style={{ textDecoration: "line-through", opacity: 0.85, fontWeight: 600 }}>
                                   {tier.labelCrossedOut}
                                 </span>
                               )}
