@@ -299,9 +299,9 @@ function PreviewProgressive() {
 const CARDS: CardSpec[] = [
   { key: "qb_same", title: "Quantity breaks for the same product", href: "/app/quantity-breaks/new", preview: PreviewQbSame },
   { key: "bxgy", title: "Buy X, get Y (BXGY) deal", href: "/app/quantity-breaks/new", preview: PreviewBxgy },
-  { key: "qb_diff", title: "Quantity breaks for different products", href: null, comingSoon: true, preview: PreviewQbDifferent },
+  { key: "qb_diff", title: "Quantity breaks for different products", href: "/app/quantity-breaks/new", preview: PreviewQbDifferent },
   { key: "bundle", title: "Complete the bundle", href: "/app/bundles/new", preview: PreviewBundle },
-  { key: "subscription", title: "Subscription", href: null, comingSoon: true, preview: PreviewSubscription },
+  { key: "subscription", title: "Subscription", href: "/app/bundles/new", preview: PreviewSubscription },
   { key: "progressive", title: "Progressive gifts", href: null, comingSoon: true, preview: PreviewProgressive },
 ];
 
@@ -361,8 +361,7 @@ export default function ChooseDiscountType() {
         <div style={{ marginBottom: 16 }}>
           <Banner tone="info" onDismiss={() => setComingSoonShown(null)}>
             <Text as="p">
-              <strong>{comingSoonShown}</strong> is coming soon. For now, the working types
-              are <em>Quantity breaks</em>, <em>BXGY</em>, and <em>Complete the bundle</em>.
+              <strong>{comingSoonShown}</strong> is coming soon.
             </Text>
           </Banner>
         </div>
