@@ -26,9 +26,8 @@ async function fetchProductDetails(
   productIds: string[],
 ): Promise<Record<string, ProductDetails>> {
   if (productIds.length === 0) return {};
-  let res: Response | undefined;
   try {
-    res = await admin.graphql(
+    const res = await admin.graphql(
       `query Products($ids: [ID!]!) {
         nodes(ids: $ids) {
           ... on Product {
@@ -40,17 +39,7 @@ async function fetchProductDetails(
       }`,
       { variables: { ids: productIds } },
     );
-    if (!res!.ok) {
-      const body = await res!.text();
-      console.error("[fetchProductDetails] non-ok response", {
-        status: res!.status,
-        statusText: res!.statusText,
-        bodyPreview: body.slice(0, 500),
-        productIds,
-      });
-      return {};
-    }
-    const data = (await res!.json()) as {
+    const data = (await res.json()) as {
       data: {
         nodes: Array<{ id: string; title: string; featuredImage: { url: string } | null } | null>;
       };
@@ -67,23 +56,7 @@ async function fetchProductDetails(
     }
     return map;
   } catch (err) {
-    if (err instanceof Response) {
-      const body = await err.text().catch(() => "(unreadable)");
-      const headers: Record<string, string> = {};
-      err.headers.forEach((v, k) => { headers[k] = v; });
-      console.error("[fetchProductDetails] threw Response", {
-        status: err.status,
-        statusText: err.statusText,
-        headers,
-        bodyPreview: body.slice(0, 1000),
-        productIds,
-      });
-    } else {
-      console.error("[fetchProductDetails] threw non-Response", {
-        err: err instanceof Error ? { name: err.name, message: err.message, stack: err.stack } : String(err),
-        productIds,
-      });
-    }
+    console.error("[app.bundles.$id] fetchProductDetails failed (non-fatal):", err);
     return {};
   }
 }
