@@ -1,18 +1,45 @@
+import { useEffect } from "react";
+
 type Props = { websiteId: string };
 
-// Injects Crisp's loader script into <head>. The loader then fetches the chat
-// widget code and renders the floating bubble. Async load — does not block.
+// Loads Crisp's chat widget by injecting their loader script into <head>.
+// We use useEffect rather than rendering a JSX <script dangerouslySetInnerHTML>
+// because React doesn't reliably execute inline scripts after client-side
+// route transitions — useEffect runs in the browser on every mount, so the
+// widget shows up consistently whether the page was SSR'd or client-routed.
 //
-// websiteId is the public Crisp workspace identifier (safe to commit). It is
-// hardcoded by callers — never sourced from user input — so the dangerouslySetInnerHTML
-// XSS surface is closed.
+// websiteId is the public Crisp workspace identifier and is hardcoded by
+// callers (never user input), so the assignment to window.CRISP_WEBSITE_ID
+// is safe; we still strip non-alphanumeric characters as defense in depth.
 export function CrispChat({ websiteId }: Props) {
-  const safeId = websiteId.replace(/[^a-zA-Z0-9-]/g, "");
-  return (
-    <script
-      dangerouslySetInnerHTML={{
-        __html: `window.$crisp=[];window.CRISP_WEBSITE_ID="${safeId}";(function(){var d=document;var s=d.createElement("script");s.src="https://client.crisp.chat/l.js";s.async=1;d.getElementsByTagName("head")[0].appendChild(s);})();`,
-      }}
-    />
-  );
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    // Idempotent — Crisp's own loader sets window.$crisp; if it's already an
+    // object with `is` defined it means the widget has booted, so skip.
+    type CrispWindow = Window & {
+      $crisp?: unknown;
+      CRISP_WEBSITE_ID?: string;
+    };
+    const w = window as CrispWindow;
+    if (w.$crisp && typeof w.$crisp === "object" && !Array.isArray(w.$crisp)) {
+      return;
+    }
+    const safeId = websiteId.replace(/[^a-zA-Z0-9-]/g, "");
+    if (!safeId) return;
+
+    w.$crisp = [];
+    w.CRISP_WEBSITE_ID = safeId;
+
+    const existing = document.querySelector<HTMLScriptElement>(
+      'script[src="https://client.crisp.chat/l.js"]',
+    );
+    if (existing) return;
+
+    const script = document.createElement("script");
+    script.src = "https://client.crisp.chat/l.js";
+    script.async = true;
+    document.head.appendChild(script);
+  }, [websiteId]);
+
+  return null;
 }
