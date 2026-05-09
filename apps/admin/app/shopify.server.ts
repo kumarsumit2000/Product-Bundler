@@ -71,7 +71,10 @@ export function createShopifyApp(context: AppLoadContext) {
     authPathPrefix: "/auth",
     sessionStorage: new KvSessionStorage(env.SESSIONS, env.DATABASE_ENCRYPTION_KEY),
     distribution: AppDistribution.AppStore,
-    // Token Exchange (Shopify managed install) is the default in v4 — no flag needed.
+    // Required in v4 too — without this the SDK falls back to the legacy auth-code
+    // OAuth path and Shopify rejects API calls made with the resulting permanent
+    // offline tokens (deprecated). Token Exchange is the only working path.
+    future: { unstable_newEmbeddedAuthStrategy: true },
     billing: BILLING_PLANS,
   });
 }
