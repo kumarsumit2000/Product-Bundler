@@ -75,4 +75,17 @@ export function ErrorBoundary() {
   return boundary.error(useRouteError());
 }
 
-export const headers: HeadersFunction = (args) => boundary.headers(args);
+export const headers: HeadersFunction = (args) => {
+  const h = new Headers(boundary.headers(args));
+  // boundary.headers() doesn't always emit a frame-ancestors CSP on thrown
+  // error responses (e.g. the 410 returned during token-exchange bootstrap).
+  // Without it, Chrome refuses to render our iframe inside Shopify admin and
+  // the merchant sees "admin.shopify.com refused to connect."
+  if (!h.has("Content-Security-Policy")) {
+    h.set(
+      "Content-Security-Policy",
+      "frame-ancestors https://*.shopify.com https://admin.shopify.com",
+    );
+  }
+  return h;
+};
