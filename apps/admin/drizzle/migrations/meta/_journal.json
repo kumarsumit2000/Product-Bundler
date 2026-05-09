@@ -43,6 +43,13 @@
       "when": 1778226753000,
       "tag": "0005_phase_7_billing",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1778351100000,
+      "tag": "0006_phase_9a1_customization",
+      "breakpoints": true
     }
   ]
 }

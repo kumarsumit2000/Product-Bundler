@@ -85,4 +85,19 @@ describe("quantity-breaks repo", () => {
     expect(listA[0]!.shopId).toBe(SHOP_A);
     expect(listB[0]!.shopId).toBe(SHOP_B);
   });
+
+  it("persists styleOverrides + textOverrides + headline + ctaLabel round-trip", async () => {
+    const created = await repo.create(setup.db, SHOP_A, {
+      ...NEW_QB_INPUT,
+      styleOverrides: { primaryColor: "#00AA88" },
+      textOverrides: { "qb.tierLabel": "Get {qty}", "qb.mostPopular": "Best deal" },
+      headline: "Volume savings",
+      ctaLabel: "Add to cart now",
+    });
+    const got = await repo.getById(setup.db, SHOP_A, created.id);
+    expect(got!.styleOverrides).toEqual({ primaryColor: "#00AA88" });
+    expect(got!.textOverrides).toEqual({ "qb.tierLabel": "Get {qty}", "qb.mostPopular": "Best deal" });
+    expect(got!.headline).toBe("Volume savings");
+    expect(got!.ctaLabel).toBe("Add to cart now");
+  });
 });

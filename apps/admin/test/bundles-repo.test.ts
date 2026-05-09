@@ -112,4 +112,28 @@ describe("bundles repo", () => {
     expect(created.collectionId).toBeNull();
     expect(created.targetQty).toBeNull();
   });
+
+  it("persists styleOverrides + textOverrides + headline + ctaLabel round-trip", async () => {
+    const created = await repo.create(setup.db, SHOP_A, {
+      ...NEW_BUNDLE_INPUT,
+      styleOverrides: { primaryColor: "#FF0000", borderRadius: 12 },
+      textOverrides: { "bundle.totalLabel": "Your total", "bundle.savingsBadge": "Save {savings}!" },
+      headline: "Bundle deal",
+      ctaLabel: "Buy now",
+    });
+    const got = await repo.getById(setup.db, SHOP_A, created.id);
+    expect(got!.styleOverrides).toEqual({ primaryColor: "#FF0000", borderRadius: 12 });
+    expect(got!.textOverrides).toEqual({
+      "bundle.totalLabel": "Your total",
+      "bundle.savingsBadge": "Save {savings}!",
+    });
+    expect(got!.headline).toBe("Bundle deal");
+    expect(got!.ctaLabel).toBe("Buy now");
+  });
+
+  it("textOverrides defaults to null when not provided", async () => {
+    const created = await repo.create(setup.db, SHOP_A, NEW_BUNDLE_INPUT);
+    const got = await repo.getById(setup.db, SHOP_A, created.id);
+    expect(got!.textOverrides).toBeNull();
+  });
 });
