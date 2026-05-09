@@ -5,6 +5,7 @@ const EN: StringTable = {
   "bundle.totalLabel": "Total",
   "bundle.cta": "Add bundle to cart",
   "bundle.ctaSavings": "Add bundle to cart — Save {savings}",
+  "bundle.savingsBadge": "Save {savings}",
   "bundle.unavailable": "1 item out of stock — bundle unavailable",
   "qb.heading": "Choose your savings",
   "qb.tierLabel": "Buy {qty}",
@@ -38,8 +39,21 @@ export function setLocale(loc: string): void {
   active = TABLES[loc.split("-")[0]!] ?? TABLES.en!;
 }
 
+function interpolate(template: string, vars?: Record<string, string | number>): string {
+  if (!vars) return template;
+  return template.replace(/\{(\w+)\}/g, (_, k) => (k in vars ? String(vars[k]) : `{${k}}`));
+}
+
 export function t(key: string, vars?: Record<string, string | number>): string {
-  const tmpl = active[key] ?? key;
-  if (!vars) return tmpl;
-  return tmpl.replace(/\{(\w+)\}/g, (_, k) => String(vars[k] ?? `{${k}}`));
+  return interpolate(active[key] ?? key, vars);
+}
+
+export function tWith(
+  overrides: Record<string, string> | null | undefined,
+  key: string,
+  vars?: Record<string, string | number>,
+): string {
+  const override = overrides?.[key];
+  const template = override && override.length > 0 ? override : (active[key] ?? key);
+  return interpolate(template, vars);
 }
