@@ -25,18 +25,20 @@ export function PreviewPane({ type, id, config }: Props) {
   }, [config]);
 
   return (
-    <Card>
-      <BlockStack gap="200">
-        <Text as="h3" variant="headingSm">Live preview</Text>
-        <Box borderWidth="025" borderColor="border" borderRadius="200" overflowX="hidden" overflowY="hidden">
-          <iframe
-            ref={iframeRef}
-            src={`/preview/${type}/${encodeURIComponent(id)}`}
-            style={{ width: "100%", height: "560px", border: "none", display: "block" }}
-            title="Widget preview"
-          />
-        </Box>
-      </BlockStack>
-    </Card>
+    <div style={{ position: "sticky", top: 16 }}>
+      <Card>
+        <BlockStack gap="200">
+          <Text as="h3" variant="headingSm">Live preview</Text>
+          <Box borderWidth="025" borderColor="border" borderRadius="200" overflowX="hidden" overflowY="hidden">
+            <iframe
+              ref={iframeRef}
+              src={`/preview/${type}/${encodeURIComponent(id)}`}
+              style={{ width: "100%", height: "560px", border: "none", display: "block" }}
+              title="Widget preview"
+            />
+          </Box>
+        </BlockStack>
+      </Card>
+    </div>
   );
 }
