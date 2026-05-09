@@ -54,6 +54,7 @@ export default function App() {
       >
         <NavMenu>
           <Link to="/app" rel="home">Dashboard</Link>
+          <Link to="/app/new">Create new</Link>
           <Link to="/app/bundles">Bundles</Link>
           <Link to="/app/quantity-breaks">Quantity breaks</Link>
           <Link to="/app/billing">Billing</Link>
