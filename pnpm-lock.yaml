@@ -45,8 +45,8 @@ importers:
         specifier: ^4.2.0
         version: 4.2.0(@remix-run/node@2.17.4(typescript@5.9.3))(@remix-run/react@2.17.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@shopify/polaris@13.9.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)(typescript@5.9.3)
       '@shopify/shopify-app-session-storage':
-        specifier: ^3.0.0
-        version: 3.0.20(@shopify/shopify-api@13.0.0)
+        specifier: ^5.0.0
+        version: 5.0.0(@shopify/shopify-api@13.0.0)
       drizzle-orm:
         specifier: ^0.36.0
         version: 0.36.4(@cloudflare/workers-types@4.20260505.1)(@types/better-sqlite3@7.6.13)(@types/react@18.3.28)(better-sqlite3@12.9.0)(react@18.3.1)
@@ -1961,11 +1961,6 @@ packages:
         optional: true
       '@shopify/polaris':
         optional: true
-
-  '@shopify/shopify-app-session-storage@3.0.20':
-    resolution: {integrity: sha512-qgO3XCi81EkLumXDVS5MgaKeLBsezJVKaS/QHjRQvLI1XsNaFlH+xguZOIFo6cqVjBCKoBplaQAJX3w9LBdc/Q==}
-    peerDependencies:
-      '@shopify/shopify-api': ^11.0.0
 
   '@shopify/shopify-app-session-storage@5.0.0':
     resolution: {integrity: sha512-hFUeDGmA4NJmnsq0peYxYIhCzPtXzP9dKjoz04VwWq0XTFzmjy+6yLWY9LFNI4gSiK3Mws3FSLKaatd8TqIj2g==}
@@ -6225,10 +6220,6 @@ snapshots:
       '@shopify/polaris': 13.9.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     transitivePeerDependencies:
       - typescript
-
-  '@shopify/shopify-app-session-storage@3.0.20(@shopify/shopify-api@13.0.0)':
-    dependencies:
-      '@shopify/shopify-api': 13.0.0
 
   '@shopify/shopify-app-session-storage@5.0.0(@shopify/shopify-api@13.0.0)':
     dependencies:
