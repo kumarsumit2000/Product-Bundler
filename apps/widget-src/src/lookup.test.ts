@@ -34,6 +34,7 @@ const CONFIG: WidgetConfig = {
       headline: null,
       ctaLabel: null,
       styleOverrides: null,
+      textOverrides: null,
     },
     {
       id: "b2",
@@ -50,6 +51,7 @@ const CONFIG: WidgetConfig = {
       headline: null,
       ctaLabel: null,
       styleOverrides: null,
+      textOverrides: null,
     },
   ],
   quantityBreaks: [
@@ -63,6 +65,9 @@ const CONFIG: WidgetConfig = {
       tiers: [],
       combinable: false,
       styleOverrides: null,
+      textOverrides: null,
+      headline: null,
+      ctaLabel: null,
     },
   ],
 };

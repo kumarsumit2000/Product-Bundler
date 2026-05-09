@@ -19,6 +19,15 @@ export type CollectionProduct = {
   priceCents: number;
 };
 
+export type StyleOverrides = Partial<{
+  primaryColor: string;
+  textColor: string;
+  backgroundColor: string;
+  borderRadius: number;
+}>;
+
+export type TextOverrides = Record<string, string>;
+
 export type BundleConfig = {
   id: string;
   name: string;
@@ -33,7 +42,8 @@ export type BundleConfig = {
   triggerProductIds: string[];
   headline: string | null;
   ctaLabel: string | null;
-  styleOverrides: Record<string, unknown> | null;
+  styleOverrides: StyleOverrides | null;
+  textOverrides: TextOverrides | null;
 };
 
 export type QbVariant = {
@@ -71,7 +81,10 @@ export type QbConfig = {
   productVariants: QbVariant[];
   tiers: QbTier[];
   combinable: boolean;
-  styleOverrides: Record<string, unknown> | null;
+  styleOverrides: StyleOverrides | null;
+  textOverrides: TextOverrides | null;
+  headline: string | null;
+  ctaLabel: string | null;
 };
 
 export type Settings = {

@@ -21,7 +21,7 @@ const MM: BundleConfig = {
     { productId: "p4", variantId: "v4", title: "Tee Navy",  image: null, available: true, priceCents: 2400 },
   ],
   discountType: "percentage", discountValue: 20, combinable: false,
-  triggerProductIds: [], headline: null, ctaLabel: null, styleOverrides: null,
+  triggerProductIds: [], headline: null, ctaLabel: null, styleOverrides: null, textOverrides: null,
 };
 
 describe("renderMixMatch", () => {

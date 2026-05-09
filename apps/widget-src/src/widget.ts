@@ -1,4 +1,4 @@
-import type { WidgetConfig, WidgetType } from "./types";
+import type { WidgetConfig, WidgetType, StyleOverrides } from "./types";
 import { matchBundle, matchQb, matchMixMatch } from "./match";
 import { lookupBundle, lookupQb, lookupMixMatch } from "./lookup";
 import { renderBundle } from "./render-bundle";
@@ -43,13 +43,17 @@ function toGid(productIdRaw: string): string {
   return `gid://shopify/Product/${productIdRaw}`;
 }
 
-function applyCssVars(target: HTMLElement, cfg: WidgetConfig): void {
+export function applyCssVars(
+  target: HTMLElement,
+  cfg: WidgetConfig,
+  override: StyleOverrides | null,
+): void {
   const s = cfg.settings;
-  target.style.setProperty("--pumper-primary", s.primaryColor);
-  target.style.setProperty("--pumper-text", s.textColor);
-  target.style.setProperty("--pumper-bg", s.backgroundColor);
-  target.style.setProperty("--pumper-radius", `${s.borderRadius}px`);
-  target.style.setProperty("--pumper-font", s.fontFamily);
+  target.style.setProperty("--pumper-primary",  override?.primaryColor    ?? s.primaryColor);
+  target.style.setProperty("--pumper-text",     override?.textColor       ?? s.textColor);
+  target.style.setProperty("--pumper-bg",       override?.backgroundColor ?? s.backgroundColor);
+  target.style.setProperty("--pumper-radius",   `${override?.borderRadius ?? s.borderRadius}px`);
+  target.style.setProperty("--pumper-font",     s.fontFamily);
 }
 
 type ShortcodeKind = "bundle" | "qb" | "mix";
@@ -62,10 +66,10 @@ const SHORTCODES: ShortcodeSpec[] = [
 ];
 
 function renderShortcode(el: HTMLElement, kind: ShortcodeKind, id: string, cfg: WidgetConfig): void {
-  applyCssVars(el, cfg);
   if (kind === "bundle") {
     const b = lookupBundle(cfg, id);
     if (!b) { el.innerHTML = ""; el.style.minHeight = ""; el.dataset.pumperRendered = "1"; return; }
+    applyCssVars(el, cfg, b.styleOverrides);
     renderBundle(el, b, cfg);
     el.dataset.pumperRendered = "1";
     return;
@@ -73,6 +77,7 @@ function renderShortcode(el: HTMLElement, kind: ShortcodeKind, id: string, cfg: 
   if (kind === "qb") {
     const q = lookupQb(cfg, id);
     if (!q) { el.innerHTML = ""; el.style.minHeight = ""; el.dataset.pumperRendered = "1"; return; }
+    applyCssVars(el, cfg, q.styleOverrides);
     renderQb(el, q, cfg);
     el.dataset.pumperRendered = "1";
     return;
@@ -80,6 +85,7 @@ function renderShortcode(el: HTMLElement, kind: ShortcodeKind, id: string, cfg: 
   // kind === "mix"
   const m = lookupMixMatch(cfg, id);
   if (!m) { el.innerHTML = ""; el.style.minHeight = ""; el.dataset.pumperRendered = "1"; return; }
+  applyCssVars(el, cfg, m.styleOverrides);
   renderMixMatch(el, m, cfg);
   el.dataset.pumperRendered = "1";
 }
@@ -102,18 +108,20 @@ function renderMount(mount: HTMLElement, cfg: WidgetConfig): void {
     mount.innerHTML = "";
     return;
   }
-  applyCssVars(mount, cfg);
   if (type === "bundle") {
     const b = matchBundle(cfg, productId);
     if (!b) { mount.innerHTML = ""; mount.style.minHeight = ""; return; }
+    applyCssVars(mount, cfg, b.styleOverrides);
     renderBundle(mount, b, cfg);
   } else if (type === "qb") {
     const q = matchQb(cfg, productId);
     if (!q) { mount.innerHTML = ""; mount.style.minHeight = ""; return; }
+    applyCssVars(mount, cfg, q.styleOverrides);
     renderQb(mount, q, cfg);
   } else if (type === "mix_match") {
     const m = matchMixMatch(cfg, productId);
     if (!m) { mount.innerHTML = ""; mount.style.minHeight = ""; return; }
+    applyCssVars(mount, cfg, m.styleOverrides);
     renderMixMatch(mount, m, cfg);
   }
   mount.dataset.pumperRendered = "1";

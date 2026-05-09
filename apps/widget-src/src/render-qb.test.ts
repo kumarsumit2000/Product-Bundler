@@ -20,7 +20,7 @@ const QB: QbConfig = {
     { qty: 2, discountType: "percentage", discountValue: 10, label: "10% off", isMostPopular: true,  available: true },
     { qty: 3, discountType: "percentage", discountValue: 15, label: "15% off", isMostPopular: false, available: true },
   ],
-  combinable: false, styleOverrides: null,
+  combinable: false, styleOverrides: null, textOverrides: null, headline: null, ctaLabel: null,
 };
 
 describe("renderQb", () => {

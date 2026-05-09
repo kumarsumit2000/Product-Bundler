@@ -32,7 +32,7 @@ describe("matchBundle (classic)", () => {
         collectionId: null, targetQty: null, collectionProducts: null,
         discountType: "percentage", discountValue: 10, combinable: false,
         triggerProductIds: ["gid://shopify/Product/1"],
-        headline: null, ctaLabel: null, styleOverrides: null,
+        headline: null, ctaLabel: null, styleOverrides: null, textOverrides: null,
       }],
     };
     expect(matchBundle(config, "gid://shopify/Product/1")?.id).toBe("b1");
@@ -50,7 +50,7 @@ describe("matchBundle (classic)", () => {
         collectionId: null, targetQty: null, collectionProducts: null,
         discountType: "percentage", discountValue: 10, combinable: false,
         triggerProductIds: [],
-        headline: null, ctaLabel: null, styleOverrides: null,
+        headline: null, ctaLabel: null, styleOverrides: null, textOverrides: null,
       }],
     };
     expect(matchBundle(config, "gid://shopify/Product/2")?.id).toBe("b1");
@@ -69,7 +69,7 @@ describe("matchBundle (classic)", () => {
         collectionProducts: [{ productId: "gid://shopify/Product/1", variantId: null, title: "", image: null, available: true, priceCents: 100 }],
         discountType: "percentage", discountValue: 20, combinable: false,
         triggerProductIds: ["gid://shopify/Product/1"],
-        headline: null, ctaLabel: null, styleOverrides: null,
+        headline: null, ctaLabel: null, styleOverrides: null, textOverrides: null,
       }],
     };
     expect(matchBundle(config, "gid://shopify/Product/1")).toBeNull();
@@ -85,7 +85,7 @@ describe("matchQb", () => {
         productTitle: "P1", productImage: null,
         productVariants: [{ variantId: "gid://shopify/ProductVariant/1", title: "Default", available: true, priceCents: 1000 }],
         tiers: [{ qty: 2, discountType: "percentage", discountValue: 10, label: "10% off", isMostPopular: true, available: true }],
-        combinable: false, styleOverrides: null,
+        combinable: false, styleOverrides: null, textOverrides: null, headline: null, ctaLabel: null,
       }],
     };
     expect(matchQb(config, "gid://shopify/Product/1")?.id).toBe("q1");
@@ -106,7 +106,7 @@ describe("matchMixMatch", () => {
         collectionProducts: [],
         discountType: "percentage", discountValue: 20, combinable: false,
         triggerProductIds: ["gid://shopify/Product/7"],
-        headline: null, ctaLabel: null, styleOverrides: null,
+        headline: null, ctaLabel: null, styleOverrides: null, textOverrides: null,
       }],
     };
     expect(matchMixMatch(config, "gid://shopify/Product/7")?.id).toBe("mm1");
@@ -121,7 +121,7 @@ describe("matchMixMatch", () => {
         collectionProducts: [{ productId: "gid://shopify/Product/8", variantId: null, title: "", image: null, available: true, priceCents: 100 }],
         discountType: "percentage", discountValue: 20, combinable: false,
         triggerProductIds: [],
-        headline: null, ctaLabel: null, styleOverrides: null,
+        headline: null, ctaLabel: null, styleOverrides: null, textOverrides: null,
       }],
     };
     expect(matchMixMatch(config, "gid://shopify/Product/8")?.id).toBe("mm1");

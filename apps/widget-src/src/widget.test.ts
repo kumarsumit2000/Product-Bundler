@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { initWidget } from "./widget";
+import { initWidget, applyCssVars } from "./widget";
 import type { WidgetConfig } from "./types";
 
 const SETTINGS: WidgetConfig["settings"] = {
@@ -23,7 +23,7 @@ const CONFIG: WidgetConfig = {
       collectionId: null, targetQty: null, collectionProducts: null,
       discountType: "percentage", discountValue: 10, combinable: false,
       triggerProductIds: ["gid://shopify/Product/1"],
-      headline: null, ctaLabel: null, styleOverrides: null,
+      headline: null, ctaLabel: null, styleOverrides: null, textOverrides: null,
     },
     {
       id: "b2", name: "B2 Mix Match", mode: "mix_match",
@@ -31,7 +31,7 @@ const CONFIG: WidgetConfig = {
       collectionId: "c1", targetQty: 3, collectionProducts: null,
       discountType: "percentage", discountValue: 20, combinable: false,
       triggerProductIds: [],
-      headline: null, ctaLabel: null, styleOverrides: null,
+      headline: null, ctaLabel: null, styleOverrides: null, textOverrides: null,
     },
   ],
   quantityBreaks: [
@@ -48,7 +48,7 @@ const CONFIG: WidgetConfig = {
         { qty: 2, discountType: "percentage", discountValue: 10, label: "10% OFF",  isMostPopular: true,  available: true },
       ],
       combinable: false,
-      styleOverrides: null,
+      styleOverrides: null, textOverrides: null, headline: null, ctaLabel: null,
     },
   ],
 };
@@ -128,5 +128,49 @@ describe("widget init", () => {
     const el = document.getElementById("sc")!;
     expect(el.dataset.pumperRendered).toBe("1");
     expect(el.innerHTML).toBe("");
+  });
+});
+
+describe("applyCssVars layered precedence", () => {
+  function makeCfg(overrides: Partial<{ primaryColor: string; textColor: string; backgroundColor: string; borderRadius: number; fontFamily: string }> = {}) {
+    return {
+      shop: "s",
+      settings: {
+        primaryColor: "#000000",
+        textColor: "#111111",
+        backgroundColor: "#FFFFFF",
+        borderRadius: 8,
+        fontFamily: "inherit",
+        bundleHeadline: "FBT",
+        qbHeadline: "QBH",
+        showCompareAtPrice: true,
+        currency: "USD",
+        locale: "en",
+        ...overrides,
+      },
+      bundles: [],
+      quantityBreaks: [],
+    };
+  }
+
+  it("uses shop settings when override is null", () => {
+    const el = document.createElement("div");
+    applyCssVars(el, makeCfg(), null);
+    expect(el.style.getPropertyValue("--pumper-primary")).toBe("#000000");
+    expect(el.style.getPropertyValue("--pumper-radius")).toBe("8px");
+  });
+
+  it("uses override when provided", () => {
+    const el = document.createElement("div");
+    applyCssVars(el, makeCfg(), { primaryColor: "#FF0000", borderRadius: 12 });
+    expect(el.style.getPropertyValue("--pumper-primary")).toBe("#FF0000");
+    expect(el.style.getPropertyValue("--pumper-radius")).toBe("12px");
+  });
+
+  it("falls back to settings for unset override fields", () => {
+    const el = document.createElement("div");
+    applyCssVars(el, makeCfg(), { primaryColor: "#FF0000" });
+    expect(el.style.getPropertyValue("--pumper-primary")).toBe("#FF0000");
+    expect(el.style.getPropertyValue("--pumper-text")).toBe("#111111");
   });
 });
