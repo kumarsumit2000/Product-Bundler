@@ -50,6 +50,12 @@ export type QbTier = {
 export type LayoutVariant = "list" | "grid";
 export type FontStyle = "regular" | "medium" | "semibold" | "bold";
 
+export type Subscription = {
+  enabled: boolean;
+  discountPercent: number;
+  interval: "weekly" | "biweekly" | "monthly" | "quarterly";
+};
+
 export type StyleOverrides = Partial<{
   // Layout
   layoutVariant: LayoutVariant;
@@ -134,6 +140,7 @@ export const bundles = sqliteTable("bundles", {
   headline: text("headline"),
   ctaLabel: text("cta_label"),
   freeGiftVariantId: text("free_gift_variant_id"),
+  subscription: text("subscription", { mode: "json" }).$type<Subscription | null>(),
   mode: text("mode", { enum: ["classic", "mix_match"] }).notNull().default("classic"),
   collectionId: text("collection_id"),
   targetQty: integer("target_qty"),
@@ -157,6 +164,7 @@ export const quantityBreaks = sqliteTable("quantity_breaks", {
   textOverrides: text("text_overrides", { mode: "json" }).$type<TextOverrides | null>(),
   headline: text("headline"),
   ctaLabel: text("cta_label"),
+  subscription: text("subscription", { mode: "json" }).$type<Subscription | null>(),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 }, (t) => ({

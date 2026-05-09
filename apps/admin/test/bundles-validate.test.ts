@@ -19,6 +19,7 @@ const VALID: Parameters<typeof validateBundle>[0] = {
   targetQty: null,
   styleOverrides: null,
   textOverrides: null,
+      subscription: null,
   freeGiftVariantId: null,
 };
 
@@ -187,6 +188,7 @@ describe("validateBundle textOverrides + styleOverrides", () => {
     collectionId: null,
     targetQty: null,
     freeGiftVariantId: null,
+    subscription: null,
   };
 
   it("accepts null textOverrides + styleOverrides", () => {
@@ -227,6 +229,7 @@ describe("validateBundle textOverrides + styleOverrides", () => {
     const r = validateBundle({
       ...baseInput,
       textOverrides: null,
+      subscription: null,
       styleOverrides: { primaryColor: "red" },
     });
     expect(r.valid).toBe(false);
@@ -237,6 +240,7 @@ describe("validateBundle textOverrides + styleOverrides", () => {
     const r = validateBundle({
       ...baseInput,
       textOverrides: null,
+      subscription: null,
       styleOverrides: { borderRadius: 99 },
     });
     expect(r.valid).toBe(false);

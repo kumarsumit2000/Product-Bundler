@@ -15,6 +15,7 @@ const VALID: Parameters<typeof validateQb>[0] = {
   ctaLabel: null,
   styleOverrides: null,
   textOverrides: null,
+      subscription: null,
 };
 
 describe("validateQb", () => {
@@ -151,6 +152,7 @@ describe("validateQb textOverrides + styleOverrides + headline/cta", () => {
     combinable: false,
     headline: null,
     ctaLabel: null,
+    subscription: null,
   };
 
   it("accepts null overrides", () => {
@@ -179,6 +181,7 @@ describe("validateQb textOverrides + styleOverrides + headline/cta", () => {
     const r = validateQb({
       ...baseInput,
       textOverrides: null,
+      subscription: null,
       styleOverrides: { textColor: "black" },
     });
     expect(r.valid).toBe(false);
@@ -189,6 +192,7 @@ describe("validateQb textOverrides + styleOverrides + headline/cta", () => {
       ...baseInput,
       headline: "x".repeat(101),
       textOverrides: null,
+      subscription: null,
       styleOverrides: null,
     });
     expect(r.valid).toBe(false);
@@ -199,6 +203,7 @@ describe("validateQb textOverrides + styleOverrides + headline/cta", () => {
       ...baseInput,
       ctaLabel: "x".repeat(51),
       textOverrides: null,
+      subscription: null,
       styleOverrides: null,
     });
     expect(r.valid).toBe(false);

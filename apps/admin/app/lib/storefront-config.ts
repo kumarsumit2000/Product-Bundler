@@ -163,6 +163,7 @@ export async function buildStorefrontConfig(
       textOverrides: q.textOverrides,
       headline: q.headline,
       ctaLabel: q.ctaLabel,
+      subscription: q.subscription ?? null,
     };
   };
 
@@ -202,6 +203,7 @@ export async function buildStorefrontConfig(
       freeGiftVariantId: b.freeGiftVariantId ?? null,
       freeGiftVariantTitle: b.freeGiftVariantId ? (variantTitles[b.freeGiftVariantId] ?? null) : null,
       freeGiftAvailable: b.freeGiftVariantId ? (variantAvailability[b.freeGiftVariantId] ?? false) : null,
+      subscription: b.subscription ?? null,
     })),
     quantityBreaks: qbs.map(buildQb),
   };

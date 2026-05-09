@@ -77,6 +77,12 @@ export type StyleOverrides = Partial<{
 
 export type TextOverrides = Record<string, string>;
 
+export type SubscriptionConfig = {
+  enabled: boolean;
+  discountPercent: number;
+  interval: "weekly" | "biweekly" | "monthly" | "quarterly";
+};
+
 export type BundleConfig = {
   id: string;
   name: string;
@@ -96,6 +102,7 @@ export type BundleConfig = {
   freeGiftVariantId: string | null;
   freeGiftVariantTitle: string | null;
   freeGiftAvailable: boolean | null;
+  subscription?: SubscriptionConfig | null;
 };
 
 export type QbVariant = {
@@ -144,6 +151,7 @@ export type QbConfig = {
   textOverrides: TextOverrides | null;
   headline: string | null;
   ctaLabel: string | null;
+  subscription?: SubscriptionConfig | null;
 };
 
 export type Settings = {

@@ -18,6 +18,7 @@ export type QbInput = {
   ctaLabel: string | null;
   styleOverrides: Record<string, unknown> | null;
   textOverrides: Record<string, unknown> | null;
+  subscription: { enabled: boolean; discountPercent: number; interval: "weekly" | "biweekly" | "monthly" | "quarterly" } | null;
 };
 
 export type ValidationResult =

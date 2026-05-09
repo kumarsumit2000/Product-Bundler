@@ -9,6 +9,7 @@ import { getUsage } from "~/lib/billing/usage";
 import { canCreateNew } from "~/lib/billing/gating";
 import * as qbRepo from "~/lib/quantity-breaks/repo";
 import { validateQb } from "~/lib/quantity-breaks/validate";
+import { parseSubscriptionForm } from "~/lib/parse-subscription";
 import { syncShopConfig } from "~/lib/metafield-sync";
 import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { QbForm, type QbFormValues } from "~/components/QbForm";
@@ -64,6 +65,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     ctaLabel: null as string | null,
     styleOverrides: null as StyleOverrides | null,
     textOverrides: null as TextOverrides | null,
+    subscription: parseSubscriptionForm(form.get("subscription")),
   };
 
   const styleOverridesRaw = (form.get("styleOverrides") as string) || "{}";
@@ -109,6 +111,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     combinable: input.combinable,
     styleOverrides: input.styleOverrides,
     textOverrides: input.textOverrides,
+    subscription: input.subscription,
     headline: input.headline,
     ctaLabel: input.ctaLabel,
   });

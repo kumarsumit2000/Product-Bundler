@@ -5,6 +5,7 @@ export type CartLineInput = {
   qty: number;
   bundleId?: string;
   giftBundleId?: string;
+  extraProperties?: Record<string, string>;
 };
 
 export type AddResult = { ok: true } | { ok: false; error: string };
@@ -51,6 +52,7 @@ export async function addToCart(
           const properties: Record<string, string> = {};
           if (l.bundleId) properties._pumper_bundle_id = l.bundleId;
           if (l.giftBundleId) properties._pumper_gift_id = l.giftBundleId;
+          if (l.extraProperties) Object.assign(properties, l.extraProperties);
           return {
             id: toCartVariantId(l.variantId),
             quantity: l.qty,

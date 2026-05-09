@@ -9,6 +9,7 @@ import { getUsage } from "~/lib/billing/usage";
 import { canCreateNew } from "~/lib/billing/gating";
 import * as bundleRepo from "~/lib/bundles/repo";
 import { validateBundle } from "~/lib/bundles/validate";
+import { parseSubscriptionForm } from "~/lib/parse-subscription";
 import { syncShopConfig } from "~/lib/metafield-sync";
 import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { BundleForm, type BundleFormValues } from "~/components/BundleForm";
@@ -92,6 +93,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     styleOverrides: parsedStyleOverrides,
     textOverrides: parsedTextOverrides,
     freeGiftVariantId: (form.get("freeGiftVariantId") as string) || null,
+    subscription: parseSubscriptionForm(form.get("subscription")),
   };
 
   const v = validateBundle(input);

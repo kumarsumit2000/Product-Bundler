@@ -19,6 +19,7 @@ export type BundleInput = {
   styleOverrides: Record<string, unknown> | null;
   textOverrides: Record<string, unknown> | null;
   freeGiftVariantId: string | null;
+  subscription: { enabled: boolean; discountPercent: number; interval: "weekly" | "biweekly" | "monthly" | "quarterly" } | null;
 };
 
 export type ValidationResult =

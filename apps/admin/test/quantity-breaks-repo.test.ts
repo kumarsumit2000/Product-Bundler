@@ -27,6 +27,7 @@ const NEW_QB_INPUT = {
   combinable: false,
   styleOverrides: null,
   textOverrides: null,
+      subscription: null,
   headline: null,
   ctaLabel: null,
 };

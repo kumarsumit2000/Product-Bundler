@@ -7,6 +7,7 @@ import { authenticate, type AppLoadContext } from "~/shopify.server";
 import { getDb } from "~/db.server";
 import * as bundleRepo from "~/lib/bundles/repo";
 import { validateBundle } from "~/lib/bundles/validate";
+import { parseSubscriptionForm } from "~/lib/parse-subscription";
 import { syncShopConfig } from "~/lib/metafield-sync";
 import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { BundleForm, type BundleFormValues } from "~/components/BundleForm";
@@ -182,6 +183,7 @@ export async function action({
     styleOverrides: parsedStyleOverrides,
     textOverrides: parsedTextOverrides,
     freeGiftVariantId: (form.get("freeGiftVariantId") as string) || null,
+    subscription: parseSubscriptionForm(form.get("subscription")),
   };
 
   const v = validateBundle(input);

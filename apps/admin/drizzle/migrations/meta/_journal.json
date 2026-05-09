@@ -57,6 +57,13 @@
       "when": 1778345700000,
       "tag": "0007_bundle_free_gift",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1778346800000,
+      "tag": "0008_subscription",
+      "breakpoints": true
     }
   ]
 }
