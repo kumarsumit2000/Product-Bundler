@@ -2,6 +2,7 @@ import type { LoaderFunctionArgs } from "@remix-run/cloudflare";
 import { json } from "@remix-run/cloudflare";
 import { Page, Card, BlockStack, Text, Link as PolarisLink } from "@shopify/polaris";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
+import { FAQ_SECTIONS } from "~/lib/faq";
 
 // Crisp chat is mounted once at the app.tsx layout level so the bubble shows
 // on every admin page, including this one — no per-route mount needed.
@@ -12,52 +13,35 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   return json({});
 }
 
-type FaqItem = { q: string; a: string };
-
-const FAQ: FaqItem[] = [
-  {
-    q: "How do I create my first bundle?",
-    a: "From the Bundles tab, click Create bundle. Pick the products to group, set the discount, and save. The widget appears automatically on the bundle members' product pages.",
-  },
-  {
-    q: "Why isn't my bundle showing on the product page?",
-    a: "Two common reasons: the bundle is in Draft status (switch to Active on the edit page), or our App Embed isn't enabled in your theme (Theme editor → App embeds → enable Bundler App Embed).",
-  },
-  {
-    q: "How do I show a bundle on my homepage or blog?",
-    a: "On the bundle's edit page, scroll to the Embed code card. Click Copy. Paste the snippet anywhere your theme accepts HTML — Shopify pages, blog posts, or page-builder Custom HTML blocks.",
-  },
-  {
-    q: "How do I switch billing plans?",
-    a: "Open the Billing tab. Pick a plan card and click Upgrade or Downgrade. Approve the charge in Shopify if upgrading.",
-  },
-  {
-    q: "How do I get more help?",
-    a: "Click the chat bubble in the bottom-right of this page, or email support@deepseatools.in.",
-  },
-];
-
 export default function SupportPage() {
   return (
     <Page title="Support">
-      <BlockStack gap="400">
+      <BlockStack gap="500">
         <Card>
           <BlockStack gap="200">
             <Text as="h2" variant="headingMd">Frequently asked questions</Text>
             <Text as="p" tone="subdued">
               Browse the answers below, or click the chat bubble in the bottom-right
-              to talk with us live.
+              to talk with us live. Average response time: under 2 hours during
+              business hours.
             </Text>
           </BlockStack>
         </Card>
 
-        {FAQ.map((item, i) => (
-          <Card key={i}>
-            <BlockStack gap="200">
-              <Text as="h3" variant="headingMd">{item.q}</Text>
-              <Text as="p">{item.a}</Text>
-            </BlockStack>
-          </Card>
+        {FAQ_SECTIONS.map((section) => (
+          <BlockStack key={section.heading} gap="200">
+            <Text as="h3" variant="headingSm" tone="subdued">
+              {section.heading.toUpperCase()}
+            </Text>
+            {section.items.map((item) => (
+              <Card key={item.q}>
+                <BlockStack gap="200">
+                  <Text as="h4" variant="headingMd">{item.q}</Text>
+                  <Text as="p">{item.a}</Text>
+                </BlockStack>
+              </Card>
+            ))}
+          </BlockStack>
         ))}
 
         <Card>
@@ -66,7 +50,7 @@ export default function SupportPage() {
             <Text as="p">
               Email{" "}
               <PolarisLink url="mailto:support@deepseatools.in">support@deepseatools.in</PolarisLink>
-              {" "}or use the chat bubble.
+              {" "}or use the chat bubble in the bottom-right.
             </Text>
           </BlockStack>
         </Card>
