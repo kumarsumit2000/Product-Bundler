@@ -14,6 +14,7 @@ import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { QbForm, type QbFormValues } from "~/components/QbForm";
 import { PreviewPane } from "~/components/PreviewPane";
 import { buildPreviewQbConfig, defaultPreviewSettings } from "~/lib/preview-config";
+import { buildStyleOverrides, buildTextOverrides } from "~/lib/preview-overrides";
 import type { TierFormValue } from "~/components/QbTierBuilder";
 import { EmbedCodeCard } from "~/components/EmbedCodeCard";
 import type { StyleOverrides, TextOverrides } from "../../drizzle/schema";
@@ -187,10 +188,10 @@ export default function QbNew() {
             available: true,
           })),
           combinable: values.combinable,
-          styleOverrides: null,
-          textOverrides: null,
-          headline: null,
-          ctaLabel: null,
+          styleOverrides: buildStyleOverrides(values),
+          textOverrides: buildTextOverrides(values.textOverrides),
+          headline: values.headline || null,
+          ctaLabel: values.ctaLabel || null,
         },
       })
     : null;

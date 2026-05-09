@@ -14,6 +14,7 @@ import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { BundleForm, type BundleFormValues } from "~/components/BundleForm";
 import { PreviewPane } from "~/components/PreviewPane";
 import { buildPreviewBundleConfig, defaultMockProduct, defaultPreviewSettings } from "~/lib/preview-config";
+import { buildStyleOverrides, buildTextOverrides } from "~/lib/preview-overrides";
 import type { PickedProduct } from "~/components/ProductPicker";
 import type { CollectionProduct } from "~/lib/shopify-product-fetch";
 import { EmbedCodeCard } from "~/components/EmbedCodeCard";
@@ -211,8 +212,8 @@ export default function BundleNew() {
           triggerProductIds: values.triggerProducts.map((p) => p.productId),
           headline: values.headline || null,
           ctaLabel: values.ctaLabel || null,
-          styleOverrides: null,
-          textOverrides: null,
+          styleOverrides: buildStyleOverrides(values),
+          textOverrides: buildTextOverrides(values.textOverrides),
         },
       })
     : null;

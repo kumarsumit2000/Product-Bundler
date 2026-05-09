@@ -11,11 +11,20 @@ type Props = {
 // ancestors. CSS sticky breaks if any ancestor has overflow != visible, and
 // Polaris's Layout / Page wrappers default to constraints that kill it.
 const STICKY_FIX_CSS = `
+  /* Sticky positioning needs every ancestor up to the scroll container to
+     have overflow: visible. Polaris's Layout.Section / Page wrappers default
+     to clip/hidden in some Polaris versions which kills sticky outright. */
   .Polaris-Page,
   .Polaris-Page__Content,
   .Polaris-Layout,
   .Polaris-Layout__Section {
     overflow: visible !important;
+  }
+  /* Polaris's CSS Grid Layout stretches each Section to the row's height by
+     default, so the sticky child has no scroll headroom. Pin the Section that
+     hosts our preview to the top of the row. */
+  .Polaris-Layout__Section:has(.pumper-sticky-preview) {
+    align-self: flex-start !important;
   }
   .pumper-sticky-preview {
     position: sticky;

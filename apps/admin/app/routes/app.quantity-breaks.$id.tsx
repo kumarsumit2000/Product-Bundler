@@ -13,6 +13,7 @@ import { QbForm, type QbFormValues } from "~/components/QbForm";
 import { PreviewPane } from "~/components/PreviewPane";
 import { EmbedCodeCard } from "~/components/EmbedCodeCard";
 import { buildPreviewQbConfig, defaultPreviewSettings } from "~/lib/preview-config";
+import { buildStyleOverrides, buildTextOverrides } from "~/lib/preview-overrides";
 import type { TierFormValue } from "~/components/QbTierBuilder";
 import { fetchVariantDetails } from "~/lib/shopify-product-fetch";
 import { getUsage } from "~/lib/billing/usage";
@@ -257,10 +258,10 @@ export default function QbEdit() {
             available: true,
           })),
           combinable: values.combinable,
-          styleOverrides: null,
-          textOverrides: null,
-          headline: null,
-          ctaLabel: null,
+          styleOverrides: buildStyleOverrides(values),
+          textOverrides: buildTextOverrides(values.textOverrides),
+          headline: values.headline || null,
+          ctaLabel: values.ctaLabel || null,
         },
       })
     : null;

@@ -15,6 +15,7 @@ import { EmbedCodeCard } from "~/components/EmbedCodeCard";
 import { getUsage } from "~/lib/billing/usage";
 import { useSavedToast } from "~/lib/toast";
 import { buildPreviewBundleConfig, defaultMockProduct, defaultPreviewSettings } from "~/lib/preview-config";
+import { buildStyleOverrides, buildTextOverrides } from "~/lib/preview-overrides";
 import type { PickedProduct } from "~/components/ProductPicker";
 import { fetchCollectionTopProducts, type CollectionProduct } from "~/lib/shopify-product-fetch";
 
@@ -317,8 +318,8 @@ export default function BundleEdit() {
           triggerProductIds: values.triggerProducts.map((p) => p.productId),
           headline: values.headline || null,
           ctaLabel: values.ctaLabel || null,
-          styleOverrides: null,
-          textOverrides: null,
+          styleOverrides: buildStyleOverrides(values),
+          textOverrides: buildTextOverrides(values.textOverrides),
         },
       })
     : null;
