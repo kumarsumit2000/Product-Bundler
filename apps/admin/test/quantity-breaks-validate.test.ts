@@ -11,6 +11,10 @@ const VALID: Parameters<typeof validateQb>[0] = {
     { qty: 3, discountType: "percentage", discountValue: 15, label: "15% off", isMostPopular: true },
   ],
   combinable: false,
+  headline: null,
+  ctaLabel: null,
+  styleOverrides: null,
+  textOverrides: null,
 };
 
 describe("validateQb", () => {
@@ -135,5 +139,58 @@ describe("validateQb", () => {
     });
     expect(r.valid).toBe(false);
     if (!r.valid) expect(r.errors.tiers).toBeDefined();
+  });
+});
+
+describe("validateQb textOverrides + styleOverrides + headline/cta", () => {
+  const baseInput = {
+    name: "x",
+    status: "draft",
+    productId: "gid://shopify/Product/1",
+    tiers: [{ qty: 1, discountType: "percentage" as const, discountValue: 10, label: "Buy 1", isMostPopular: false }],
+    combinable: false,
+    headline: null,
+    ctaLabel: null,
+  };
+
+  it("accepts null overrides", () => {
+    expect(validateQb({ ...baseInput, textOverrides: null, styleOverrides: null }).valid).toBe(true);
+  });
+
+  it("accepts curated text override keys", () => {
+    const r = validateQb({
+      ...baseInput,
+      textOverrides: { "qb.tierLabel": "Get {qty}", "qb.mostPopular": "Top pick" },
+      styleOverrides: null,
+    });
+    expect(r.valid).toBe(true);
+  });
+
+  it("rejects unknown text override key (e.g. qb.heading is a column)", () => {
+    const r = validateQb({
+      ...baseInput,
+      textOverrides: { "qb.heading": "x" } as Record<string, string>,
+      styleOverrides: null,
+    });
+    expect(r.valid).toBe(false);
+  });
+
+  it("rejects non-hex color", () => {
+    const r = validateQb({
+      ...baseInput,
+      textOverrides: null,
+      styleOverrides: { textColor: "black" },
+    });
+    expect(r.valid).toBe(false);
+  });
+
+  it("rejects headline > 100 chars", () => {
+    const r = validateQb({
+      ...baseInput,
+      headline: "x".repeat(101),
+      textOverrides: null,
+      styleOverrides: null,
+    });
+    expect(r.valid).toBe(false);
   });
 });

@@ -17,6 +17,8 @@ const VALID: Parameters<typeof validateBundle>[0] = {
   mode: "classic",
   collectionId: null,
   targetQty: null,
+  styleOverrides: null,
+  textOverrides: null,
 };
 
 describe("validateBundle", () => {
@@ -163,5 +165,79 @@ describe("validateBundle", () => {
     });
     expect(r.valid).toBe(false);
     if (!r.valid) expect(r.errors.targetQty).toBeDefined();
+  });
+});
+
+describe("validateBundle textOverrides + styleOverrides", () => {
+  const baseInput = {
+    name: "x",
+    status: "draft",
+    products: [
+      { productId: "gid://shopify/Product/1", variantId: null, qty: 1 },
+      { productId: "gid://shopify/Product/2", variantId: null, qty: 1 },
+    ],
+    discountType: "percentage",
+    discountValue: 10,
+    combinable: false,
+    triggerProductIds: [],
+    headline: null,
+    ctaLabel: null,
+    mode: "classic" as const,
+    collectionId: null,
+    targetQty: null,
+  };
+
+  it("accepts null textOverrides + styleOverrides", () => {
+    const r = validateBundle({ ...baseInput, textOverrides: null, styleOverrides: null });
+    expect(r.valid).toBe(true);
+  });
+
+  it("accepts a partial textOverrides object", () => {
+    const r = validateBundle({
+      ...baseInput,
+      textOverrides: { "bundle.totalLabel": "Your total" },
+      styleOverrides: { primaryColor: "#FF0000" },
+    });
+    expect(r.valid).toBe(true);
+  });
+
+  it("rejects textOverride values longer than 120 chars", () => {
+    const r = validateBundle({
+      ...baseInput,
+      textOverrides: { "bundle.totalLabel": "x".repeat(121) },
+      styleOverrides: null,
+    });
+    expect(r.valid).toBe(false);
+    if (!r.valid) expect(r.errors.textOverrides).toMatch(/120/);
+  });
+
+  it("rejects unknown text override keys", () => {
+    const r = validateBundle({
+      ...baseInput,
+      textOverrides: { "bundle.heading": "x" } as Record<string, string>,
+      styleOverrides: null,
+    });
+    expect(r.valid).toBe(false);
+    if (!r.valid) expect(r.errors.textOverrides).toBeDefined();
+  });
+
+  it("rejects non-hex primaryColor", () => {
+    const r = validateBundle({
+      ...baseInput,
+      textOverrides: null,
+      styleOverrides: { primaryColor: "red" },
+    });
+    expect(r.valid).toBe(false);
+    if (!r.valid) expect(r.errors.styleOverrides).toMatch(/color/i);
+  });
+
+  it("rejects borderRadius outside 0–24", () => {
+    const r = validateBundle({
+      ...baseInput,
+      textOverrides: null,
+      styleOverrides: { borderRadius: 99 },
+    });
+    expect(r.valid).toBe(false);
+    if (!r.valid) expect(r.errors.styleOverrides).toMatch(/radius/i);
   });
 });

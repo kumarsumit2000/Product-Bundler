@@ -1,5 +1,9 @@
 import type { BundleProduct } from "../../../drizzle/schema";
 
+const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
+const ALLOWED_BUNDLE_TEXT_KEYS = new Set(["bundle.totalLabel", "bundle.savingsBadge"]);
+const ALLOWED_STYLE_KEYS = new Set(["primaryColor", "textColor", "backgroundColor", "borderRadius"]);
+
 export type BundleInput = {
   name: string;
   status: string;
@@ -13,6 +17,8 @@ export type BundleInput = {
   mode: "classic" | "mix_match";
   collectionId: string | null;
   targetQty: number | null;
+  styleOverrides: Record<string, unknown> | null;
+  textOverrides: Record<string, string> | null;
 };
 
 export type ValidationResult =
@@ -75,6 +81,51 @@ export function validateBundle(input: BundleInput): ValidationResult {
 
   if (input.ctaLabel && input.ctaLabel.length > 50) {
     errors.ctaLabel = "CTA label must be 50 characters or less";
+  }
+
+  if (input.textOverrides !== null && input.textOverrides !== undefined) {
+    if (typeof input.textOverrides !== "object" || Array.isArray(input.textOverrides)) {
+      errors.textOverrides = "textOverrides must be an object";
+    } else {
+      for (const [k, v] of Object.entries(input.textOverrides)) {
+        if (!ALLOWED_BUNDLE_TEXT_KEYS.has(k)) {
+          errors.textOverrides = `Unknown text override key: ${k}`;
+          break;
+        }
+        if (typeof v !== "string") {
+          errors.textOverrides = `Text override for ${k} must be a string`;
+          break;
+        }
+        if (v.length > 120) {
+          errors.textOverrides = `Text override for ${k} must be 120 characters or less`;
+          break;
+        }
+      }
+    }
+  }
+
+  if (input.styleOverrides !== null && input.styleOverrides !== undefined) {
+    if (typeof input.styleOverrides !== "object" || Array.isArray(input.styleOverrides)) {
+      errors.styleOverrides = "styleOverrides must be an object";
+    } else {
+      for (const [k, v] of Object.entries(input.styleOverrides)) {
+        if (!ALLOWED_STYLE_KEYS.has(k)) {
+          errors.styleOverrides = `Unknown style key: ${k}`;
+          break;
+        }
+        if (k === "borderRadius") {
+          if (typeof v !== "number" || v < 0 || v > 24) {
+            errors.styleOverrides = "borderRadius must be a number between 0 and 24";
+            break;
+          }
+        } else {
+          if (typeof v !== "string" || !HEX_COLOR_RE.test(v)) {
+            errors.styleOverrides = `${k} must be a hex color like #RRGGBB`;
+            break;
+          }
+        }
+      }
+    }
   }
 
   return Object.keys(errors).length === 0 ? { valid: true } : { valid: false, errors };
