@@ -19,6 +19,7 @@ type StyleFormFields = {
 
   // General
   cardsBg: string;
+  tierBg: string;
   selectedBg: string;
   borderColor: string;
   blockTitleColor: string;
@@ -71,6 +72,7 @@ const COLOR_KEYS: Array<keyof StyleFormFields> = [
   "textColor",
   "backgroundColor",
   "cardsBg",
+  "tierBg",
   "selectedBg",
   "borderColor",
   "blockTitleColor",
@@ -160,6 +162,7 @@ export const EMPTY_STYLE_FORM: StyleFormFields = {
   textColor: "",
   backgroundColor: "",
   cardsBg: "",
+  tierBg: "",
   selectedBg: "",
   borderColor: "",
   blockTitleColor: "",

@@ -18,7 +18,6 @@ export function SimpleQbStylePanel({ values, onChange }: Props) {
         <Text as="h2" variant="headingMd">Appearance</Text>
         <Text as="p" tone="subdued">Override layout, colors and shape. Leave any field blank to use defaults.</Text>
         <BlockStack gap="200">
-          <Text as="h3" variant="headingSm">Layout</Text>
           <LayoutPresetPicker
             value={values.layoutVariant}
             onChange={(layoutVariant) => onChange({ layoutVariant })}
@@ -67,18 +66,24 @@ export function SimpleQbStylePanel({ values, onChange }: Props) {
           </FormLayout.Group>
           <FormLayout.Group>
             <ColorSwatchPicker
+              label="Unselected tier bg"
+              value={values.tierBg}
+              onChange={(tierBg) => onChange({ tierBg })}
+              placeholder="#FFFFFF"
+            />
+            <ColorSwatchPicker
               label="Selected tier bg"
               value={values.selectedBg}
               onChange={(selectedBg) => onChange({ selectedBg })}
               placeholder="#FFF7F8"
             />
-            <ColorSwatchPicker
-              label="Primary / button color"
-              value={values.primaryColor}
-              onChange={(primaryColor) => onChange({ primaryColor })}
-              placeholder="#7B1E2A"
-            />
           </FormLayout.Group>
+          <ColorSwatchPicker
+            label="Primary / button color"
+            value={values.primaryColor}
+            onChange={(primaryColor) => onChange({ primaryColor })}
+            placeholder="#7B1E2A"
+          />
           <FormLayout.Group>
             <ColorSwatchPicker
               label="Savings badge bg"

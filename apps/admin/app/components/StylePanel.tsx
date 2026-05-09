@@ -30,6 +30,7 @@ export type StylePanelValues = {
   backgroundColor: string;
   // General
   cardsBg: string;
+  tierBg: string;
   selectedBg: string;
   borderColor: string;
   blockTitleColor: string;

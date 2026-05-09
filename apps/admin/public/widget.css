@@ -102,7 +102,7 @@
 }
 .pumper-bundle-row,
 .pumper-qb-tier {
-  background: var(--pumper-cards-bg, #fff);
+  background: var(--pumper-tier-bg, var(--pumper-cards-bg, #fff));
   border-color: var(--pumper-border, #e3e3e3);
 }
 

@@ -70,6 +70,7 @@ export type StyleOverrides = Partial<{
 
   // General
   cardsBg: string;
+  tierBg: string;
   selectedBg: string;
   borderColor: string;
   blockTitleColor: string;

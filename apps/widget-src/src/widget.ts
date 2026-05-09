@@ -75,6 +75,7 @@ export function applyCssVars(
 
   // General
   setVar(target, "--pumper-cards-bg",         o.cardsBg);
+  setVar(target, "--pumper-tier-bg",          o.tierBg);
   setVar(target, "--pumper-selected-bg",      o.selectedBg);
   setVar(target, "--pumper-border",           o.borderColor);
   setVar(target, "--pumper-block-title-color", o.blockTitleColor);
