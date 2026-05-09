@@ -1,5 +1,5 @@
 import { Card, Text, BlockStack, Box } from "@shopify/polaris";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Props = {
   type: "bundle" | "qb" | "mix_match" | "newsletter";
@@ -10,6 +10,7 @@ type Props = {
 export function PreviewPane({ type, id, config }: Props) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const lastSentRef = useRef<string>("");
+  const [height, setHeight] = useState<number>(280);
 
   // Push config updates to the preview iframe (debounced).
   useEffect(() => {
@@ -24,6 +25,19 @@ export function PreviewPane({ type, id, config }: Props) {
     }, 300);
     return () => clearTimeout(handle);
   }, [config]);
+
+  // Auto-size the iframe to its content. The iframe is same-origin so we can
+  // read body.scrollHeight directly. Polls every 250ms — cheap and avoids
+  // dealing with cross-frame ResizeObserver wiring.
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      const doc = iframeRef.current?.contentDocument;
+      if (!doc?.body) return;
+      const next = Math.max(140, doc.documentElement.scrollHeight || doc.body.scrollHeight);
+      setHeight((prev) => (Math.abs(prev - next) > 2 ? next : prev));
+    }, 250);
+    return () => window.clearInterval(id);
+  }, []);
 
   // Sticky behavior intentionally removed — preview now sits at the top of
   // the page in a column layout, so pinning it on scroll just covered the
@@ -43,7 +57,7 @@ export function PreviewPane({ type, id, config }: Props) {
           <iframe
             ref={iframeRef}
             src={`/preview/${type}/${encodeURIComponent(id)}`}
-            style={{ width: "100%", height: "560px", border: "none", display: "block" }}
+            style={{ width: "100%", height: `${height}px`, border: "none", display: "block", transition: "height .15s" }}
             title="Widget preview"
           />
         </Box>

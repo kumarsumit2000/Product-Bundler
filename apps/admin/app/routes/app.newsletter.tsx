@@ -69,6 +69,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
 function NewsletterLivePreview({ config }: { config: unknown }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const lastSentRef = useRef<string>("");
+  const [height, setHeight] = useState<number>(320);
 
   useEffect(() => {
     const next = JSON.stringify(config);
@@ -82,6 +83,16 @@ function NewsletterLivePreview({ config }: { config: unknown }) {
     }, 250);
     return () => clearTimeout(handle);
   }, [config]);
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      const doc = iframeRef.current?.contentDocument;
+      if (!doc?.body) return;
+      const next = Math.max(180, doc.documentElement.scrollHeight || doc.body.scrollHeight);
+      setHeight((prev) => (Math.abs(prev - next) > 2 ? next : prev));
+    }, 250);
+    return () => window.clearInterval(id);
+  }, []);
 
   return (
     <Card>
@@ -98,7 +109,7 @@ function NewsletterLivePreview({ config }: { config: unknown }) {
           <iframe
             ref={iframeRef}
             src="/preview/newsletter/default"
-            style={{ width: "100%", height: "460px", border: "none", display: "block", background: "#f6f6f7" }}
+            style={{ width: "100%", height: `${height}px`, border: "none", display: "block", background: "#f6f6f7", transition: "height .15s" }}
             title="Newsletter preview"
           />
         </Box>
