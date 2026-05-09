@@ -15,7 +15,7 @@ import { EmbedCodeCard } from "~/components/EmbedCodeCard";
 import { getUsage } from "~/lib/billing/usage";
 import { useSavedToast } from "~/lib/toast";
 import { buildPreviewBundleConfig, defaultMockProduct, defaultPreviewSettings } from "~/lib/preview-config";
-import { buildStyleOverrides, buildTextOverrides } from "~/lib/preview-overrides";
+import { buildStyleOverrides, buildTextOverrides, styleOverridesToFormFields } from "~/lib/preview-overrides";
 import type { PickedProduct } from "~/components/ProductPicker";
 import { fetchCollectionTopProducts, type CollectionProduct } from "~/lib/shopify-product-fetch";
 
@@ -269,10 +269,7 @@ export default function BundleEdit() {
     status: bundle.status as BundleFormValues["status"],
     headline: bundle.headline ?? "",
     ctaLabel: bundle.ctaLabel ?? "",
-    primaryColor: (bundle.styleOverrides as { primaryColor?: string } | null)?.primaryColor ?? "",
-    textColor: (bundle.styleOverrides as { textColor?: string } | null)?.textColor ?? "",
-    backgroundColor: (bundle.styleOverrides as { backgroundColor?: string } | null)?.backgroundColor ?? "",
-    borderRadius: (bundle.styleOverrides as { borderRadius?: number } | null)?.borderRadius?.toString() ?? "",
+    ...styleOverridesToFormFields(bundle.styleOverrides as Record<string, unknown> | null),
     textOverrides: {
       "bundle.totalLabel": (bundle.textOverrides as Record<string, string> | null)?.["bundle.totalLabel"] ?? "",
       "bundle.savingsBadge": (bundle.textOverrides as Record<string, string> | null)?.["bundle.savingsBadge"] ?? "",

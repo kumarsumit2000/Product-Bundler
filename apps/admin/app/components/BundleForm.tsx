@@ -15,13 +15,15 @@ import { useEffect, useState } from "react";
 import { ProductPicker, type PickedProduct } from "./ProductPicker";
 import { DiscountValueInput } from "./DiscountValueInput";
 import { CollectionPicker, type PickedCollection } from "./CollectionPicker";
+import { StylePanel, type StylePanelValues } from "./StylePanel";
+import { EMPTY_STYLE_FORM, buildStyleOverrides } from "~/lib/preview-overrides";
 
 type DiscountType = "percentage" | "flat" | "fixed_total";
 type Status = "draft" | "active" | "paused";
 type TriggerMode = "same_as_members" | "specific";
 type Mode = "classic" | "mix_match";
 
-export type BundleFormValues = {
+export type BundleFormValues = StylePanelValues & {
   name: string;
   mode: Mode;
   products: PickedProduct[];
@@ -35,11 +37,7 @@ export type BundleFormValues = {
   status: Status;
   headline: string;
   ctaLabel: string;
-  primaryColor: string;       // "" = inherit
-  textColor: string;          // "" = inherit
-  backgroundColor: string;    // "" = inherit
-  borderRadius: string;       // "" = inherit (string for textfield round-trip; parseInt at submit)
-  textOverrides: Record<string, string>; // empty values stripped at submit
+  textOverrides: Record<string, string>;
 };
 
 type Props = {
@@ -50,6 +48,7 @@ type Props = {
 };
 
 const DEFAULTS: BundleFormValues = {
+  ...EMPTY_STYLE_FORM,
   name: "",
   mode: "classic",
   products: [],
@@ -63,10 +62,6 @@ const DEFAULTS: BundleFormValues = {
   status: "draft",
   headline: "",
   ctaLabel: "",
-  primaryColor: "",
-  textColor: "",
-  backgroundColor: "",
-  borderRadius: "",
   textOverrides: { "bundle.totalLabel": "", "bundle.savingsBadge": "" },
 };
 
@@ -92,15 +87,18 @@ export function BundleForm({ initialValues, errors, submitLabel, onValuesChange 
       <input type="hidden" name="mode" value={values.mode} />
       <input type="hidden" name="collectionId" value={values.collection?.collectionId ?? ""} />
       <input type="hidden" name="targetQty" value={values.targetQty} />
-      <input type="hidden" name="styleOverrides" value={JSON.stringify({
-        primaryColor: values.primaryColor || undefined,
-        textColor: values.textColor || undefined,
-        backgroundColor: values.backgroundColor || undefined,
-        borderRadius: values.borderRadius ? parseInt(values.borderRadius, 10) : undefined,
-      })} />
-      <input type="hidden" name="textOverrides" value={JSON.stringify(
-        Object.fromEntries(Object.entries(values.textOverrides).filter(([, v]) => v.length > 0))
-      )} />
+      <input
+        type="hidden"
+        name="styleOverrides"
+        value={JSON.stringify(buildStyleOverrides(values) ?? {})}
+      />
+      <input
+        type="hidden"
+        name="textOverrides"
+        value={JSON.stringify(
+          Object.fromEntries(Object.entries(values.textOverrides).filter(([, v]) => v.length > 0)),
+        )}
+      />
 
       <BlockStack gap="500">
         {hasErrors && (
@@ -270,77 +268,29 @@ export function BundleForm({ initialValues, errors, submitLabel, onValuesChange 
           </BlockStack>
         </Card>
 
+        <StylePanel values={values} onChange={(next) => setValues((s) => ({ ...s, ...next }))} />
+
         <Card>
           <BlockStack gap="400">
-            <Text as="h2" variant="headingMd">Style & Text</Text>
-            <Text as="p" tone="subdued">Override how this bundle looks and reads. Leave fields empty to use shop defaults.</Text>
-
-            <BlockStack gap="200">
-              <Text as="h3" variant="headingSm">Colors</Text>
-              <InlineStack gap="300">
-                <TextField
-                  label="Primary color"
-                  type="text"
-                  value={values.primaryColor}
-                  onChange={(v) => update("primaryColor", v)}
-                  placeholder="#7B1E2A"
-                  helpText="6-digit hex like #FF0000"
-                  autoComplete="off"
-                  maxLength={7}
-                />
-                <TextField
-                  label="Text color"
-                  type="text"
-                  value={values.textColor}
-                  onChange={(v) => update("textColor", v)}
-                  placeholder="#1A1A1A"
-                  autoComplete="off"
-                  maxLength={7}
-                />
-                <TextField
-                  label="Background color"
-                  type="text"
-                  value={values.backgroundColor}
-                  onChange={(v) => update("backgroundColor", v)}
-                  placeholder="#FFFFFF"
-                  autoComplete="off"
-                  maxLength={7}
-                />
-              </InlineStack>
-              <TextField
-                label="Border radius (px)"
-                type="number"
-                min={0}
-                max={24}
-                value={values.borderRadius}
-                onChange={(v) => update("borderRadius", v)}
-                placeholder="8"
-                autoComplete="off"
-              />
-            </BlockStack>
-
-            <BlockStack gap="200">
-              <Text as="h3" variant="headingSm">Text</Text>
-              <TextField
-                label="Total label"
-                value={values.textOverrides["bundle.totalLabel"] ?? ""}
-                onChange={(v) => update("textOverrides", { ...values.textOverrides, "bundle.totalLabel": v })}
-                placeholder="Total"
-                helpText="Leave empty to use the default."
-                autoComplete="off"
-                maxLength={120}
-              />
-              <TextField
-                label="Savings badge"
-                value={values.textOverrides["bundle.savingsBadge"] ?? ""}
-                onChange={(v) => update("textOverrides", { ...values.textOverrides, "bundle.savingsBadge": v })}
-                placeholder="Save {savings}"
-                helpText="Available variables: {savings}"
-                autoComplete="off"
-                maxLength={120}
-              />
-            </BlockStack>
-
+            <Text as="h2" variant="headingMd">Text overrides</Text>
+            <Text as="p" tone="subdued">Rename labels shown on the widget. Leave empty to use defaults.</Text>
+            <TextField
+              label="Total label"
+              value={values.textOverrides["bundle.totalLabel"] ?? ""}
+              onChange={(v) => update("textOverrides", { ...values.textOverrides, "bundle.totalLabel": v })}
+              placeholder="Total"
+              autoComplete="off"
+              maxLength={120}
+            />
+            <TextField
+              label="Savings badge"
+              value={values.textOverrides["bundle.savingsBadge"] ?? ""}
+              onChange={(v) => update("textOverrides", { ...values.textOverrides, "bundle.savingsBadge": v })}
+              placeholder="Save {savings}"
+              helpText="Available variables: {savings}"
+              autoComplete="off"
+              maxLength={120}
+            />
             {(errors?.styleOverrides || errors?.textOverrides) && (
               <Banner tone="critical">{errors?.styleOverrides || errors?.textOverrides}</Banner>
             )}

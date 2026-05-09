@@ -14,10 +14,12 @@ import {
 import { useEffect, useState } from "react";
 import { ProductPicker, type PickedProduct } from "./ProductPicker";
 import { QbTierBuilder, type TierFormValue } from "./QbTierBuilder";
+import { StylePanel, type StylePanelValues } from "./StylePanel";
+import { EMPTY_STYLE_FORM, buildStyleOverrides } from "~/lib/preview-overrides";
 
 type Status = "draft" | "active" | "paused";
 
-export type QbFormValues = {
+export type QbFormValues = StylePanelValues & {
   name: string;
   product: PickedProduct[];
   tiers: TierFormValue[];
@@ -25,10 +27,6 @@ export type QbFormValues = {
   status: Status;
   headline: string;
   ctaLabel: string;
-  primaryColor: string;
-  textColor: string;
-  backgroundColor: string;
-  borderRadius: string;
   textOverrides: Record<string, string>;
 };
 
@@ -40,6 +38,7 @@ type Props = {
 };
 
 const DEFAULTS: QbFormValues = {
+  ...EMPTY_STYLE_FORM,
   name: "",
   product: [],
   tiers: [{ qty: 1, discountType: "percentage", discountValue: 0, label: "Buy 1", isMostPopular: false }],
@@ -47,10 +46,6 @@ const DEFAULTS: QbFormValues = {
   status: "draft",
   headline: "",
   ctaLabel: "",
-  primaryColor: "",
-  textColor: "",
-  backgroundColor: "",
-  borderRadius: "",
   textOverrides: {
     "qb.tierLabel": "",
     "qb.savingsBadge": "",
@@ -78,15 +73,18 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange }: P
       <input type="hidden" name="productId" value={values.product[0]?.productId ?? ""} />
       <input type="hidden" name="headline" value={values.headline} />
       <input type="hidden" name="ctaLabel" value={values.ctaLabel} />
-      <input type="hidden" name="styleOverrides" value={JSON.stringify({
-        primaryColor: values.primaryColor || undefined,
-        textColor: values.textColor || undefined,
-        backgroundColor: values.backgroundColor || undefined,
-        borderRadius: values.borderRadius ? parseInt(values.borderRadius, 10) : undefined,
-      })} />
-      <input type="hidden" name="textOverrides" value={JSON.stringify(
-        Object.fromEntries(Object.entries(values.textOverrides).filter(([, v]) => v.length > 0))
-      )} />
+      <input
+        type="hidden"
+        name="styleOverrides"
+        value={JSON.stringify(buildStyleOverrides(values) ?? {})}
+      />
+      <input
+        type="hidden"
+        name="textOverrides"
+        value={JSON.stringify(
+          Object.fromEntries(Object.entries(values.textOverrides).filter(([, v]) => v.length > 0)),
+        )}
+      />
       <input
         type="hidden"
         name="tiers"
@@ -116,9 +114,7 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange }: P
 
         <Card>
           <BlockStack gap="400">
-            <Text as="h2" variant="headingMd">
-              1. Product
-            </Text>
+            <Text as="h2" variant="headingMd">1. Product</Text>
             <TextField
               label="Name"
               name="name"
@@ -140,9 +136,7 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange }: P
 
         <Card>
           <BlockStack gap="400">
-            <Text as="h2" variant="headingMd">
-              2. Tiers
-            </Text>
+            <Text as="h2" variant="headingMd">2. Tiers</Text>
             <QbTierBuilder
               tiers={values.tiers}
               onChange={(t) => update("tiers", t)}
@@ -154,9 +148,7 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange }: P
 
         <Card>
           <BlockStack gap="400">
-            <Text as="h2" variant="headingMd">
-              Settings
-            </Text>
+            <Text as="h2" variant="headingMd">Settings</Text>
             <ChoiceList
               title="Status"
               choices={[
@@ -179,111 +171,70 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange }: P
 
         <Card>
           <BlockStack gap="400">
-            <Text as="h2" variant="headingMd">Style &amp; Text</Text>
-            <Text as="p" tone="subdued">Override how this quantity break looks and reads. Leave fields empty to use shop defaults.</Text>
+            <Text as="h2" variant="headingMd">Headline & CTA</Text>
+            <Text as="p" tone="subdued">Override the headline and CTA shown on this widget. Leave empty to use shop defaults.</Text>
+            <TextField
+              label="Headline (optional)"
+              value={values.headline}
+              onChange={(v) => update("headline", v)}
+              error={errors?.headline}
+              placeholder="Choose your savings"
+              autoComplete="off"
+              maxLength={100}
+            />
+            <TextField
+              label="CTA label (optional)"
+              value={values.ctaLabel}
+              onChange={(v) => update("ctaLabel", v)}
+              error={errors?.ctaLabel}
+              placeholder="Add to cart"
+              autoComplete="off"
+              maxLength={50}
+            />
+          </BlockStack>
+        </Card>
 
-            <BlockStack gap="200">
-              <Text as="h3" variant="headingSm">Headline &amp; CTA</Text>
-              <TextField
-                label="Headline (optional)"
-                value={values.headline}
-                onChange={(v) => update("headline", v)}
-                error={errors?.headline}
-                placeholder="Choose your savings"
-                autoComplete="off"
-                maxLength={100}
-              />
-              <TextField
-                label="CTA label (optional)"
-                value={values.ctaLabel}
-                onChange={(v) => update("ctaLabel", v)}
-                error={errors?.ctaLabel}
-                placeholder="Add to cart"
-                autoComplete="off"
-                maxLength={50}
-              />
-            </BlockStack>
+        <StylePanel values={values} onChange={(next) => setValues((s) => ({ ...s, ...next }))} />
 
-            <BlockStack gap="200">
-              <Text as="h3" variant="headingSm">Colors</Text>
-              <InlineStack gap="300">
-                <TextField
-                  label="Primary color"
-                  value={values.primaryColor}
-                  onChange={(v) => update("primaryColor", v)}
-                  placeholder="#7B1E2A"
-                  helpText="6-digit hex like #FF0000"
-                  autoComplete="off"
-                  maxLength={7}
-                />
-                <TextField
-                  label="Text color"
-                  value={values.textColor}
-                  onChange={(v) => update("textColor", v)}
-                  placeholder="#1A1A1A"
-                  autoComplete="off"
-                  maxLength={7}
-                />
-                <TextField
-                  label="Background color"
-                  value={values.backgroundColor}
-                  onChange={(v) => update("backgroundColor", v)}
-                  placeholder="#FFFFFF"
-                  autoComplete="off"
-                  maxLength={7}
-                />
-              </InlineStack>
-              <TextField
-                label="Border radius (px)"
-                type="number"
-                min={0}
-                max={24}
-                value={values.borderRadius}
-                onChange={(v) => update("borderRadius", v)}
-                placeholder="8"
-                autoComplete="off"
-              />
-            </BlockStack>
-
-            <BlockStack gap="200">
-              <Text as="h3" variant="headingSm">Text overrides</Text>
-              <TextField
-                label="Tier label"
-                value={values.textOverrides["qb.tierLabel"] ?? ""}
-                onChange={(v) => update("textOverrides", { ...values.textOverrides, "qb.tierLabel": v })}
-                placeholder="Buy {qty}"
-                helpText="Available variables: {qty}"
-                autoComplete="off"
-                maxLength={120}
-              />
-              <TextField
-                label="Savings badge"
-                value={values.textOverrides["qb.savingsBadge"] ?? ""}
-                onChange={(v) => update("textOverrides", { ...values.textOverrides, "qb.savingsBadge": v })}
-                placeholder="−{savings}"
-                helpText="Available variables: {savings}"
-                autoComplete="off"
-                maxLength={120}
-              />
-              <TextField
-                label='"Most popular" badge'
-                value={values.textOverrides["qb.mostPopular"] ?? ""}
-                onChange={(v) => update("textOverrides", { ...values.textOverrides, "qb.mostPopular": v })}
-                placeholder="MOST POPULAR"
-                autoComplete="off"
-                maxLength={120}
-              />
-              <TextField
-                label="Free gift badge"
-                value={values.textOverrides["qb.giftBadge"] ?? ""}
-                onChange={(v) => update("textOverrides", { ...values.textOverrides, "qb.giftBadge": v })}
-                placeholder="🎁 + Free {variantTitle}"
-                helpText="Available variables: {variantTitle}"
-                autoComplete="off"
-                maxLength={120}
-              />
-            </BlockStack>
-
+        <Card>
+          <BlockStack gap="400">
+            <Text as="h2" variant="headingMd">Text overrides</Text>
+            <Text as="p" tone="subdued">Rename the labels and badges shown on the widget. Leave empty to use defaults.</Text>
+            <TextField
+              label="Tier label"
+              value={values.textOverrides["qb.tierLabel"] ?? ""}
+              onChange={(v) => update("textOverrides", { ...values.textOverrides, "qb.tierLabel": v })}
+              placeholder="Buy {qty}"
+              helpText="Available variables: {qty}"
+              autoComplete="off"
+              maxLength={120}
+            />
+            <TextField
+              label="Savings badge"
+              value={values.textOverrides["qb.savingsBadge"] ?? ""}
+              onChange={(v) => update("textOverrides", { ...values.textOverrides, "qb.savingsBadge": v })}
+              placeholder="−{savings}"
+              helpText="Available variables: {savings}"
+              autoComplete="off"
+              maxLength={120}
+            />
+            <TextField
+              label='"Most popular" badge'
+              value={values.textOverrides["qb.mostPopular"] ?? ""}
+              onChange={(v) => update("textOverrides", { ...values.textOverrides, "qb.mostPopular": v })}
+              placeholder="MOST POPULAR"
+              autoComplete="off"
+              maxLength={120}
+            />
+            <TextField
+              label="Free gift badge"
+              value={values.textOverrides["qb.giftBadge"] ?? ""}
+              onChange={(v) => update("textOverrides", { ...values.textOverrides, "qb.giftBadge": v })}
+              placeholder="🎁 + Free {variantTitle}"
+              helpText="Available variables: {variantTitle}"
+              autoComplete="off"
+              maxLength={120}
+            />
             {(errors?.styleOverrides || errors?.textOverrides) && (
               <Banner tone="critical">{errors?.styleOverrides || errors?.textOverrides}</Banner>
             )}

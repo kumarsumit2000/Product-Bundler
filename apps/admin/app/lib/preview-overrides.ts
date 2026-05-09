@@ -1,25 +1,138 @@
 // Helpers that pull live form-state values into the shape the preview iframe
-// expects. The form holds colors as strings ("" = inherit) and a flat
-// textOverrides record with empty strings for unset entries; the preview
-// payload wants compact objects (or null) so the widget treats unset values
-// as "fall back to shop default" the same way the real config endpoint does.
+// + the storefront-config payload expect. Form holds colors as strings
+// ("" = inherit) and font sizes as strings; preview/persisted shape uses
+// numbers and only includes keys that are actually set.
+
+import type { FontStyle, LayoutVariant } from "../../drizzle/schema";
 
 type StyleFormFields = {
+  // Layout
+  layoutVariant: LayoutVariant | "";
+  borderRadius: string;
+  spacing: string;
+
+  // Legacy color shorthand (kept for backward compat)
   primaryColor: string;
   textColor: string;
   backgroundColor: string;
-  borderRadius: string;
+
+  // General
+  cardsBg: string;
+  selectedBg: string;
+  borderColor: string;
+  blockTitleColor: string;
+
+  // Bar texts
+  titleColor: string;
+  subtitleColor: string;
+  priceColor: string;
+  fullPriceColor: string;
+
+  // Label
+  labelBg: string;
+  labelText: string;
+
+  // Badge
+  badgeBg: string;
+  badgeText: string;
+
+  // Free gift
+  freeGiftBg: string;
+  freeGiftText: string;
+  freeGiftSelectedBg: string;
+  freeGiftSelectedText: string;
+
+  // Upsell
+  upsellBg: string;
+  upsellText: string;
+  upsellSelectedBg: string;
+  upsellSelectedText: string;
+
+  // Typography
+  blockTitleFontSize: string;
+  blockTitleFontStyle: FontStyle | "";
+  titleFontSize: string;
+  titleFontStyle: FontStyle | "";
+  subtitleFontSize: string;
+  subtitleFontStyle: FontStyle | "";
+  labelFontSize: string;
+  labelFontStyle: FontStyle | "";
+  freeGiftFontSize: string;
+  freeGiftFontStyle: FontStyle | "";
+  upsellFontSize: string;
+  upsellFontStyle: FontStyle | "";
+  unitLabelFontSize: string;
+  unitLabelFontStyle: FontStyle | "";
 };
 
-export function buildStyleOverrides(values: StyleFormFields): Record<string, unknown> | null {
+const COLOR_KEYS: Array<keyof StyleFormFields> = [
+  "primaryColor",
+  "textColor",
+  "backgroundColor",
+  "cardsBg",
+  "selectedBg",
+  "borderColor",
+  "blockTitleColor",
+  "titleColor",
+  "subtitleColor",
+  "priceColor",
+  "fullPriceColor",
+  "labelBg",
+  "labelText",
+  "badgeBg",
+  "badgeText",
+  "freeGiftBg",
+  "freeGiftText",
+  "freeGiftSelectedBg",
+  "freeGiftSelectedText",
+  "upsellBg",
+  "upsellText",
+  "upsellSelectedBg",
+  "upsellSelectedText",
+];
+
+const NUMBER_KEYS: Array<keyof StyleFormFields> = [
+  "borderRadius",
+  "spacing",
+  "blockTitleFontSize",
+  "titleFontSize",
+  "subtitleFontSize",
+  "labelFontSize",
+  "freeGiftFontSize",
+  "upsellFontSize",
+  "unitLabelFontSize",
+];
+
+const ENUM_KEYS: Array<keyof StyleFormFields> = [
+  "layoutVariant",
+  "blockTitleFontStyle",
+  "titleFontStyle",
+  "subtitleFontStyle",
+  "labelFontStyle",
+  "freeGiftFontStyle",
+  "upsellFontStyle",
+  "unitLabelFontStyle",
+];
+
+export function buildStyleOverrides(values: Partial<StyleFormFields>): Record<string, unknown> | null {
   const out: Record<string, unknown> = {};
-  if (values.primaryColor) out.primaryColor = values.primaryColor;
-  if (values.textColor) out.textColor = values.textColor;
-  if (values.backgroundColor) out.backgroundColor = values.backgroundColor;
-  if (values.borderRadius) {
-    const n = parseInt(values.borderRadius, 10);
-    if (Number.isFinite(n)) out.borderRadius = n;
+
+  for (const k of COLOR_KEYS) {
+    const v = values[k];
+    if (typeof v === "string" && v.length > 0) out[k] = v;
   }
+  for (const k of NUMBER_KEYS) {
+    const v = values[k];
+    if (typeof v === "string" && v.length > 0) {
+      const n = parseInt(v, 10);
+      if (Number.isFinite(n)) out[k] = n;
+    }
+  }
+  for (const k of ENUM_KEYS) {
+    const v = values[k];
+    if (typeof v === "string" && v.length > 0) out[k] = v;
+  }
+
   return Object.keys(out).length > 0 ? out : null;
 }
 
@@ -33,3 +146,70 @@ export function buildTextOverrides(
   }
   return Object.keys(out).length > 0 ? out : null;
 }
+
+// Default form-shape so callers can spread {...EMPTY_STYLE_FORM, ...overrides}
+// without having to enumerate ~36 fields each time.
+export const EMPTY_STYLE_FORM: StyleFormFields = {
+  layoutVariant: "",
+  borderRadius: "",
+  spacing: "",
+  primaryColor: "",
+  textColor: "",
+  backgroundColor: "",
+  cardsBg: "",
+  selectedBg: "",
+  borderColor: "",
+  blockTitleColor: "",
+  titleColor: "",
+  subtitleColor: "",
+  priceColor: "",
+  fullPriceColor: "",
+  labelBg: "",
+  labelText: "",
+  badgeBg: "",
+  badgeText: "",
+  freeGiftBg: "",
+  freeGiftText: "",
+  freeGiftSelectedBg: "",
+  freeGiftSelectedText: "",
+  upsellBg: "",
+  upsellText: "",
+  upsellSelectedBg: "",
+  upsellSelectedText: "",
+  blockTitleFontSize: "",
+  blockTitleFontStyle: "",
+  titleFontSize: "",
+  titleFontStyle: "",
+  subtitleFontSize: "",
+  subtitleFontStyle: "",
+  labelFontSize: "",
+  labelFontStyle: "",
+  freeGiftFontSize: "",
+  freeGiftFontStyle: "",
+  upsellFontSize: "",
+  upsellFontStyle: "",
+  unitLabelFontSize: "",
+  unitLabelFontStyle: "",
+};
+
+// Inverse of buildStyleOverrides — take a saved JSON object and produce the
+// flat string-everywhere shape the form holds in state. Unknown keys are
+// dropped silently so old data with obsolete fields doesn't break hydration.
+export function styleOverridesToFormFields(
+  overrides: Record<string, unknown> | null | undefined,
+): StyleFormFields {
+  const out: StyleFormFields = { ...EMPTY_STYLE_FORM };
+  if (!overrides || typeof overrides !== "object") return out;
+
+  for (const [k, v] of Object.entries(overrides)) {
+    if (!(k in out)) continue;
+    if (typeof v === "number") {
+      (out as Record<string, string>)[k] = String(v);
+    } else if (typeof v === "string") {
+      (out as Record<string, string>)[k] = v;
+    }
+  }
+  return out;
+}
+
+export type { StyleFormFields };

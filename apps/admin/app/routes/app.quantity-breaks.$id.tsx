@@ -13,7 +13,7 @@ import { QbForm, type QbFormValues } from "~/components/QbForm";
 import { PreviewPane } from "~/components/PreviewPane";
 import { EmbedCodeCard } from "~/components/EmbedCodeCard";
 import { buildPreviewQbConfig, defaultPreviewSettings } from "~/lib/preview-config";
-import { buildStyleOverrides, buildTextOverrides } from "~/lib/preview-overrides";
+import { buildStyleOverrides, buildTextOverrides, styleOverridesToFormFields } from "~/lib/preview-overrides";
 import type { TierFormValue } from "~/components/QbTierBuilder";
 import { fetchVariantDetails } from "~/lib/shopify-product-fetch";
 import { getUsage } from "~/lib/billing/usage";
@@ -214,10 +214,7 @@ export default function QbEdit() {
     status: qb.status as QbFormValues["status"],
     headline: qb.headline ?? "",
     ctaLabel: qb.ctaLabel ?? "",
-    primaryColor: (qb.styleOverrides as { primaryColor?: string } | null)?.primaryColor ?? "",
-    textColor: (qb.styleOverrides as { textColor?: string } | null)?.textColor ?? "",
-    backgroundColor: (qb.styleOverrides as { backgroundColor?: string } | null)?.backgroundColor ?? "",
-    borderRadius: (qb.styleOverrides as { borderRadius?: number } | null)?.borderRadius?.toString() ?? "",
+    ...styleOverridesToFormFields(qb.styleOverrides as Record<string, unknown> | null),
     textOverrides: {
       "qb.tierLabel": (qb.textOverrides as Record<string, string> | null)?.["qb.tierLabel"] ?? "",
       "qb.savingsBadge": (qb.textOverrides as Record<string, string> | null)?.["qb.savingsBadge"] ?? "",
