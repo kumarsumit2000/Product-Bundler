@@ -8,10 +8,18 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const shop = url.searchParams.get("shop");
   const host = url.searchParams.get("host");
 
-  // Top-level navigation onto our domain (e.g., from Shopify billing-approval
-  // redirect or someone bookmarking the app URL). If we know the shop, bounce
-  // back into the embedded admin shell — otherwise /app routes will just kick
-  // to /auth/login because there's no Bearer token outside the iframe.
+  // Embedded entry: Shopify launches the app at our root URL (no /app suffix).
+  // Forward to /app same-origin so the embedded auth + bounce flow runs inside
+  // the iframe. A cross-origin redirect to admin.shopify.com here would be
+  // X-Frame-Options blocked.
+  if (shop && host) {
+    const params = new URLSearchParams(url.searchParams);
+    params.set("embedded", "1");
+    return redirect(`/app?${params.toString()}`);
+  }
+
+  // Top-level visit (no shop/host): try to bounce into the embedded admin shell
+  // if we at least know the shop, otherwise start the install flow.
   if (host || shop) {
     let embeddedHost: string | null = null;
     if (host) {
