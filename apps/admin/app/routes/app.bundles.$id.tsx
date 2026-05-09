@@ -128,6 +128,27 @@ export async function action({
   const targetQtyRaw = form.get("targetQty") as string;
   const targetQty = targetQtyRaw ? parseInt(targetQtyRaw, 10) : null;
 
+  const styleOverridesRaw = (form.get("styleOverrides") as string) || "{}";
+  const textOverridesRaw = (form.get("textOverrides") as string) || "{}";
+  let parsedStyleOverrides: Record<string, unknown> | null = null;
+  let parsedTextOverrides: Record<string, string> | null = null;
+  try {
+    const so = JSON.parse(styleOverridesRaw);
+    const filteredSo: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(so)) {
+      if (v !== undefined && v !== null && v !== "") filteredSo[k] = v;
+    }
+    parsedStyleOverrides = Object.keys(filteredSo).length > 0 ? filteredSo : null;
+  } catch { parsedStyleOverrides = null; }
+  try {
+    const to = JSON.parse(textOverridesRaw);
+    const filteredTo: Record<string, string> = {};
+    for (const [k, v] of Object.entries(to)) {
+      if (typeof v === "string" && v.length > 0) filteredTo[k] = v;
+    }
+    parsedTextOverrides = Object.keys(filteredTo).length > 0 ? filteredTo : null;
+  } catch { parsedTextOverrides = null; }
+
   const input = {
     name: (form.get("name") as string) || "",
     status: (form.get("status") as string) || "draft",
@@ -145,8 +166,8 @@ export async function action({
     triggerProductIds: mode === "mix_match" ? [] : triggerProductIds,
     headline: (form.get("headline") as string) || null,
     ctaLabel: (form.get("ctaLabel") as string) || null,
-    styleOverrides: null,
-    textOverrides: null,
+    styleOverrides: parsedStyleOverrides,
+    textOverrides: parsedTextOverrides,
   };
 
   const v = validateBundle(input);
@@ -234,6 +255,14 @@ export default function BundleEdit() {
     status: bundle.status as BundleFormValues["status"],
     headline: bundle.headline ?? "",
     ctaLabel: bundle.ctaLabel ?? "",
+    primaryColor: (bundle.styleOverrides as { primaryColor?: string } | null)?.primaryColor ?? "",
+    textColor: (bundle.styleOverrides as { textColor?: string } | null)?.textColor ?? "",
+    backgroundColor: (bundle.styleOverrides as { backgroundColor?: string } | null)?.backgroundColor ?? "",
+    borderRadius: (bundle.styleOverrides as { borderRadius?: number } | null)?.borderRadius?.toString() ?? "",
+    textOverrides: {
+      "bundle.totalLabel": (bundle.textOverrides as Record<string, string> | null)?.["bundle.totalLabel"] ?? "",
+      "bundle.savingsBadge": (bundle.textOverrides as Record<string, string> | null)?.["bundle.savingsBadge"] ?? "",
+    },
   };
 
   const previewConfig = values
