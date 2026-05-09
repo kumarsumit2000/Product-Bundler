@@ -43,13 +43,20 @@ export function ProgressiveGiftPreview({ values, demoCartTotal = 75 }: Props) {
       const defaultTitle = isShipping
         ? "Free shipping"
         : (tier.product?.title ?? tier.variant?.productTitle ?? "Free gift");
+      const minSpend = parseFloat(tier.minSpend || "0") || 0;
+      const remaining = Math.max(0, minSpend - demoCartTotal);
+      // Auto strike: for free_gift use the picked product's price unless
+      // the merchant typed a custom value.
+      const autoStrike = !isShipping && tier.product?.priceCents != null
+        ? `$${(tier.product.priceCents / 100).toFixed(2)}`
+        : "";
       return {
-        minSpend: parseFloat(tier.minSpend || "0") || 0,
+        minSpend,
         label: tier.label || "FREE",
-        lockedLabel: tier.lockedLabel || `$${parseFloat(tier.minSpend || "0") || 0}`,
+        lockedLabel: tier.lockedLabel || `$${minSpend.toFixed(0)}`,
         title: tier.title || defaultTitle,
-        lockedTitle: tier.lockedTitle || "Locked",
-        labelCrossedOut: tier.labelCrossedOut || "",
+        lockedTitle: tier.lockedTitle || `Spend $${remaining.toFixed(2)} to unlock`,
+        labelCrossedOut: tier.labelCrossedOut || autoStrike,
         image: isShipping ? (tier.iconUrl || null) : (productImage ?? null),
         isShipping,
         iconEmoji: isShipping && !tier.iconUrl ? "🚚" : null,

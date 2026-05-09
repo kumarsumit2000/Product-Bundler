@@ -9,6 +9,7 @@ export type PickedProduct = {
   qty: number;
   title?: string;
   image?: string;
+  priceCents?: number;
 };
 
 type Props = {
@@ -35,14 +36,24 @@ export function ProductPicker({
     });
     if (!result?.selection) return;
     const next: PickedProduct[] = result.selection.map(
-      (s: { id: string; title?: string; images?: { originalSrc?: string }[] }) => {
+      (s: {
+        id: string;
+        title?: string;
+        images?: { originalSrc?: string }[];
+        variants?: Array<{ price?: string | number }>;
+      }) => {
         const existing = products.find((p) => p.productId === s.id);
+        const rawPrice = s.variants?.[0]?.price;
+        const priceCents = rawPrice != null && !Number.isNaN(parseFloat(String(rawPrice)))
+          ? Math.round(parseFloat(String(rawPrice)) * 100)
+          : existing?.priceCents;
         return {
           productId: s.id,
           variantId: existing?.variantId ?? null,
           qty: existing?.qty ?? 1,
           title: s.title,
           image: s.images?.[0]?.originalSrc,
+          priceCents,
         };
       },
     );

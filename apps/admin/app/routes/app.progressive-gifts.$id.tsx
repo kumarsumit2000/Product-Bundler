@@ -123,6 +123,7 @@ export default function ProgressiveGiftEdit() {
             qty: 1,
             title: productMap[t.giftProductId]!.title,
             image: productMap[t.giftProductId]!.image ?? undefined,
+            priceCents: productMap[t.giftProductId]!.variants?.[0]?.priceCents,
           }
         : null,
     })),
