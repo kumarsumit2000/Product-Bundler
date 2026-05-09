@@ -253,6 +253,39 @@ export function ProgressiveGiftPreview({ values, demoCartTotal = 75 }: Props) {
                               )}
                             </div>
                           )}
+                          {unlocked && !tier.isShipping && (
+                            <button
+                              type="button"
+                              disabled
+                              style={{
+                                background: t.progressFill,
+                                color: "#fff",
+                                border: 0,
+                                padding: "6px 14px",
+                                borderRadius: 6,
+                                fontSize: 11,
+                                fontWeight: 700,
+                                cursor: "not-allowed",
+                                opacity: 0.95,
+                                flexShrink: 0,
+                              }}
+                              title="Claim button (active on storefront)"
+                            >
+                              Claim
+                            </button>
+                          )}
+                          {unlocked && tier.isShipping && (
+                            <span
+                              style={{
+                                fontSize: 10,
+                                fontWeight: 600,
+                                color: "#166534",
+                                flexShrink: 0,
+                              }}
+                            >
+                              ✓ At checkout
+                            </span>
+                          )}
                         </div>
                       );
                     })}
