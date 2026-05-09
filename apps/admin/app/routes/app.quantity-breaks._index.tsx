@@ -1,5 +1,5 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/cloudflare";
-import { json, redirect } from "@remix-run/cloudflare";
+import { json } from "@remix-run/cloudflare";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import {
@@ -63,9 +63,13 @@ export async function action({ request, context }: ActionFunctionArgs) {
     return json({ error: "Invalid action" }, { status: 400 });
   }
 
-  await syncShopConfig(db, admin, session.shop);
+  try {
+    await syncShopConfig(db, admin, session.shop);
+  } catch (err) {
+    console.error("[quantity-breaks delete] syncShopConfig failed (non-fatal):", err);
+  }
   await ctx.cloudflare.env.SHOP_SETTINGS_CACHE.delete(`config:${session.shop}`);
-  return redirect("/app/quantity-breaks");
+  return json({ ok: true });
 }
 
 function DeleteRowButton({ id, name, onDelete }: { id: string; name: string; onDelete: (id: string, name: string) => void }) {
