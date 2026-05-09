@@ -207,11 +207,64 @@ export type NewsletterConfig = {
   styleOverrides?: NewsletterStyleOverrides | null;
 };
 
+export type ProgressiveGiftStyleOverrides = Partial<{
+  backgroundColor: string;
+  borderColor: string;
+  headingColor: string;
+  textColor: string;
+  progressFill: string;
+  progressTrack: string;
+  cardBg: string;
+  cardBorder: string;
+  cardBgInactive: string;
+  cardBorderInactive: string;
+  badgeBg: string;
+  badgeBgInactive: string;
+  badgeText: string;
+  borderRadius: number;
+  paddingX: number;
+  paddingY: number;
+}>;
+
+export type ProgressiveGiftThreshold = {
+  minSpendCents: number;
+  kind: "free_gift" | "free_shipping";
+  label: string;
+  title: string | null;
+  lockedTitle: string | null;
+  labelCrossedOut: string | null;
+  lockedLabel: string | null;
+  iconUrl: string | null;
+  giftProductId: string | null;
+  giftVariantId: string | null;
+  productTitle: string | null;
+  productImage: string | null;
+  variants: Array<{
+    variantId: string;
+    title: string;
+    available: boolean;
+    priceCents: number;
+  }>;
+};
+
+export type ProgressiveGiftConfig = {
+  id: string;
+  name: string;
+  headline: string | null;
+  subtitle: string | null;
+  layout: "stacked" | "grid" | "inline";
+  hideLocked: boolean;
+  showLockedLabels: boolean;
+  styleOverrides: ProgressiveGiftStyleOverrides | null;
+  thresholds: ProgressiveGiftThreshold[];
+};
+
 export type WidgetConfig = {
   shop: string;
   settings: Settings;
   bundles: BundleConfig[];
   quantityBreaks: QbConfig[];
+  progressiveGifts?: ProgressiveGiftConfig[];
   newsletter?: NewsletterConfig | null;
 };
 

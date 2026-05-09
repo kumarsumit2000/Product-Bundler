@@ -3,6 +3,7 @@ import { schema } from "~/db.server";
 import * as bundleRepo from "./bundles/repo";
 import * as qbRepo from "./quantity-breaks/repo";
 import * as newsletterRepo from "./newsletter/repo";
+import * as pgRepo from "./progressive-gifts/repo";
 import {
   fetchProductDetails,
   fetchCollectionTopProducts,
@@ -19,7 +20,7 @@ export async function buildStorefrontConfig(
   admin: AdminGraphqlClient,
   shopId: string,
 ) {
-  const [bundlesAll, qbsAll, settingsRow, shopRow, newsletter] = await Promise.all([
+  const [bundlesAll, qbsAll, settingsRow, shopRow, newsletter, pgsAll] = await Promise.all([
     bundleRepo.listByShop(db, shopId),
     qbRepo.listByShop(db, shopId),
     db
@@ -35,7 +36,10 @@ export async function buildStorefrontConfig(
       .limit(1)
       .then((r: { currency: string; primaryLocale: string }[]) => r[0] ?? null),
     newsletterRepo.getOrDefault(db, shopId),
+    pgRepo.listByShop(db, shopId),
   ]);
+
+  const progressiveGifts = pgsAll.filter((p) => p.status === "active");
 
   const bundles = bundlesAll.filter((b) => b.status === "active");
   const qbs = qbsAll.filter((q) => q.status === "active");
@@ -48,6 +52,11 @@ export async function buildStorefrontConfig(
     }
   }
   for (const q of qbs) allProductIds.add(q.productId);
+  for (const pg of progressiveGifts) {
+    for (const t of pg.thresholds) {
+      if (t.giftProductId) allProductIds.add(t.giftProductId);
+    }
+  }
 
   const productMap = await fetchProductDetails(admin, [...allProductIds]);
 
@@ -208,6 +217,40 @@ export async function buildStorefrontConfig(
       subscription: b.subscription ?? null,
     })),
     quantityBreaks: qbs.map(buildQb),
+    progressiveGifts: progressiveGifts.map((pg) => ({
+      id: pg.id,
+      name: pg.name,
+      headline: pg.headline,
+      subtitle: pg.subtitle,
+      layout: pg.layout,
+      hideLocked: pg.hideLocked,
+      showLockedLabels: pg.showLockedLabels,
+      styleOverrides: pg.styleOverrides ?? null,
+      thresholds: pg.thresholds.map((tr) => {
+        const isShipping = tr.kind === "free_shipping";
+        const detail = !isShipping && tr.giftProductId ? productMap[tr.giftProductId] : undefined;
+        return {
+          minSpendCents: tr.minSpendCents,
+          kind: (tr.kind ?? "free_gift") as "free_gift" | "free_shipping",
+          label: tr.label,
+          title: tr.title ?? null,
+          lockedTitle: tr.lockedTitle ?? null,
+          labelCrossedOut: tr.labelCrossedOut ?? null,
+          lockedLabel: tr.lockedLabel ?? null,
+          iconUrl: tr.iconUrl ?? null,
+          giftProductId: tr.giftProductId ?? null,
+          giftVariantId: tr.giftVariantId || null,
+          productTitle: detail?.title ?? null,
+          productImage: detail?.image ?? null,
+          variants: (detail?.variants ?? []).map((v) => ({
+            variantId: v.variantId,
+            title: v.title,
+            available: v.available,
+            priceCents: v.priceCents,
+          })),
+        };
+      }),
+    })),
     newsletter: newsletter.enabled
       ? {
           headline: newsletter.headline,

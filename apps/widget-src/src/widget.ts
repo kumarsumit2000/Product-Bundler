@@ -5,6 +5,7 @@ import { renderBundle } from "./render-bundle";
 import { renderQb } from "./render-qb";
 import { renderMixMatch } from "./render-mix-match";
 import { renderNewsletter, renderPopupInline, maybeStartNewsletterPopup } from "./render-newsletter";
+import { renderProgressive } from "./render-progressive";
 import { configureAnalytics } from "./analytics";
 import { setLocale } from "./i18n";
 
@@ -134,13 +135,14 @@ export function applyCssVars(
   }
 }
 
-type ShortcodeKind = "bundle" | "qb" | "mix";
+type ShortcodeKind = "bundle" | "qb" | "mix" | "pg";
 type ShortcodeSpec = { kind: ShortcodeKind; selector: string; attr: string };
 
 const SHORTCODES: ShortcodeSpec[] = [
   { kind: "bundle", selector: "[data-pumper-bundle]:not([data-pumper-rendered])",    attr: "data-pumper-bundle"    },
   { kind: "qb",     selector: "[data-pumper-qb]:not([data-pumper-rendered])",        attr: "data-pumper-qb"        },
   { kind: "mix",    selector: "[data-pumper-mix-match]:not([data-pumper-rendered])", attr: "data-pumper-mix-match" },
+  { kind: "pg",     selector: "[data-pumper-progressive]:not([data-pumper-rendered])", attr: "data-pumper-progressive" },
 ];
 
 function renderShortcode(el: HTMLElement, kind: ShortcodeKind, id: string, cfg: WidgetConfig): void {
@@ -160,11 +162,18 @@ function renderShortcode(el: HTMLElement, kind: ShortcodeKind, id: string, cfg: 
     el.dataset.pumperRendered = "1";
     return;
   }
-  // kind === "mix"
-  const m = lookupMixMatch(cfg, id);
-  if (!m) { el.innerHTML = ""; el.style.minHeight = ""; el.dataset.pumperRendered = "1"; return; }
-  applyCssVars(el, cfg, m.styleOverrides);
-  renderMixMatch(el, m, cfg);
+  if (kind === "mix") {
+    const m = lookupMixMatch(cfg, id);
+    if (!m) { el.innerHTML = ""; el.style.minHeight = ""; el.dataset.pumperRendered = "1"; return; }
+    applyCssVars(el, cfg, m.styleOverrides);
+    renderMixMatch(el, m, cfg);
+    el.dataset.pumperRendered = "1";
+    return;
+  }
+  // kind === "pg"
+  const pg = (cfg.progressiveGifts ?? []).find((p) => p.id === id);
+  if (!pg) { el.innerHTML = ""; el.style.minHeight = ""; el.dataset.pumperRendered = "1"; return; }
+  renderProgressive(el, pg);
   el.dataset.pumperRendered = "1";
 }
 
