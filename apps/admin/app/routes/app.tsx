@@ -59,7 +59,9 @@ export default function App() {
           <Link to="/app/billing">Billing</Link>
           <Link to="/app/support">Support</Link>
         </NavMenu>
-        <Outlet />
+        <div style={{ paddingBottom: 100 }}>
+          <Outlet />
+        </div>
         <CrispChat websiteId={CRISP_WEBSITE_ID} />
       </PolarisAppProvider>
     </ShopifyAppProvider>
