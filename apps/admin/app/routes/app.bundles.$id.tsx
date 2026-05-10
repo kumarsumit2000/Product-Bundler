@@ -418,7 +418,7 @@ export default function BundleEdit() {
       backAction={{ content: "Bundles", url: "/app/bundles" }}
     >
       <Layout>
-        <Layout.Section>
+        <Layout.Section variant="oneHalf">
           <BundleForm
             submitLabel="Save changes"
             errors={errors}
@@ -428,7 +428,7 @@ export default function BundleEdit() {
             progressiveGiftOptions={progressiveGiftOptions}
           />
         </Layout.Section>
-        <Layout.Section variant="oneThird">
+        <Layout.Section variant="oneHalf">
           {previewConfig && (
             <PreviewPane
               type={values?.mode === "mix_match" ? "mix_match" : "bundle"}

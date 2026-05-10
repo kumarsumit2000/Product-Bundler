@@ -401,7 +401,7 @@ export default function QbEdit() {
       }}
     >
       <Layout>
-        <Layout.Section>
+        <Layout.Section variant="oneHalf">
           <QbForm
             submitLabel="Save changes"
             errors={errors}
@@ -411,7 +411,7 @@ export default function QbEdit() {
             progressiveGiftOptions={progressiveGiftOptions}
           />
         </Layout.Section>
-        <Layout.Section variant="oneThird">
+        <Layout.Section variant="oneHalf">
           {previewConfig && (
             <PreviewPane type="qb" id={qb.id} config={previewConfig} />
           )}

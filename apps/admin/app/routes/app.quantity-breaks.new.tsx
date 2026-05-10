@@ -303,7 +303,7 @@ export default function QbNew() {
       }}
     >
       <Layout>
-        <Layout.Section>
+        <Layout.Section variant="oneHalf">
           <QbForm
             submitLabel="Save quantity break"
             errors={errors}
@@ -312,7 +312,7 @@ export default function QbNew() {
             progressiveGiftOptions={progressiveGiftOptions}
           />
         </Layout.Section>
-        <Layout.Section variant="oneThird">
+        <Layout.Section variant="oneHalf">
           {previewConfig && (
             <PreviewPane type="qb" id="new" config={previewConfig} />
           )}
