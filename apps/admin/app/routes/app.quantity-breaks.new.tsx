@@ -18,6 +18,7 @@ import { parseAddonsOrder } from "~/lib/parse-addons-order";
 import { syncShopConfig } from "~/lib/metafield-sync";
 import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { QbForm, type QbFormValues } from "~/components/QbForm";
+import { qbTemplate } from "~/lib/template-presets";
 import { PreviewPane } from "~/components/PreviewPane";
 import { StickyAtcPreview } from "~/components/StickyAtcPreview";
 import { buildPreviewQbConfig, defaultPreviewSettings } from "~/lib/preview-config";
@@ -36,6 +37,10 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     pgRepo.listByShop(db, session.shop),
   ]);
   const allProgressiveGifts = await enrichProgressiveGiftsForPreview(admin, pgs);
+  const url = new URL(request.url);
+  const template = url.searchParams.get("template");
+  const theme = url.searchParams.get("theme");
+  const preset = qbTemplate(template);
   const gate = canCreateNew(usage);
   return json({
     gate,
@@ -54,6 +59,8 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         styleOverrides: (c.styleOverrides ?? null) as Record<string, unknown> | null,
       })),
     allProgressiveGifts,
+    preset,
+    theme,
   });
 }
 
@@ -189,10 +196,28 @@ export async function action({ request, context }: ActionFunctionArgs) {
 }
 
 export default function QbNew() {
-  const { gate, plan, countdownOptions, progressiveGiftOptions, allCountdowns, allProgressiveGifts } = useLoaderData<typeof loader>();
+  const { gate, plan, countdownOptions, progressiveGiftOptions, allCountdowns, allProgressiveGifts, preset, theme } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const errors =
     actionData && "errors" in actionData ? actionData.errors : undefined;
+
+  const initialValues: Partial<QbFormValues> | undefined = preset
+    ? {
+        name: preset.name,
+        headline: preset.headline,
+        ctaLabel: preset.ctaLabel,
+        tiers: preset.tiers.map((t) => ({
+          qty: t.qty,
+          discountType: t.discountType,
+          discountValue: t.discountValue,
+          label: t.label,
+          isMostPopular: t.isMostPopular,
+          bogoMode: (t.bogoMode ?? "") as "" | "add_same" | "add_different" | "nth_free",
+          bogoBonusQty: t.bogoBonusQty ?? 1,
+        })),
+        ...(theme ? { primaryColor: theme } : {}),
+      }
+    : undefined;
 
   const [values, setValues] = useState<QbFormValues | null>(null);
 
@@ -288,6 +313,7 @@ export default function QbNew() {
           <QbForm
             submitLabel="Save quantity break"
             errors={errors}
+            initialValues={initialValues}
             onValuesChange={setValues}
             countdownOptions={countdownOptions}
             progressiveGiftOptions={progressiveGiftOptions}

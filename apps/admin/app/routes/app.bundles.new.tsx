@@ -18,6 +18,7 @@ import { parseAddonsOrder } from "~/lib/parse-addons-order";
 import { syncShopConfig } from "~/lib/metafield-sync";
 import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { BundleForm, type BundleFormValues } from "~/components/BundleForm";
+import { bundleTemplate } from "~/lib/template-presets";
 import { PreviewPane } from "~/components/PreviewPane";
 import { StickyAtcPreview } from "~/components/StickyAtcPreview";
 import { buildPreviewBundleConfig, defaultMockProduct, defaultPreviewSettings } from "~/lib/preview-config";
@@ -36,6 +37,10 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     pgRepo.listByShop(db, session.shop),
   ]);
   const allProgressiveGifts = await enrichProgressiveGiftsForPreview(admin, pgs);
+  const url = new URL(request.url);
+  const template = url.searchParams.get("template");
+  const theme = url.searchParams.get("theme");
+  const preset = bundleTemplate(template);
   const gate = canCreateNew(usage);
   return json({
     gate,
@@ -54,6 +59,8 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         styleOverrides: (c.styleOverrides ?? null) as Record<string, unknown> | null,
       })),
     allProgressiveGifts,
+    preset,
+    theme,
   });
 }
 
@@ -183,7 +190,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
 }
 
 export default function BundleNew() {
-  const { gate, plan, countdownOptions, progressiveGiftOptions, allCountdowns, allProgressiveGifts } = useLoaderData<typeof loader>();
+  const { gate, plan, countdownOptions, progressiveGiftOptions, allCountdowns, allProgressiveGifts, preset, theme } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const errors =
     actionData && "errors" in actionData ? actionData.errors : undefined;
@@ -305,6 +312,16 @@ export default function BundleNew() {
           <BundleForm
             submitLabel="Save bundle"
             errors={errors}
+            initialValues={preset
+              ? {
+                  name: preset.name,
+                  headline: preset.headline,
+                  ctaLabel: preset.ctaLabel,
+                  discountType: preset.discountType,
+                  discountValue: preset.discountValue,
+                  ...(theme ? { primaryColor: theme } : {}),
+                }
+              : undefined}
             onValuesChange={setValues}
             countdownOptions={countdownOptions}
             progressiveGiftOptions={progressiveGiftOptions}

@@ -293,7 +293,9 @@ export default function ChooseDiscountType() {
       setComingSoonShown(card.title);
       return;
     }
-    navigate(card.href);
+    const sep = card.href.includes("?") ? "&" : "?";
+    const target = `${card.href}${sep}template=${card.key}&theme=${encodeURIComponent(theme)}`;
+    navigate(target);
   }
 
   return (
