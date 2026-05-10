@@ -1,5 +1,5 @@
 import {
-  BlockStack, Card, FormLayout, TextField, Select, Button, Text, InlineStack, Checkbox, ChoiceList, Thumbnail, Box,
+  BlockStack, Card, FormLayout, TextField, Select, Button, Text, InlineStack, Checkbox, Thumbnail, Box,
 } from "@shopify/polaris";
 import { ImageIcon } from "@shopify/polaris-icons";
 import { ProductPicker, type PickedProduct } from "./ProductPicker";
@@ -43,18 +43,15 @@ export function QbUpsellsBuilder({ enabled, onEnabledChange, upsells, onUpsellsC
   return (
     <Card>
       <BlockStack gap="400">
-        <InlineStack align="space-between" blockAlign="center">
-          <Text as="h2" variant="headingMd">🛒 Checkbox upsells</Text>
-          <Checkbox
-            label="Enabled"
-            labelHidden
-            checked={enabled}
-            onChange={onEnabledChange}
-          />
-        </InlineStack>
+        <Text as="h2" variant="headingMd">🛒 Checkbox upsells</Text>
         <Text as="p" tone="subdued">
           Add extra products customers can tick to add alongside the bundle, with a per-line discount.
         </Text>
+        <Checkbox
+          label="Enable checkbox upsells"
+          checked={enabled}
+          onChange={onEnabledChange}
+        />
 
         {enabled && (
           <BlockStack gap="400">
@@ -68,19 +65,9 @@ export function QbUpsellsBuilder({ enabled, onEnabledChange, upsells, onUpsellsC
                     </Button>
                   </InlineStack>
 
-                  <ChoiceList
-                    title="Source"
-                    titleHidden
-                    choices={[
-                      { label: "Selected product (same as bundle product)", value: "selected" },
-                      { label: "Complementary product (pick a different one)", value: "complementary" },
-                    ]}
-                    selected={[u.mode]}
-                    onChange={(s) => update(i, { mode: (s[0] as "selected" | "complementary") })}
-                  />
-
-                  {u.mode === "complementary" && (
-                    u.product ? (
+                  <BlockStack gap="100">
+                    <Text as="span" variant="bodyMd">Product</Text>
+                    {u.product ? (
                       <Box borderWidth="025" borderColor="border" borderRadius="200" padding="200">
                         <InlineStack gap="300" blockAlign="center" align="space-between">
                           <InlineStack gap="300" blockAlign="center">
@@ -105,8 +92,8 @@ export function QbUpsellsBuilder({ enabled, onEnabledChange, upsells, onUpsellsC
                         multiple={false}
                         showQty={false}
                       />
-                    )
-                  )}
+                    )}
+                  </BlockStack>
 
                   <FormLayout>
                     <FormLayout.Group>
@@ -144,11 +131,6 @@ export function QbUpsellsBuilder({ enabled, onEnabledChange, upsells, onUpsellsC
                       autoComplete="off"
                       helpText="Variables: {{saved_amount}}, {{discount}}"
                       placeholder="Save {{saved_amount}}!"
-                    />
-                    <Checkbox
-                      label="Selected by default"
-                      checked={u.selectedByDefault}
-                      onChange={(selectedByDefault) => update(i, { selectedByDefault })}
                     />
                   </FormLayout>
                 </BlockStack>
