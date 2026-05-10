@@ -80,6 +80,8 @@ export type StyleOverrides = Partial<{
   subtitleColor: string;
   priceColor: string;
   fullPriceColor: string;
+  // Savings pill on the right of each tier row
+  savingsFontSize: number;
 
   // Label
   labelBg: string;

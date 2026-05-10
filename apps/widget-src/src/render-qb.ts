@@ -88,7 +88,11 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
         ${popularBadge}
         <div class="pumper-qb-tier-meta">
           <div class="pumper-qb-tier-title">${escapeHtml(tWith(qb.textOverrides, "qb.tierLabel", { qty: tr.qty }))}${tr.discountValue > 0 ? ` — ${escapeHtml(tr.label)}` : ""}</div>
-          <div class="pumper-qb-tier-sub">${formatMoney(unitCents, config.settings.currency, config.settings.locale)} each · ${formatMoney(totalCents, config.settings.currency, config.settings.locale)} total</div>
+          <div class="pumper-qb-tier-sub">
+            ${tr.discountValue > 0
+              ? `<span class="pumper-strike">${formatMoney(variant.priceCents, config.settings.currency, config.settings.locale)}</span> `
+              : ""}<strong>${formatMoney(unitCents, config.settings.currency, config.settings.locale)}</strong> each · ${formatMoney(totalCents, config.settings.currency, config.settings.locale)} total
+          </div>
         </div>
         ${savingsBadge}
         ${renderGiftBadges(tr, qb.textOverrides)}

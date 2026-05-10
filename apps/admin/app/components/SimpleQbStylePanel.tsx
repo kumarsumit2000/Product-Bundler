@@ -98,16 +98,28 @@ export function SimpleQbStylePanel({ values, onChange }: Props) {
               placeholder="#D9263A"
             />
           </FormLayout.Group>
-          <TextField
-            label="Border radius (px)"
-            type="number"
-            value={values.borderRadius}
-            onChange={(borderRadius) => onChange({ borderRadius })}
-            autoComplete="off"
-            min={0}
-            max={48}
-            placeholder="8"
-          />
+          <FormLayout.Group>
+            <TextField
+              label="Border radius (px)"
+              type="number"
+              value={values.borderRadius}
+              onChange={(borderRadius) => onChange({ borderRadius })}
+              autoComplete="off"
+              min={0}
+              max={48}
+              placeholder="8"
+            />
+            <TextField
+              label="Gap between tiers (px)"
+              type="number"
+              value={values.spacing}
+              onChange={(spacing) => onChange({ spacing })}
+              autoComplete="off"
+              min={0}
+              max={64}
+              placeholder="6"
+            />
+          </FormLayout.Group>
           <Text as="h3" variant="headingSm">Font sizes</Text>
           <FormLayout.Group>
             <TextField
@@ -132,6 +144,8 @@ export function SimpleQbStylePanel({ values, onChange }: Props) {
               placeholder="13"
               suffix="px"
             />
+          </FormLayout.Group>
+          <FormLayout.Group>
             <TextField
               label="Tier subtitle"
               type="number"
@@ -142,6 +156,18 @@ export function SimpleQbStylePanel({ values, onChange }: Props) {
               max={48}
               placeholder="11"
               suffix="px"
+            />
+            <TextField
+              label="Savings badge"
+              type="number"
+              value={values.savingsFontSize}
+              onChange={(savingsFontSize) => onChange({ savingsFontSize })}
+              autoComplete="off"
+              min={10}
+              max={48}
+              placeholder="11"
+              suffix="px"
+              helpText="Right-side pill"
             />
           </FormLayout.Group>
         </FormLayout>

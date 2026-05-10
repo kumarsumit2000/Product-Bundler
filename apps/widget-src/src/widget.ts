@@ -121,6 +121,7 @@ export function applyCssVars(
   setVar(target, "--pumper-upsell-fw",       o.upsellFontStyle ? FONT_WEIGHT[o.upsellFontStyle] : undefined);
   setVar(target, "--pumper-unit-label-fs",   o.unitLabelFontSize);
   setVar(target, "--pumper-unit-label-fw",   o.unitLabelFontStyle ? FONT_WEIGHT[o.unitLabelFontStyle] : undefined);
+  setVar(target, "--pumper-savings-fs",      o.savingsFontSize);
 
   // Layout variant — drives the data-layout attribute the CSS targets.
   if (o.layoutVariant) {

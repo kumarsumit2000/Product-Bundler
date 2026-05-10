@@ -70,6 +70,7 @@ export type StylePanelValues = {
   upsellFontStyle: FontStyle | "";
   unitLabelFontSize: string;
   unitLabelFontStyle: FontStyle | "";
+  savingsFontSize: string;
 };
 
 type Props = {

@@ -74,6 +74,7 @@ export type StyleOverrides = Partial<{
   upsellFontStyle: FontStyle;
   unitLabelFontSize: number;
   unitLabelFontStyle: FontStyle;
+  savingsFontSize: number;
 }>;
 
 export type TextOverrides = Record<string, string>;

@@ -65,6 +65,7 @@ type StyleFormFields = {
   upsellFontStyle: FontStyle | "";
   unitLabelFontSize: string;
   unitLabelFontStyle: FontStyle | "";
+  savingsFontSize: string;
 };
 
 const COLOR_KEYS: Array<keyof StyleFormFields> = [
@@ -105,6 +106,7 @@ const NUMBER_KEYS: Array<keyof StyleFormFields> = [
   "freeGiftFontSize",
   "upsellFontSize",
   "unitLabelFontSize",
+  "savingsFontSize",
 ];
 
 const ENUM_KEYS: Array<keyof StyleFormFields> = [
@@ -196,6 +198,7 @@ export const EMPTY_STYLE_FORM: StyleFormFields = {
   upsellFontStyle: "",
   unitLabelFontSize: "",
   unitLabelFontStyle: "",
+  savingsFontSize: "",
 };
 
 // Inverse of buildStyleOverrides — take a saved JSON object and produce the

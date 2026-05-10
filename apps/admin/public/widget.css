@@ -42,7 +42,7 @@
 .pumper-qb-tier-meta { flex: 1; }
 .pumper-qb-tier-title { font-size: 13px; font-weight: 600; }
 .pumper-qb-tier-sub { font-size: 11px; color: #888; }
-.pumper-qb-savings { background: #fde7ea; color: var(--pumper-primary, #7B1E2A); font-size: 11px; padding: 3px 6px; border-radius: 4px; font-weight: 600; }
+.pumper-qb-savings { background: #fde7ea; color: var(--pumper-primary, #7B1E2A); font-size: var(--pumper-savings-fs, 11px); padding: 3px 6px; border-radius: 4px; font-weight: 600; }
 .pumper-qb-popular-badge { position: absolute; top: -8px; right: 10px; background: var(--pumper-primary, #7B1E2A); color: #fff; font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 700; letter-spacing: .5px; }
 
 /* Mix & Match */

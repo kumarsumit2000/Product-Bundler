@@ -27,6 +27,7 @@ const NUMBER_KEYS: Record<string, [number, number]> = {
   freeGiftFontSize: [10, 48],
   upsellFontSize: [10, 48],
   unitLabelFontSize: [10, 48],
+  savingsFontSize: [10, 48],
 };
 
 const FONT_STYLES = new Set(["regular", "medium", "semibold", "bold"]);

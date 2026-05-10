@@ -9,7 +9,7 @@ const EN: StringTable = {
   "bundle.unavailable": "1 item out of stock — bundle unavailable",
   "qb.heading": "Choose your savings",
   "qb.tierLabel": "Buy {qty}",
-  "qb.savingsBadge": "−{savings}",
+  "qb.savingsBadge": "Save {savings}",
   "qb.cta": "Add {qty} to cart",
   "qb.ctaSavings": "Add {qty} to cart — Save {savings}",
   "qb.mostPopular": "MOST POPULAR",
