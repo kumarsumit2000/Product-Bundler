@@ -125,6 +125,44 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
     plan: usage.plan,
     countdownOptions: countdowns.map((c) => ({ id: c.id, name: c.name })),
     progressiveGiftOptions: pgs.map((p) => ({ id: p.id, name: p.name })),
+    allCountdowns: countdowns
+      .filter((c) => c.status === "active")
+      .map((c) => ({
+        id: c.id,
+        name: c.name,
+        endAt: new Date(c.endAt).getTime(),
+        headline: c.headline,
+        expiredHeadline: c.expiredHeadline,
+        layout: c.layout as "inline" | "bar",
+        styleOverrides: (c.styleOverrides ?? null) as Record<string, unknown> | null,
+      })),
+    allProgressiveGifts: pgs
+      .filter((p) => p.status === "active")
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        headline: p.headline,
+        subtitle: p.subtitle,
+        layout: p.layout as "stacked" | "grid" | "inline",
+        hideLocked: p.hideLocked,
+        showLockedLabels: p.showLockedLabels,
+        styleOverrides: (p.styleOverrides ?? null) as Record<string, unknown> | null,
+        thresholds: p.thresholds.map((t) => ({
+          minSpendCents: t.minSpendCents,
+          kind: (t.kind ?? "free_gift") as "free_gift" | "free_shipping",
+          label: t.label,
+          title: t.title ?? null,
+          lockedTitle: t.lockedTitle ?? null,
+          labelCrossedOut: t.labelCrossedOut ?? null,
+          lockedLabel: t.lockedLabel ?? null,
+          iconUrl: t.iconUrl ?? null,
+          giftProductId: t.giftProductId ?? null,
+          giftVariantId: t.giftVariantId ?? null,
+          productTitle: null,
+          productImage: null,
+          variants: [] as Array<{ variantId: string; title: string; available: boolean; priceCents: number }>,
+        })),
+      })),
   });
 }
 
@@ -241,7 +279,7 @@ export async function action({
 }
 
 export default function BundleEdit() {
-  const { bundle, productDetails, collectionDetails, collectionTopProducts, giftVariantDetails, plan, countdownOptions, progressiveGiftOptions } = useLoaderData<typeof loader>();
+  const { bundle, productDetails, collectionDetails, collectionTopProducts, giftVariantDetails, plan, countdownOptions, progressiveGiftOptions, allCountdowns, allProgressiveGifts } = useLoaderData<typeof loader>();
   useSavedToast();
   const actionData = useActionData<typeof action>();
   const snippet = bundle.mode === "mix_match"
@@ -364,6 +402,12 @@ export default function BundleEdit() {
           ctaLabel: values.ctaLabel || null,
           styleOverrides: buildStyleOverrides(values),
           textOverrides: buildTextOverrides(values.textOverrides),
+          linkedCountdownId: values.linkedCountdownId,
+          linkedProgressiveGiftId: values.linkedProgressiveGiftId,
+        },
+        addons: {
+          countdowns: allCountdowns,
+          progressiveGifts: allProgressiveGifts,
         },
       })
     : null;

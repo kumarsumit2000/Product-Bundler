@@ -46,6 +46,31 @@ type BundleShape = {
   ctaLabel: string | null;
   styleOverrides: Record<string, unknown> | null;
   textOverrides: Record<string, string> | null;
+  linkedCountdownId?: string | null;
+  linkedProgressiveGiftId?: string | null;
+};
+
+type AddonsShape = {
+  countdowns?: Array<{
+    id: string;
+    name: string;
+    endAt: number;
+    headline: string;
+    expiredHeadline: string;
+    layout: "inline" | "bar";
+    styleOverrides: Record<string, unknown> | null;
+  }>;
+  progressiveGifts?: Array<{
+    id: string;
+    name: string;
+    headline: string | null;
+    subtitle: string | null;
+    layout: "stacked" | "grid" | "inline";
+    hideLocked: boolean;
+    showLockedLabels: boolean;
+    styleOverrides: Record<string, unknown> | null;
+    thresholds: Array<Record<string, unknown>>;
+  }>;
 };
 
 type QbShape = {
@@ -74,6 +99,8 @@ type QbShape = {
     title: string;
     subtitle: string;
   }>;
+  linkedCountdownId?: string | null;
+  linkedProgressiveGiftId?: string | null;
 };
 
 type MockProduct = { productId: string; title: string; priceCents: number };
@@ -102,12 +129,15 @@ export function buildPreviewBundleConfig(args: {
   mockProduct: MockProduct;
   settings: Settings;
   bundle: BundleShape;
+  addons?: AddonsShape;
 }) {
   return {
     shop: args.shop,
     settings: args.settings,
     bundles: [args.bundle],
     quantityBreaks: [],
+    countdowns: args.addons?.countdowns ?? [],
+    progressiveGifts: args.addons?.progressiveGifts ?? [],
   };
 }
 
@@ -116,6 +146,7 @@ export function buildPreviewQbConfig(args: {
   mockProduct: MockProduct;
   settings: Settings;
   qb: QbShape;
+  addons?: AddonsShape;
 }) {
   return {
     shop: args.shop,
@@ -130,5 +161,7 @@ export function buildPreviewQbConfig(args: {
       visibilityProductIds: [] as string[],
       visibilityCollectionIds: [] as string[],
     }],
+    countdowns: args.addons?.countdowns ?? [],
+    progressiveGifts: args.addons?.progressiveGifts ?? [],
   };
 }

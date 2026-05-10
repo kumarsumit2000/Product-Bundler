@@ -74,6 +74,44 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
     qb, productTitle, productImage, tierVariantDetails, plan: usage.plan,
     countdownOptions: countdowns.map((c) => ({ id: c.id, name: c.name })),
     progressiveGiftOptions: pgs.map((p) => ({ id: p.id, name: p.name })),
+    allCountdowns: countdowns
+      .filter((c) => c.status === "active")
+      .map((c) => ({
+        id: c.id,
+        name: c.name,
+        endAt: new Date(c.endAt).getTime(),
+        headline: c.headline,
+        expiredHeadline: c.expiredHeadline,
+        layout: c.layout as "inline" | "bar",
+        styleOverrides: (c.styleOverrides ?? null) as Record<string, unknown> | null,
+      })),
+    allProgressiveGifts: pgs
+      .filter((p) => p.status === "active")
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        headline: p.headline,
+        subtitle: p.subtitle,
+        layout: p.layout as "stacked" | "grid" | "inline",
+        hideLocked: p.hideLocked,
+        showLockedLabels: p.showLockedLabels,
+        styleOverrides: (p.styleOverrides ?? null) as Record<string, unknown> | null,
+        thresholds: p.thresholds.map((t) => ({
+          minSpendCents: t.minSpendCents,
+          kind: (t.kind ?? "free_gift") as "free_gift" | "free_shipping",
+          label: t.label,
+          title: t.title ?? null,
+          lockedTitle: t.lockedTitle ?? null,
+          labelCrossedOut: t.labelCrossedOut ?? null,
+          lockedLabel: t.lockedLabel ?? null,
+          iconUrl: t.iconUrl ?? null,
+          giftProductId: t.giftProductId ?? null,
+          giftVariantId: t.giftVariantId ?? null,
+          productTitle: null,
+          productImage: null,
+          variants: [] as Array<{ variantId: string; title: string; available: boolean; priceCents: number }>,
+        })),
+      })),
   });
 }
 
@@ -203,7 +241,7 @@ export async function action({
 }
 
 export default function QbEdit() {
-  const { qb, productTitle, productImage, tierVariantDetails, plan, countdownOptions, progressiveGiftOptions } = useLoaderData<typeof loader>();
+  const { qb, productTitle, productImage, tierVariantDetails, plan, countdownOptions, progressiveGiftOptions, allCountdowns, allProgressiveGifts } = useLoaderData<typeof loader>();
   useSavedToast();
   const actionData = useActionData<typeof action>();
   const snippet = `<div data-pumper-qb="${qb.id}"></div>`;
@@ -344,6 +382,12 @@ export default function QbEdit() {
             title: u.title,
             subtitle: u.subtitle,
           })),
+          linkedCountdownId: values.linkedCountdownId,
+          linkedProgressiveGiftId: values.linkedProgressiveGiftId,
+        },
+        addons: {
+          countdowns: allCountdowns,
+          progressiveGifts: allProgressiveGifts,
         },
       })
     : null;
@@ -358,10 +402,6 @@ export default function QbEdit() {
     >
       <Layout>
         <Layout.Section>
-          {previewConfig && (
-            <PreviewPane type="qb" id={qb.id} config={previewConfig} />
-          )}
-          <div style={{ height: 16 }} />
           <QbForm
             submitLabel="Save changes"
             errors={errors}
@@ -370,7 +410,13 @@ export default function QbEdit() {
             countdownOptions={countdownOptions}
             progressiveGiftOptions={progressiveGiftOptions}
           />
-          <div style={{ height: 16 }} />
+        </Layout.Section>
+        <Layout.Section variant="oneThird">
+          {previewConfig && (
+            <PreviewPane type="qb" id={qb.id} config={previewConfig} />
+          )}
+        </Layout.Section>
+        <Layout.Section>
           <EmbedCodeCard plan={plan} snippet={snippet} />
         </Layout.Section>
       </Layout>

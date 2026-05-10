@@ -248,16 +248,19 @@ function renderMount(mount: HTMLElement, cfg: WidgetConfig): void {
     if (!b) { mount.innerHTML = ""; mount.style.minHeight = ""; return; }
     applyCssVars(mount, cfg, b.styleOverrides);
     renderBundle(mount, b, cfg);
+    renderLinkedAddons(mount, cfg, b.linkedCountdownId, b.linkedProgressiveGiftId);
   } else if (type === "qb") {
     const q = matchQb(cfg, productId);
     if (!q) { mount.innerHTML = ""; mount.style.minHeight = ""; return; }
     applyCssVars(mount, cfg, q.styleOverrides);
     renderQb(mount, q, cfg);
+    renderLinkedAddons(mount, cfg, q.linkedCountdownId, q.linkedProgressiveGiftId);
   } else if (type === "mix_match") {
     const m = matchMixMatch(cfg, productId);
     if (!m) { mount.innerHTML = ""; mount.style.minHeight = ""; return; }
     applyCssVars(mount, cfg, m.styleOverrides);
     renderMixMatch(mount, m, cfg);
+    renderLinkedAddons(mount, cfg, m.linkedCountdownId, m.linkedProgressiveGiftId);
   }
   mount.dataset.pumperRendered = "1";
 }
