@@ -193,14 +193,26 @@ function renderTier(
 }
 
 async function rerender(mount: HTMLElement, pg: ProgressiveGiftConfig): Promise<void> {
-  let cart = await fetchCart();
-  // If the customer dropped below a threshold after claiming, strip those
-  // gift lines so they don't ride along uncovered.
-  if (cart && await pruneOrphanGifts(pg, cart)) {
+  // In admin preview there is no real cart; fake a subtotal that's just above
+  // the lowest threshold so merchants can see the unlocked state.
+  const isPreview = typeof window !== "undefined" && window._pumperPreview;
+  let cart: CartShape | null = null;
+  let cartSubtotalCents = 0;
+  if (isPreview) {
+    const lowest = [...pg.thresholds]
+      .map((t) => t.minSpendCents)
+      .sort((a, b) => a - b)[0] ?? 0;
+    cartSubtotalCents = lowest + 100; // $1 over the lowest threshold
+  } else {
     cart = await fetchCart();
-    document.dispatchEvent(new CustomEvent("cart:refresh"));
+    // If the customer dropped below a threshold after claiming, strip those
+    // gift lines so they don't ride along uncovered.
+    if (cart && await pruneOrphanGifts(pg, cart)) {
+      cart = await fetchCart();
+      document.dispatchEvent(new CustomEvent("cart:refresh"));
+    }
+    cartSubtotalCents = cart?.items_subtotal_price ?? cart?.total_price ?? 0;
   }
-  const cartSubtotalCents = cart?.items_subtotal_price ?? cart?.total_price ?? 0;
 
   const tiers = [...pg.thresholds].sort((a, b) => a.minSpendCents - b.minSpendCents);
   const visible = pg.hideLocked
@@ -232,6 +244,8 @@ async function rerender(mount: HTMLElement, pg: ProgressiveGiftConfig): Promise<
 }
 
 function bindClaimHandlers(mount: HTMLElement, pg: ProgressiveGiftConfig, cartSubtotalCents: number): void {
+  // Preview iframe has no /cart endpoint — claim button is decorative there.
+  if (typeof window !== "undefined" && window._pumperPreview) return;
   mount.querySelectorAll<HTMLElement>(".pg-tier").forEach((tierEl) => {
     const idxAttr = tierEl.getAttribute("data-pg-tier");
     if (!idxAttr) return;
