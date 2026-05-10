@@ -299,18 +299,31 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
           }
         }
 
-        if (tr.bogo
-            && (tr.bogo.mode === "add_same" || tr.bogo.mode === "add_different")
+        if (tr.bogo) {
+          if (tr.bogo.mode === "add_same") {
+            // Bonus = N more of the SAME variant the customer is buying.
+            // targetVariantId is optional; fall back to the QB's main variant.
+            const target = tr.bogo.targetVariantId ?? variant.variantId;
+            lines.push({
+              variantId: target,
+              qty: tr.bogo.bonusQty,
+              bundleId: qb.id,
+              giftBundleId: qb.id,
+            });
+          } else if (
+            tr.bogo.mode === "add_different"
             && tr.bogo.targetVariantId
-            && tr.bogo.targetAvailable !== false) {
-          lines.push({
-            variantId: tr.bogo.targetVariantId,
-            qty: tr.bogo.bonusQty,
-            bundleId: qb.id,
-            giftBundleId: qb.id,
-          });
+            && tr.bogo.targetAvailable !== false
+          ) {
+            lines.push({
+              variantId: tr.bogo.targetVariantId,
+              qty: tr.bogo.bonusQty,
+              bundleId: qb.id,
+              giftBundleId: qb.id,
+            });
+          }
+          // bogo.mode === "nth_free" → no extra line; Discount Function handles the math.
         }
-        // bogo.mode === "nth_free" → no extra line; Discount Function handles the math.
 
         // Pack QB extras — tier-attached bundled products.
         if (tr.extraProducts) {
