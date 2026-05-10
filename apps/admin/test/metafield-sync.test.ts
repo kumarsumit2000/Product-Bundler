@@ -116,6 +116,8 @@ describe("syncShopConfig", () => {
       visibility: "specific",
       visibilityProductIds: [],
       visibilityCollectionIds: [],
+      checkboxUpsellsEnabled: false,
+      checkboxUpsells: [],
     });
     const { admin, calls } = makeAdmin();
     await syncShopConfig(setup.db, admin, SHOP);
@@ -194,6 +196,8 @@ describe("syncShopConfig", () => {
       visibility: "specific",
       visibilityProductIds: [],
       visibilityCollectionIds: [],
+      checkboxUpsellsEnabled: false,
+      checkboxUpsells: [],
     });
     const { admin, calls } = makeAdmin();
     await syncShopConfig(setup.db, admin, SHOP);

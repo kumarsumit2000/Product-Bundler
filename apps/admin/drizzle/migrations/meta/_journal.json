@@ -113,6 +113,13 @@
       "when": 1778355000000,
       "tag": "0015_qb_visibility",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1778356200000,
+      "tag": "0016_qb_checkbox_upsells",
+      "breakpoints": true
     }
   ]
 }

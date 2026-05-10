@@ -33,6 +33,8 @@ const NEW_QB_INPUT = {
   visibility: "specific" as const,
   visibilityProductIds: [],
   visibilityCollectionIds: [],
+  checkboxUpsellsEnabled: false,
+  checkboxUpsells: [],
 };
 
 describe("quantity-breaks repo", () => {

@@ -132,6 +132,8 @@ export async function action({
   const visibility = ((form.get("visibility") as string) || "specific");
   const visibilityProductIds = (() => { try { return JSON.parse((form.get("visibilityProductIds") as string) || "[]") as string[]; } catch { return []; } })();
   const visibilityCollectionIds = (() => { try { return JSON.parse((form.get("visibilityCollectionIds") as string) || "[]") as string[]; } catch { return []; } })();
+  const checkboxUpsellsEnabled = form.get("checkboxUpsellsEnabled") === "on";
+  const checkboxUpsells = (() => { try { return JSON.parse((form.get("checkboxUpsells") as string) || "[]") as never[]; } catch { return [] as never[]; } })();
   const normalizedVisibility = ["all", "all_except", "specific", "collections"].includes(visibility)
     ? (visibility as "all" | "all_except" | "specific" | "collections")
     : "specific";
@@ -161,6 +163,8 @@ export async function action({
     visibility: normalizedVisibility,
     visibilityProductIds,
     visibilityCollectionIds,
+    checkboxUpsellsEnabled,
+    checkboxUpsells,
   });
 
   try {
@@ -245,6 +249,26 @@ export default function QbEdit() {
     })),
     visibilityCollections: (qb.visibilityCollectionIds ?? []).map((cid) => ({
       collectionId: cid, title: cid,
+    })),
+    checkboxUpsellsEnabled: qb.checkboxUpsellsEnabled ?? false,
+    checkboxUpsells: (qb.checkboxUpsells ?? []).map((u) => ({
+      id: u.id,
+      mode: u.mode,
+      product: u.productId
+        ? {
+            productId: u.productId,
+            variantId: u.variantId,
+            qty: 1,
+            title: u.productTitle,
+            image: u.productImage ?? undefined,
+            priceCents: u.productPriceCents ?? undefined,
+          }
+        : null,
+      discountType: u.discountType,
+      discountValue: String(u.discountValue),
+      title: u.title,
+      subtitle: u.subtitle,
+      selectedByDefault: u.selectedByDefault,
     })),
   };
 

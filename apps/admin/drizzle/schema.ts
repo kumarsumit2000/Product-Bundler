@@ -154,6 +154,21 @@ export const bundles = sqliteTable("bundles", {
   statusIdx: index("bundles_status_idx").on(t.shopId, t.status),
 }));
 
+export type QbCheckboxUpsell = {
+  id: string;
+  mode: "selected" | "complementary";
+  productId: string;
+  variantId: string | null;
+  productTitle: string;
+  productImage: string | null;
+  productPriceCents: number | null;
+  discountType: "percentage" | "flat";
+  discountValue: number;
+  title: string;
+  subtitle: string;
+  selectedByDefault: boolean;
+};
+
 export const quantityBreaks = sqliteTable("quantity_breaks", {
   id: text("id").primaryKey(),
   shopId: text("shop_id").notNull().references(() => shops.id, { onDelete: "cascade" }),
@@ -171,6 +186,8 @@ export const quantityBreaks = sqliteTable("quantity_breaks", {
   visibility: text("visibility").notNull().default("specific"),
   visibilityProductIds: text("visibility_product_ids", { mode: "json" }).$type<string[]>().notNull().default([]),
   visibilityCollectionIds: text("visibility_collection_ids", { mode: "json" }).$type<string[]>().notNull().default([]),
+  checkboxUpsellsEnabled: integer("checkbox_upsells_enabled", { mode: "boolean" }).notNull().default(false),
+  checkboxUpsells: text("checkbox_upsells", { mode: "json" }).$type<QbCheckboxUpsell[]>().notNull().default([]),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 }, (t) => ({

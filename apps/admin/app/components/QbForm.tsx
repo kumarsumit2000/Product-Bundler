@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import { ProductPicker, type PickedProduct } from "./ProductPicker";
 import { type PickedCollection } from "./CollectionPicker";
 import { MultiCollectionPicker } from "./MultiCollectionPicker";
+import { QbUpsellsBuilder, EMPTY_UPSELL, type UpsellFormValue } from "./QbUpsellsBuilder";
 import { QbTierBuilder, type TierFormValue } from "./QbTierBuilder";
 import { type StylePanelValues } from "./StylePanel";
 import { SimpleQbStylePanel } from "./SimpleQbStylePanel";
@@ -35,6 +36,8 @@ export type QbFormValues = StylePanelValues & {
   visibility: QbVisibility;
   visibilityProducts: PickedProduct[];
   visibilityCollections: PickedCollection[];
+  checkboxUpsellsEnabled: boolean;
+  checkboxUpsells: UpsellFormValue[];
 };
 
 type Props = {
@@ -62,6 +65,8 @@ const DEFAULTS: QbFormValues = {
   visibility: "all",
   visibilityProducts: [],
   visibilityCollections: [],
+  checkboxUpsellsEnabled: false,
+  checkboxUpsells: [],
 };
 
 export function QbForm({ initialValues, errors, submitLabel, onValuesChange }: Props) {
@@ -95,6 +100,25 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange }: P
         type="hidden"
         name="visibilityCollectionIds"
         value={JSON.stringify(values.visibilityCollections.map((c) => c.collectionId))}
+      />
+      <input type="hidden" name="checkboxUpsellsEnabled" value={values.checkboxUpsellsEnabled ? "on" : ""} />
+      <input
+        type="hidden"
+        name="checkboxUpsells"
+        value={JSON.stringify(values.checkboxUpsells.map((u) => ({
+          id: u.id,
+          mode: u.mode,
+          productId: u.product?.productId ?? "",
+          variantId: u.product?.variantId ?? null,
+          productTitle: u.product?.title ?? "",
+          productImage: u.product?.image ?? null,
+          productPriceCents: u.product?.priceCents ?? null,
+          discountType: u.discountType,
+          discountValue: parseFloat(u.discountValue) || 0,
+          title: u.title,
+          subtitle: u.subtitle,
+          selectedByDefault: u.selectedByDefault,
+        })))}
       />
       <input type="hidden" name="headline" value={values.headline} />
       <input type="hidden" name="ctaLabel" value={values.ctaLabel} />
@@ -205,6 +229,13 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange }: P
             {errors?.visibility && <Banner tone="critical">{errors.visibility}</Banner>}
           </BlockStack>
         </Card>
+
+        <QbUpsellsBuilder
+          enabled={values.checkboxUpsellsEnabled}
+          onEnabledChange={(checkboxUpsellsEnabled) => update("checkboxUpsellsEnabled", checkboxUpsellsEnabled)}
+          upsells={values.checkboxUpsells}
+          onUpsellsChange={(checkboxUpsells) => update("checkboxUpsells", checkboxUpsells)}
+        />
 
         <Card>
           <BlockStack gap="400">

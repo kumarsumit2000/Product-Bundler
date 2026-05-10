@@ -92,6 +92,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const visibility = ((form.get("visibility") as string) || "specific");
   const visibilityProductIds = (() => { try { return JSON.parse((form.get("visibilityProductIds") as string) || "[]") as string[]; } catch { return []; } })();
   const visibilityCollectionIds = (() => { try { return JSON.parse((form.get("visibilityCollectionIds") as string) || "[]") as string[]; } catch { return []; } })();
+  const checkboxUpsellsEnabled = form.get("checkboxUpsellsEnabled") === "on";
+  const checkboxUpsells = (() => { try { return JSON.parse((form.get("checkboxUpsells") as string) || "[]") as never[]; } catch { return [] as never[]; } })();
   const normalizedVisibility = ["all", "all_except", "specific", "collections"].includes(visibility)
     ? (visibility as "all" | "all_except" | "specific" | "collections")
     : "specific";
@@ -129,6 +131,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
     visibility: normalizedVisibility,
     visibilityProductIds,
     visibilityCollectionIds,
+    checkboxUpsellsEnabled,
+    checkboxUpsells,
   });
 
   try {
