@@ -85,11 +85,98 @@ export function renderBxgy(mount: HTMLElement, offer: BxgyOfferConfig, config: W
     return `<button class="pumper-cta" data-action="add-to-cart">${escapeHtml(label)}</button>`;
   };
 
+  const renderGiftRow = (): string => {
+    const minBuyQty = offer.freeGiftMinBuyQty ?? 1;
+    const selected = offer.bars[selectedIndex];
+    const unlocked = !!selected && selected.buyQty >= minBuyQty;
+    const lockedNote = `<div class="pumper-row-sub">Pick a bar with buy qty ${minBuyQty}+ to unlock</div>`;
+    if (offer.freeGiftVariantId && offer.freeGiftAvailable) {
+      return `
+        <div class="pumper-bundle-row pumper-bundle-row--gift${unlocked ? "" : " pumper-bundle-row--gift-locked"}">
+          <div class="pumper-thumb pumper-thumb-emoji">🎁</div>
+          <div class="pumper-row-meta">
+            <div class="pumper-row-title">${escapeHtml(offer.freeGiftVariantTitle ?? "Free gift")}</div>
+            ${unlocked
+              ? `<div class="pumper-row-sub"><strong class="pumper-row-free">FREE</strong> with this offer</div>`
+              : lockedNote}
+          </div>
+        </div>
+      `;
+    }
+    if (offer.freeGiftProductId && (offer.freeGiftProductVariants?.length ?? 0) > 0) {
+      const variants = offer.freeGiftProductVariants ?? [];
+      if (!variants.some((v) => v.available)) return "";
+      const img = offer.freeGiftProductImage
+        ? `<img src="${escapeHtml(offer.freeGiftProductImage)}" alt="" class="pumper-thumb" loading="lazy" />`
+        : `<div class="pumper-thumb pumper-thumb-emoji">🎁</div>`;
+      const select = variants.length > 1 && unlocked
+        ? `<select class="pumper-gift-variant" data-pumper-bxgy-gift-variant>
+             ${variants.map((v) => `<option value="${escapeHtml(v.variantId)}" ${!v.available ? "disabled" : ""}>${escapeHtml(v.title)}${!v.available ? " (out of stock)" : ""}</option>`).join("")}
+           </select>`
+        : "";
+      return `
+        <div class="pumper-bundle-row pumper-bundle-row--gift${unlocked ? "" : " pumper-bundle-row--gift-locked"}">
+          ${img}
+          <div class="pumper-row-meta">
+            <div class="pumper-row-title">${escapeHtml(offer.freeGiftProductTitle ?? "Free gift")}</div>
+            ${unlocked
+              ? `<div class="pumper-row-sub"><strong class="pumper-row-free">FREE</strong> with this offer</div>`
+              : lockedNote}
+            ${select}
+          </div>
+        </div>
+      `;
+    }
+    return "";
+  };
+
+  const renderUpsells = (): string => {
+    if (!offer.checkboxUpsellsEnabled || !offer.checkboxUpsells?.length) return "";
+    const cards = offer.checkboxUpsells
+      .filter((u) => u.productId && u.productTitle)
+      .map((u) => {
+        const baseCents = u.productPriceCents ?? 0;
+        const discountedCents = u.discountType === "percentage"
+          ? Math.round(baseCents * (1 - u.discountValue / 100))
+          : Math.max(0, baseCents - Math.round(u.discountValue * 100));
+        const savedCents = Math.max(0, baseCents - discountedCents);
+        const discountText = u.discountType === "percentage"
+          ? `${u.discountValue}% off`
+          : `${formatMoney(Math.round(u.discountValue * 100), config.settings.currency, config.settings.locale)} off`;
+        const expand = (s: string) => s
+          .replace(/\{\{product\}\}/g, escapeHtml(u.productTitle))
+          .replace(/\{\{saved_amount\}\}/g, escapeHtml(formatMoney(savedCents, config.settings.currency, config.settings.locale)))
+          .replace(/\{\{discount\}\}/g, escapeHtml(discountText));
+        const img = u.productImage
+          ? `<img src="${escapeHtml(u.productImage)}" alt="" class="pumper-upsell-img" />`
+          : `<div class="pumper-upsell-img pumper-upsell-img-empty"></div>`;
+        const priceLine = baseCents > 0
+          ? `<span class="pumper-upsell-price">${formatMoney(discountedCents, config.settings.currency, config.settings.locale)}</span> <span class="pumper-strike">${formatMoney(baseCents, config.settings.currency, config.settings.locale)}</span>`
+          : "";
+        return `
+          <label class="pumper-upsell" data-pumper-upsell="${escapeHtml(u.id)}">
+            <input type="checkbox" class="pumper-upsell-check" />
+            ${img}
+            <div class="pumper-upsell-meta">
+              <div class="pumper-upsell-title">${expand(u.title)}</div>
+              ${u.subtitle ? `<div class="pumper-upsell-sub">${expand(u.subtitle)}</div>` : ""}
+            </div>
+            ${priceLine ? `<div class="pumper-upsell-pricing">${priceLine}</div>` : ""}
+          </label>
+        `;
+      })
+      .join("");
+    if (!cards) return "";
+    return `<div class="pumper-upsells">${cards}</div>`;
+  };
+
   const renderAll = () => {
     mount.innerHTML = `
       <section class="pumper-card pumper-qb">
         <h3 class="pumper-qb-heading">${escapeHtml(heading)}</h3>
         <div class="pumper-qb-tiers">${renderBars()}</div>
+        ${renderGiftRow()}
+        ${renderUpsells()}
         ${renderCta()}
       </section>
     `;
@@ -138,6 +225,40 @@ export function renderBxgy(mount: HTMLElement, offer: BxgyOfferConfig, config: W
             giftBundleId: `${offer.id}:${bar.id}:get`,
           });
         }
+
+        // Offer-level free gift — only when bar buyQty meets the threshold.
+        const giftMin = offer.freeGiftMinBuyQty ?? 1;
+        if (bar.buyQty >= giftMin) {
+          const giftTag = `${offer.id}:gift`;
+          if (offer.freeGiftVariantId && offer.freeGiftAvailable) {
+            lines.push({
+              variantId: offer.freeGiftVariantId, qty: 1, bundleId: offer.id, giftBundleId: giftTag,
+            });
+          } else if (offer.freeGiftProductId && (offer.freeGiftProductVariants?.length ?? 0) > 0) {
+            const giftVariants = offer.freeGiftProductVariants ?? [];
+            const giftSelect = mount.querySelector<HTMLSelectElement>("[data-pumper-bxgy-gift-variant]");
+            const chosen = giftSelect?.value
+              || giftVariants.find((v) => v.available)?.variantId
+              || giftVariants[0]?.variantId;
+            if (chosen) {
+              lines.push({ variantId: chosen, qty: 1, bundleId: offer.id, giftBundleId: giftTag });
+            }
+          }
+        }
+
+        // Checkbox upsells — same pattern as QB.
+        const upsellChecks = mount.querySelectorAll<HTMLInputElement>(".pumper-upsell-check");
+        upsellChecks.forEach((cb, idx) => {
+          if (!cb.checked) return;
+          const u = offer.checkboxUpsells?.[idx];
+          if (!u || !u.variantId) return;
+          lines.push({
+            variantId: u.variantId,
+            qty: 1,
+            bundleId: offer.id,
+            giftBundleId: `${offer.id}:upsell:${u.id}`,
+          });
+        });
 
         const result = await addToCart(offer.id, lines);
         if (!result.ok) {

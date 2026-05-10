@@ -365,9 +365,29 @@ export type BxgyOfferConfig = {
   combinable: boolean;
   headline: string | null;
   ctaLabel: string | null;
+  styleOverrides?: StyleOverrides | null;
   visibility?: "all" | "all_except" | "specific" | "collections";
   visibilityProductIds?: string[];
   visibilityCollectionIds?: string[];
+  linkedCountdownId?: string | null;
+  linkedProgressiveGiftId?: string | null;
+  addonsOrder?: string[] | null;
+  stickyAtc?: StickyAtcConfig | null;
+  freeGiftVariantId?: string | null;
+  freeGiftVariantTitle?: string | null;
+  freeGiftAvailable?: boolean | null;
+  freeGiftMinBuyQty?: number | null;
+  freeGiftProductId?: string | null;
+  freeGiftProductTitle?: string | null;
+  freeGiftProductImage?: string | null;
+  freeGiftProductVariants?: Array<{
+    variantId: string;
+    title: string;
+    available: boolean;
+    priceCents: number;
+  }> | null;
+  checkboxUpsellsEnabled?: boolean;
+  checkboxUpsells?: QbCheckboxUpsell[];
 };
 
 export type WidgetConfig = {

@@ -277,8 +277,9 @@ function renderShortcode(el: HTMLElement, kind: ShortcodeKind, id: string, cfg: 
   if (kind === "bxgy") {
     const o = lookupBxgy(cfg, id);
     if (!o) { el.innerHTML = ""; el.style.minHeight = ""; el.dataset.pumperRendered = "1"; return; }
-    applyCssVars(el, cfg, null);
+    applyCssVars(el, cfg, o.styleOverrides ?? null);
     renderBxgy(el, o, cfg);
+    renderLinkedAddons(el, cfg, o.linkedCountdownId, o.linkedProgressiveGiftId, o.addonsOrder);
     el.dataset.pumperRendered = "1";
     return;
   }
@@ -335,8 +336,9 @@ function renderMount(mount: HTMLElement, cfg: WidgetConfig): void {
   } else if (type === "bxgy") {
     const o = matchBxgy(cfg, productId);
     if (!o) { mount.innerHTML = ""; mount.style.minHeight = ""; return; }
-    applyCssVars(mount, cfg, null);
+    applyCssVars(mount, cfg, o.styleOverrides ?? null);
     renderBxgy(mount, o, cfg);
+    renderLinkedAddons(mount, cfg, o.linkedCountdownId, o.linkedProgressiveGiftId, o.addonsOrder);
   }
   mount.dataset.pumperRendered = "1";
 }
@@ -419,11 +421,14 @@ export async function initWidget(): Promise<void> {
     if (pdpProductId) {
       const matchedQb = matchQb(cfg, pdpProductId);
       const matchedBundle = matchBundle(cfg, pdpProductId) ?? matchMixMatch(cfg, pdpProductId);
+      const matchedBxgy = matchBxgy(cfg, pdpProductId);
       const stickyConfig = matchedQb?.stickyAtc?.enabled
         ? matchedQb.stickyAtc
         : matchedBundle?.stickyAtc?.enabled
           ? matchedBundle.stickyAtc
-          : null;
+          : matchedBxgy?.stickyAtc?.enabled
+            ? matchedBxgy.stickyAtc
+            : null;
       if (stickyConfig) {
         const widgetEl = findRenderedWidgetEl();
         startStickyAtc(stickyConfig, widgetEl ?? undefined);

@@ -378,6 +378,8 @@ export const bxgyOffers = sqliteTable("bxgy_offers", {
   freeGiftVariantId: text("free_gift_variant_id"),
   freeGiftProductId: text("free_gift_product_id"),
   freeGiftMinBuyQty: integer("free_gift_min_buy_qty").notNull().default(1),
+  checkboxUpsellsEnabled: integer("checkbox_upsells_enabled", { mode: "boolean" }).notNull().default(false),
+  checkboxUpsells: text("checkbox_upsells", { mode: "json" }).$type<QbCheckboxUpsell[]>().notNull().default([]),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 }, (t) => ({

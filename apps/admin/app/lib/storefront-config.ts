@@ -60,6 +60,7 @@ export async function buildStorefrontConfig(
   for (const q of qbs) allProductIds.add(q.productId);
   for (const o of bxgyOffers) {
     if (o.productId) allProductIds.add(o.productId);
+    if (o.freeGiftProductId) allProductIds.add(o.freeGiftProductId);
   }
   for (const pg of progressiveGifts) {
     for (const t of pg.thresholds) {
@@ -89,6 +90,9 @@ export async function buildStorefrontConfig(
   }
   for (const q of qbs) {
     if (q.freeGiftVariantId) tierVariantIds.add(q.freeGiftVariantId);
+  }
+  for (const o of bxgyOffers) {
+    if (o.freeGiftVariantId) tierVariantIds.add(o.freeGiftVariantId);
   }
 
   const variantAvailability: Record<string, boolean> = {};
@@ -295,9 +299,31 @@ export async function buildStorefrontConfig(
         combinable: o.combinable,
         headline: o.headline,
         ctaLabel: o.ctaLabel,
+        styleOverrides: o.styleOverrides,
         visibility: o.visibility as "all" | "all_except" | "specific" | "collections",
         visibilityProductIds: o.visibilityProductIds,
         visibilityCollectionIds: o.visibilityCollectionIds,
+        linkedCountdownId: o.linkedCountdownId ?? null,
+        linkedProgressiveGiftId: o.linkedProgressiveGiftId ?? null,
+        addonsOrder: o.addonsOrder ?? null,
+        stickyAtc: o.stickyAtc ?? null,
+        freeGiftVariantId: o.freeGiftVariantId ?? null,
+        freeGiftVariantTitle: o.freeGiftVariantId ? (variantTitles[o.freeGiftVariantId] ?? null) : null,
+        freeGiftAvailable: o.freeGiftVariantId ? (variantAvailability[o.freeGiftVariantId] ?? false) : null,
+        freeGiftMinBuyQty: o.freeGiftMinBuyQty ?? 1,
+        freeGiftProductId: o.freeGiftProductId ?? null,
+        freeGiftProductTitle: o.freeGiftProductId ? (productMap[o.freeGiftProductId]?.title ?? null) : null,
+        freeGiftProductImage: o.freeGiftProductId ? (productMap[o.freeGiftProductId]?.image ?? null) : null,
+        freeGiftProductVariants: o.freeGiftProductId
+          ? (productMap[o.freeGiftProductId]?.variants ?? []).map((v) => ({
+              variantId: v.variantId,
+              title: v.title,
+              available: v.available,
+              priceCents: v.priceCents,
+            }))
+          : null,
+        checkboxUpsellsEnabled: o.checkboxUpsellsEnabled ?? false,
+        checkboxUpsells: o.checkboxUpsells ?? [],
       };
     }),
     progressiveGifts: progressiveGifts.map((pg) => ({

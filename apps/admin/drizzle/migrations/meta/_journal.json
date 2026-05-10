@@ -190,6 +190,13 @@
       "when": 1778368200000,
       "tag": "0026_bxgy_offers",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "6",
+      "when": 1778369400000,
+      "tag": "0027_bxgy_checkbox_upsells",
+      "breakpoints": true
     }
   ]
 }
