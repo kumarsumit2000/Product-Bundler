@@ -108,6 +108,42 @@ export function SimpleQbStylePanel({ values, onChange }: Props) {
             max={48}
             placeholder="8"
           />
+          <Text as="h3" variant="headingSm">Font sizes</Text>
+          <FormLayout.Group>
+            <TextField
+              label="Heading"
+              type="number"
+              value={values.blockTitleFontSize}
+              onChange={(blockTitleFontSize) => onChange({ blockTitleFontSize })}
+              autoComplete="off"
+              min={10}
+              max={48}
+              placeholder="14"
+              suffix="px"
+            />
+            <TextField
+              label="Tier title"
+              type="number"
+              value={values.titleFontSize}
+              onChange={(titleFontSize) => onChange({ titleFontSize })}
+              autoComplete="off"
+              min={10}
+              max={48}
+              placeholder="13"
+              suffix="px"
+            />
+            <TextField
+              label="Tier subtitle"
+              type="number"
+              value={values.subtitleFontSize}
+              onChange={(subtitleFontSize) => onChange({ subtitleFontSize })}
+              autoComplete="off"
+              min={10}
+              max={48}
+              placeholder="11"
+              suffix="px"
+            />
+          </FormLayout.Group>
         </FormLayout>
       </BlockStack>
     </Card>
