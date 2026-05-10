@@ -7,7 +7,7 @@ import { type AppLoadContext } from "~/shopify.server";
 export async function loader({ context, params }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
   const type = String(params.type ?? "bundle");
-  if (!["bundle", "qb", "mix_match", "newsletter"].includes(type)) {
+  if (!["bundle", "qb", "mix_match", "newsletter", "bxgy"].includes(type)) {
     return new Response("Bad type", { status: 400 });
   }
 
@@ -64,6 +64,7 @@ ${type === "newsletter"
       var firstBundleProductId = (e.data.config.bundles && e.data.config.bundles[0] && e.data.config.bundles[0].products && e.data.config.bundles[0].products[0] && e.data.config.bundles[0].products[0].productId)
         || (e.data.config.bundles && e.data.config.bundles[0] && e.data.config.bundles[0].collectionProducts && e.data.config.bundles[0].collectionProducts[0] && e.data.config.bundles[0].collectionProducts[0].productId)
         || (e.data.config.quantityBreaks && e.data.config.quantityBreaks[0] && e.data.config.quantityBreaks[0].productId)
+        || (e.data.config.bxgyOffers && e.data.config.bxgyOffers[0] && e.data.config.bxgyOffers[0].productId)
         || "gid://shopify/Product/0";
       var bareId = String(firstBundleProductId).replace(/^gid:\\/\\/shopify\\/Product\\//, '');
       var mounts = document.querySelectorAll('.pumper-mount');

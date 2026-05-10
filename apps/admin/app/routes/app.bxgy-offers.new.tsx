@@ -1,13 +1,16 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/cloudflare";
 import { json, redirect } from "@remix-run/cloudflare";
 import { useActionData, useLoaderData } from "@remix-run/react";
-import { Page, Layout } from "@shopify/polaris";
+import { useState } from "react";
+import { Page } from "@shopify/polaris";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
 import { getDb } from "~/db.server";
 import * as bxgyRepo from "~/lib/bxgy-offers/repo";
 import { syncShopConfig } from "~/lib/metafield-sync";
 import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { BxgyForm, type BxgyFormValues } from "~/components/BxgyForm";
+import { PreviewPane } from "~/components/PreviewPane";
+import { buildPreviewBxgyConfig, defaultMockProduct, defaultPreviewSettings } from "~/lib/preview-config";
 import type { BxgyBarValue } from "~/components/BxgyBarBuilder";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
@@ -81,6 +84,7 @@ export default function BxgyNew() {
   const { preset } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const errors = actionData && "errors" in actionData ? actionData.errors : undefined;
+  const [values, setValues] = useState<BxgyFormValues | null>(null);
 
   const initialValues: Partial<BxgyFormValues> | undefined = preset
     ? {
@@ -91,13 +95,38 @@ export default function BxgyNew() {
       }
     : undefined;
 
+  const previewConfig = values
+    ? buildPreviewBxgyConfig({
+        shop: "preview",
+        mockProduct: defaultMockProduct(),
+        settings: defaultPreviewSettings(),
+        offer: {
+          id: "new",
+          name: values.name || "Sample offer",
+          productId: values.product[0]?.productId ?? "gid://shopify/Product/0",
+          productTitle: values.product[0]?.title ?? "Sample product",
+          productImage: values.product[0]?.image ?? null,
+          productVariants: [
+            { variantId: values.product[0]?.variantId ?? "v0", title: "Default", available: true, priceCents: 4999 },
+          ],
+          bars: values.bars,
+          combinable: values.combinable,
+          headline: values.headline || null,
+          ctaLabel: values.ctaLabel || null,
+        },
+      })
+    : null;
+
   return (
     <Page title="Create BXGY offer" backAction={{ content: "Buy X, get Y", url: "/app/bxgy-offers" }}>
-      <Layout>
-        <Layout.Section>
-          <BxgyForm submitLabel="Save offer" errors={errors} initialValues={initialValues} />
-        </Layout.Section>
-      </Layout>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+        <div>
+          <BxgyForm submitLabel="Save offer" errors={errors} initialValues={initialValues} onValuesChange={setValues} />
+        </div>
+        <div style={{ position: "sticky", top: 16 }}>
+          {previewConfig && <PreviewPane type="bxgy" id="new" config={previewConfig} />}
+        </div>
+      </div>
     </Page>
   );
 }

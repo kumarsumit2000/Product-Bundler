@@ -217,3 +217,50 @@ export function buildPreviewQbConfig(args: {
     progressiveGifts: args.addons?.progressiveGifts ?? [],
   };
 }
+
+type BxgyShape = {
+  id: string;
+  name: string;
+  productId: string;
+  productTitle: string;
+  productImage: string | null;
+  productVariants: Array<{ variantId: string; title: string; available: boolean; priceCents: number }>;
+  bars: Array<{
+    id: string;
+    buyQty: number;
+    buyDiscountPercent: number;
+    getQty: number;
+    getDiscountPercent: number;
+    title: string;
+    subtitle: string;
+    badgeStyle: "save_percent" | "save_amount" | "custom" | "none";
+    badgeText: string;
+    label: string;
+    isMostPopular: boolean;
+  }>;
+  combinable: boolean;
+  headline: string | null;
+  ctaLabel: string | null;
+};
+
+export function buildPreviewBxgyConfig(args: {
+  shop: string;
+  mockProduct: MockProduct;
+  settings: Settings;
+  offer: BxgyShape;
+}) {
+  return {
+    shop: args.shop,
+    settings: args.settings,
+    bundles: [],
+    quantityBreaks: [],
+    bxgyOffers: [{
+      ...args.offer,
+      // Force visibility=all so the preview iframe renders regardless of
+      // the saved visibility scope (mirrors QB preview behavior).
+      visibility: "all" as const,
+      visibilityProductIds: [] as string[],
+      visibilityCollectionIds: [] as string[],
+    }],
+  };
+}

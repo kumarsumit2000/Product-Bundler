@@ -1,14 +1,17 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/cloudflare";
 import { json, redirect } from "@remix-run/cloudflare";
 import { useActionData, useLoaderData } from "@remix-run/react";
-import { Page, Layout } from "@shopify/polaris";
+import { useState } from "react";
+import { Page } from "@shopify/polaris";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
 import { getDb } from "~/db.server";
 import * as bxgyRepo from "~/lib/bxgy-offers/repo";
 import { syncShopConfig } from "~/lib/metafield-sync";
 import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { BxgyForm, type BxgyFormValues } from "~/components/BxgyForm";
+import { PreviewPane } from "~/components/PreviewPane";
 import { EmbedCodeCard } from "~/components/EmbedCodeCard";
+import { buildPreviewBxgyConfig, defaultMockProduct, defaultPreviewSettings } from "~/lib/preview-config";
 import { useSavedToast } from "~/lib/toast";
 import type { BxgyBarValue } from "~/components/BxgyBarBuilder";
 
@@ -64,6 +67,7 @@ export default function BxgyEdit() {
   const actionData = useActionData<typeof action>();
   const errors = actionData && "errors" in actionData ? actionData.errors : undefined;
   const snippet = `<div data-pumper-bxgy="${offer.id}"></div>`;
+  const [values, setValues] = useState<BxgyFormValues | null>(null);
 
   const initial: Partial<BxgyFormValues> = {
     name: offer.name,
@@ -77,15 +81,39 @@ export default function BxgyEdit() {
     combinable: offer.combinable,
   };
 
+  const previewConfig = values
+    ? buildPreviewBxgyConfig({
+        shop: "preview",
+        mockProduct: defaultMockProduct(),
+        settings: defaultPreviewSettings(),
+        offer: {
+          id: offer.id,
+          name: values.name || offer.name,
+          productId: values.product[0]?.productId ?? offer.productId,
+          productTitle: values.product[0]?.title ?? "Sample product",
+          productImage: values.product[0]?.image ?? null,
+          productVariants: [
+            { variantId: values.product[0]?.variantId ?? "v0", title: "Default", available: true, priceCents: 4999 },
+          ],
+          bars: values.bars,
+          combinable: values.combinable,
+          headline: values.headline || null,
+          ctaLabel: values.ctaLabel || null,
+        },
+      })
+    : null;
+
   return (
     <Page title={offer.name} backAction={{ content: "Buy X, get Y", url: "/app/bxgy-offers" }}>
-      <Layout>
-        <Layout.Section>
-          <BxgyForm submitLabel="Save changes" errors={errors} initialValues={initial} />
-          <div style={{ height: 16 }} />
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+        <div>
+          <BxgyForm submitLabel="Save changes" errors={errors} initialValues={initial} onValuesChange={setValues} />
+        </div>
+        <div style={{ position: "sticky", top: 16, display: "flex", flexDirection: "column", gap: 16 }}>
+          {previewConfig && <PreviewPane type="bxgy" id={offer.id} config={previewConfig} />}
           <EmbedCodeCard plan="free" snippet={snippet} />
-        </Layout.Section>
-      </Layout>
+        </div>
+      </div>
     </Page>
   );
 }
