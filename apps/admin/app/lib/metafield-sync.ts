@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { schema } from "~/db.server";
 import * as bundleRepo from "./bundles/repo";
 import * as qbRepo from "./quantity-breaks/repo";
+import * as pgRepo from "./progressive-gifts/repo";
 
 const MAX_BYTES = 50_000;
 
@@ -53,6 +54,11 @@ interface SyncConfig {
     }>;
     combinable: boolean;
   }>;
+  progressiveGifts: Array<{
+    id: string;
+    status: string;
+    shippingThresholds: Array<{ minSpendCents: number }>;
+  }>;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -61,9 +67,10 @@ export async function syncShopConfig(
   admin: AdminGraphqlClient,
   shopId: string,
 ): Promise<void> {
-  const [bundles, qbs] = await Promise.all([
+  const [bundles, qbs, pgs] = await Promise.all([
     bundleRepo.listByShop(db, shopId),
     qbRepo.listByShop(db, shopId),
+    pgRepo.listByShop(db, shopId),
   ]);
 
   const config: SyncConfig = {
@@ -98,6 +105,13 @@ export async function syncShopConfig(
         bogo: tr.bogo ?? null,
       })),
       combinable: q.combinable,
+    })),
+    progressiveGifts: pgs.map((p) => ({
+      id: p.id,
+      status: p.status,
+      shippingThresholds: p.thresholds
+        .filter((t) => t.kind === "free_shipping")
+        .map((t) => ({ minSpendCents: t.minSpendCents })),
     })),
   };
 

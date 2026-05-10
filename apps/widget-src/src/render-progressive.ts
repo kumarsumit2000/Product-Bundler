@@ -9,7 +9,17 @@ function fmtMoney(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
-type CartShape = { items_subtotal_price?: number; total_price?: number; items?: Array<{ properties?: Record<string, string> | null }> };
+type CartItem = {
+  key?: string;
+  variant_id?: number;
+  quantity?: number;
+  properties?: Record<string, string> | null;
+};
+type CartShape = {
+  items_subtotal_price?: number;
+  total_price?: number;
+  items?: CartItem[];
+};
 
 async function fetchCart(): Promise<CartShape | null> {
   try {
@@ -19,6 +29,49 @@ async function fetchCart(): Promise<CartShape | null> {
   } catch {
     return null;
   }
+}
+
+async function removeCartLine(key: string): Promise<boolean> {
+  try {
+    const res = await fetch("/cart/change.js", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ id: key, quantity: 0 }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Strip claimed gift lines that no longer qualify (cart subtotal dropped below
+ * the threshold after the customer removed items). Returns true if any line
+ * was removed so the caller can re-fetch the cart before rendering.
+ */
+async function pruneOrphanGifts(
+  pg: ProgressiveGiftConfig,
+  cart: CartShape | null,
+): Promise<boolean> {
+  if (!cart?.items || cart.items.length === 0) return false;
+  // Compute the *gift-free* subtotal first — claimed gifts have a cart-line
+  // total of 0 anyway (100% off applied at checkout, not in cart), so the
+  // raw items_subtotal_price is what determines whether the threshold is met.
+  const subtotal = cart.items_subtotal_price ?? cart.total_price ?? 0;
+  let removedAny = false;
+  for (const item of cart.items) {
+    const tag = item.properties?._pumper_gift_id;
+    if (!tag || !tag.startsWith(`${pg.id}:`)) continue;
+    const idx = parseInt(tag.split(":")[1] ?? "", 10);
+    const tier = pg.thresholds[idx];
+    if (!tier) continue;
+    if (subtotal >= tier.minSpendCents) continue; // still qualifies
+    if (!item.key) continue;
+    const ok = await removeCartLine(item.key);
+    if (ok) removedAny = true;
+  }
+  return removedAny;
 }
 
 function alreadyClaimed(cart: CartShape | null, pgId: string, thresholdIdx: number): boolean {
@@ -134,7 +187,13 @@ function renderTier(
 }
 
 async function rerender(mount: HTMLElement, pg: ProgressiveGiftConfig): Promise<void> {
-  const cart = await fetchCart();
+  let cart = await fetchCart();
+  // If the customer dropped below a threshold after claiming, strip those
+  // gift lines so they don't ride along uncovered.
+  if (cart && await pruneOrphanGifts(pg, cart)) {
+    cart = await fetchCart();
+    document.dispatchEvent(new CustomEvent("cart:refresh"));
+  }
   const cartSubtotalCents = cart?.items_subtotal_price ?? cart?.total_price ?? 0;
 
   const tiers = [...pg.thresholds].sort((a, b) => a.minSpendCents - b.minSpendCents);

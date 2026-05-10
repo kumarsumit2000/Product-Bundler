@@ -58,6 +58,7 @@ describe("syncShopConfig", () => {
       schemaVersion: 1,
       bundles: [],
       quantityBreaks: [],
+      progressiveGifts: [],
     });
   });
 
