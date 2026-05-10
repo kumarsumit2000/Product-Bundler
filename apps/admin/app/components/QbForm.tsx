@@ -202,6 +202,7 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange }: P
                 onChange={(c) => update("visibilityCollections", c)}
               />
             )}
+            {errors?.visibility && <Banner tone="critical">{errors.visibility}</Banner>}
           </BlockStack>
         </Card>
 

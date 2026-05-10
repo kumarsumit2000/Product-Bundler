@@ -19,6 +19,9 @@ export type QbInput = {
   styleOverrides: Record<string, unknown> | null;
   textOverrides: Record<string, unknown> | null;
   subscription: { enabled: boolean; discountPercent: number; interval: "weekly" | "biweekly" | "monthly" | "quarterly" } | null;
+  visibility?: "all" | "all_except" | "specific" | "collections";
+  visibilityProductIds?: string[];
+  visibilityCollectionIds?: string[];
 };
 
 export type ValidationResult =
@@ -37,6 +40,17 @@ export function validateQb(input: QbInput): ValidationResult {
   // productId is no longer required — visibility settings drive product
   // matching. We still persist whatever was set (auto-derived from
   // visibilityProductIds[0] when present) for backward compat.
+
+  const visibility = input.visibility ?? "specific";
+  const vProducts = input.visibilityProductIds ?? [];
+  const vCollections = input.visibilityCollectionIds ?? [];
+  if (visibility === "specific" && vProducts.length === 0) {
+    errors.visibility = "Pick at least one product to show this widget on";
+  } else if (visibility === "all_except" && vProducts.length === 0) {
+    errors.visibility = "Pick at least one product to exclude — or change to All products";
+  } else if (visibility === "collections" && vCollections.length === 0) {
+    errors.visibility = "Pick at least one collection to show this widget on";
+  }
 
   if (!Array.isArray(input.tiers) || input.tiers.length === 0) {
     errors.tiers = "At least one tier is required";

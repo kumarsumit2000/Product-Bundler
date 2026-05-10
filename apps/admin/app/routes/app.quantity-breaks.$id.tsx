@@ -129,16 +129,24 @@ export async function action({
   input.headline = (form.get("headline") as string) || null;
   input.ctaLabel = (form.get("ctaLabel") as string) || null;
 
-  const v = validateQb(input);
+  const visibility = ((form.get("visibility") as string) || "specific");
+  const visibilityProductIds = (() => { try { return JSON.parse((form.get("visibilityProductIds") as string) || "[]") as string[]; } catch { return []; } })();
+  const visibilityCollectionIds = (() => { try { return JSON.parse((form.get("visibilityCollectionIds") as string) || "[]") as string[]; } catch { return []; } })();
+  const normalizedVisibility = ["all", "all_except", "specific", "collections"].includes(visibility)
+    ? (visibility as "all" | "all_except" | "specific" | "collections")
+    : "specific";
+
+  const v = validateQb({
+    ...input,
+    visibility: normalizedVisibility,
+    visibilityProductIds,
+    visibilityCollectionIds,
+  });
   if (!v.valid) {
     return json({ errors: v.errors }, { status: 400 });
   }
 
   const db = getDb(ctx.cloudflare.env.DB);
-
-  const visibility = ((form.get("visibility") as string) || "specific");
-  const visibilityProductIds = (() => { try { return JSON.parse((form.get("visibilityProductIds") as string) || "[]") as string[]; } catch { return []; } })();
-  const visibilityCollectionIds = (() => { try { return JSON.parse((form.get("visibilityCollectionIds") as string) || "[]") as string[]; } catch { return []; } })();
 
   await qbRepo.update(db, session.shop, params.id!, {
     name: input.name,
@@ -150,7 +158,7 @@ export async function action({
     textOverrides: input.textOverrides,
     headline: input.headline,
     ctaLabel: input.ctaLabel,
-    visibility: ["all", "all_except", "specific", "collections"].includes(visibility) ? visibility : "specific",
+    visibility: normalizedVisibility,
     visibilityProductIds,
     visibilityCollectionIds,
   });
