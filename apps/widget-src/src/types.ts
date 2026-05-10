@@ -105,6 +105,8 @@ export type BundleConfig = {
   freeGiftVariantTitle: string | null;
   freeGiftAvailable: boolean | null;
   subscription?: SubscriptionConfig | null;
+  linkedCountdownId?: string | null;
+  linkedProgressiveGiftId?: string | null;
 };
 
 export type QbVariant = {
@@ -172,6 +174,8 @@ export type QbConfig = {
   visibilityCollectionIds?: string[];
   checkboxUpsellsEnabled?: boolean;
   checkboxUpsells?: QbCheckboxUpsell[];
+  linkedCountdownId?: string | null;
+  linkedProgressiveGiftId?: string | null;
 };
 
 export type Settings = {

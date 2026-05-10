@@ -82,6 +82,8 @@ describe("syncShopConfig", () => {
       headline: null,
       ctaLabel: null,
       freeGiftVariantId: null,
+      linkedCountdownId: null,
+      linkedProgressiveGiftId: null,
     });
     const { admin, calls } = makeAdmin();
     await syncShopConfig(setup.db, admin, SHOP);
@@ -118,6 +120,8 @@ describe("syncShopConfig", () => {
       visibilityCollectionIds: [],
       checkboxUpsellsEnabled: false,
       checkboxUpsells: [],
+      linkedCountdownId: null,
+      linkedProgressiveGiftId: null,
     });
     const { admin, calls } = makeAdmin();
     await syncShopConfig(setup.db, admin, SHOP);
@@ -155,6 +159,8 @@ describe("syncShopConfig", () => {
       mode: "mix_match",
       collectionId: "gid://shopify/Collection/9",
       targetQty: 3,
+      linkedCountdownId: null,
+      linkedProgressiveGiftId: null,
     });
     const { admin, calls } = makeAdmin();
     await syncShopConfig(setup.db, admin, SHOP);
@@ -198,6 +204,8 @@ describe("syncShopConfig", () => {
       visibilityCollectionIds: [],
       checkboxUpsellsEnabled: false,
       checkboxUpsells: [],
+      linkedCountdownId: null,
+      linkedProgressiveGiftId: null,
     });
     const { admin, calls } = makeAdmin();
     await syncShopConfig(setup.db, admin, SHOP);
@@ -232,6 +240,8 @@ describe("syncShopConfig", () => {
       headline: "x".repeat(60_000),
       ctaLabel: null,
       freeGiftVariantId: null,
+      linkedCountdownId: null,
+      linkedProgressiveGiftId: null,
     });
     const { admin } = makeAdmin();
     await expect(syncShopConfig(setup.db, admin, SHOP)).rejects.toThrow(

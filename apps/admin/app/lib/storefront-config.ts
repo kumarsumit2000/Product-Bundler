@@ -183,6 +183,10 @@ export async function buildStorefrontConfig(
       visibility: q.visibility ?? "specific",
       visibilityProductIds: q.visibilityProductIds ?? [],
       visibilityCollectionIds: q.visibilityCollectionIds ?? [],
+      linkedCountdownId: q.linkedCountdownId ?? null,
+      linkedProgressiveGiftId: q.linkedProgressiveGiftId ?? null,
+      checkboxUpsellsEnabled: q.checkboxUpsellsEnabled ?? false,
+      checkboxUpsells: q.checkboxUpsells ?? [],
     };
   };
 
@@ -223,6 +227,8 @@ export async function buildStorefrontConfig(
       freeGiftVariantTitle: b.freeGiftVariantId ? (variantTitles[b.freeGiftVariantId] ?? null) : null,
       freeGiftAvailable: b.freeGiftVariantId ? (variantAvailability[b.freeGiftVariantId] ?? false) : null,
       subscription: b.subscription ?? null,
+      linkedCountdownId: b.linkedCountdownId ?? null,
+      linkedProgressiveGiftId: b.linkedProgressiveGiftId ?? null,
     })),
     quantityBreaks: qbs.map(buildQb),
     progressiveGifts: progressiveGifts.map((pg) => ({

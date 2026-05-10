@@ -16,6 +16,7 @@ import { ProductPicker, type PickedProduct } from "./ProductPicker";
 import { DiscountValueInput } from "./DiscountValueInput";
 import { CollectionPicker, type PickedCollection } from "./CollectionPicker";
 import { StylePanel, type StylePanelValues } from "./StylePanel";
+import { WidgetAddonsCard } from "./WidgetAddonsCard";
 import { VariantPicker, type PickedVariant } from "./VariantPicker";
 import { EMPTY_STYLE_FORM, buildStyleOverrides } from "~/lib/preview-overrides";
 
@@ -40,13 +41,19 @@ export type BundleFormValues = StylePanelValues & {
   ctaLabel: string;
   textOverrides: Record<string, string>;
   freeGiftVariant: PickedVariant | null;
+  linkedCountdownId: string | null;
+  linkedProgressiveGiftId: string | null;
 };
+
+type AddonOption = { id: string; name: string };
 
 type Props = {
   initialValues?: Partial<BundleFormValues>;
   errors?: Record<string, string>;
   submitLabel: string;
   onValuesChange?: (v: BundleFormValues) => void;
+  countdownOptions?: AddonOption[];
+  progressiveGiftOptions?: AddonOption[];
 };
 
 const DEFAULTS: BundleFormValues = {
@@ -66,9 +73,11 @@ const DEFAULTS: BundleFormValues = {
   ctaLabel: "",
   textOverrides: { "bundle.totalLabel": "", "bundle.savingsBadge": "" },
   freeGiftVariant: null,
+  linkedCountdownId: null,
+  linkedProgressiveGiftId: null,
 };
 
-export function BundleForm({ initialValues, errors, submitLabel, onValuesChange }: Props) {
+export function BundleForm({ initialValues, errors, submitLabel, onValuesChange, countdownOptions = [], progressiveGiftOptions = [] }: Props) {
   const [values, setValues] = useState<BundleFormValues>({ ...DEFAULTS, ...initialValues });
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
@@ -108,6 +117,8 @@ export function BundleForm({ initialValues, errors, submitLabel, onValuesChange 
         value={values.freeGiftVariant?.variantId ?? ""}
       />
       <input type="hidden" name="subscription" value="null" />
+      <input type="hidden" name="linkedCountdownId" value={values.linkedCountdownId ?? ""} />
+      <input type="hidden" name="linkedProgressiveGiftId" value={values.linkedProgressiveGiftId ?? ""} />
 
       <BlockStack gap="500">
         {hasErrors && (
@@ -290,6 +301,14 @@ export function BundleForm({ initialValues, errors, submitLabel, onValuesChange 
             />
           </BlockStack>
         </Card>
+
+        <WidgetAddonsCard
+          countdowns={countdownOptions}
+          progressiveGifts={progressiveGiftOptions}
+          linkedCountdownId={values.linkedCountdownId}
+          linkedProgressiveGiftId={values.linkedProgressiveGiftId}
+          onChange={(patch) => setValues((s) => ({ ...s, ...patch }))}
+        />
 
         <StylePanel values={values} onChange={(next) => setValues((s) => ({ ...s, ...next }))} />
 

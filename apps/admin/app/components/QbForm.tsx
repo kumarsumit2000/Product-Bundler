@@ -16,6 +16,7 @@ import { ProductPicker, type PickedProduct } from "./ProductPicker";
 import { type PickedCollection } from "./CollectionPicker";
 import { MultiCollectionPicker } from "./MultiCollectionPicker";
 import { QbUpsellsBuilder, EMPTY_UPSELL, type UpsellFormValue } from "./QbUpsellsBuilder";
+import { WidgetAddonsCard } from "./WidgetAddonsCard";
 import { QbTierBuilder, type TierFormValue } from "./QbTierBuilder";
 import { type StylePanelValues } from "./StylePanel";
 import { SimpleQbStylePanel } from "./SimpleQbStylePanel";
@@ -38,13 +39,19 @@ export type QbFormValues = StylePanelValues & {
   visibilityCollections: PickedCollection[];
   checkboxUpsellsEnabled: boolean;
   checkboxUpsells: UpsellFormValue[];
+  linkedCountdownId: string | null;
+  linkedProgressiveGiftId: string | null;
 };
+
+type AddonOption = { id: string; name: string };
 
 type Props = {
   initialValues?: Partial<QbFormValues>;
   errors?: Record<string, string>;
   submitLabel: string;
   onValuesChange?: (v: QbFormValues) => void;
+  countdownOptions?: AddonOption[];
+  progressiveGiftOptions?: AddonOption[];
 };
 
 const DEFAULTS: QbFormValues = {
@@ -67,9 +74,11 @@ const DEFAULTS: QbFormValues = {
   visibilityCollections: [],
   checkboxUpsellsEnabled: false,
   checkboxUpsells: [],
+  linkedCountdownId: null,
+  linkedProgressiveGiftId: null,
 };
 
-export function QbForm({ initialValues, errors, submitLabel, onValuesChange }: Props) {
+export function QbForm({ initialValues, errors, submitLabel, onValuesChange, countdownOptions = [], progressiveGiftOptions = [] }: Props) {
   const [values, setValues] = useState<QbFormValues>({ ...DEFAULTS, ...initialValues });
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
@@ -101,6 +110,8 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange }: P
         name="visibilityCollectionIds"
         value={JSON.stringify(values.visibilityCollections.map((c) => c.collectionId))}
       />
+      <input type="hidden" name="linkedCountdownId" value={values.linkedCountdownId ?? ""} />
+      <input type="hidden" name="linkedProgressiveGiftId" value={values.linkedProgressiveGiftId ?? ""} />
       <input type="hidden" name="checkboxUpsellsEnabled" value={values.checkboxUpsellsEnabled ? "on" : ""} />
       <input
         type="hidden"
@@ -229,6 +240,14 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange }: P
             {errors?.visibility && <Banner tone="critical">{errors.visibility}</Banner>}
           </BlockStack>
         </Card>
+
+        <WidgetAddonsCard
+          countdowns={countdownOptions}
+          progressiveGifts={progressiveGiftOptions}
+          linkedCountdownId={values.linkedCountdownId}
+          linkedProgressiveGiftId={values.linkedProgressiveGiftId}
+          onChange={(patch) => setValues((s) => ({ ...s, ...patch }))}
+        />
 
         <QbUpsellsBuilder
           enabled={values.checkboxUpsellsEnabled}

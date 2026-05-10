@@ -35,6 +35,8 @@ const NEW_BUNDLE_INPUT = {
   mode: "classic" as const,
   collectionId: null,
   targetQty: null,
+  linkedCountdownId: null,
+  linkedProgressiveGiftId: null,
 };
 
 describe("bundles repo", () => {

@@ -35,6 +35,8 @@ const NEW_QB_INPUT = {
   visibilityCollectionIds: [],
   checkboxUpsellsEnabled: false,
   checkboxUpsells: [],
+  linkedCountdownId: null,
+  linkedProgressiveGiftId: null,
 };
 
 describe("quantity-breaks repo", () => {

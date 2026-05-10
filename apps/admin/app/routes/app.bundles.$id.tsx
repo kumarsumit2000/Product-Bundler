@@ -6,6 +6,8 @@ import { Page, Layout } from "@shopify/polaris";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
 import { getDb } from "~/db.server";
 import * as bundleRepo from "~/lib/bundles/repo";
+import * as countdownRepo from "~/lib/countdowns/repo";
+import * as pgRepo from "~/lib/progressive-gifts/repo";
 import { validateBundle } from "~/lib/bundles/validate";
 import { parseSubscriptionForm } from "~/lib/parse-subscription";
 import { syncShopConfig } from "~/lib/metafield-sync";
@@ -111,8 +113,17 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
       })
     : {};
 
-  const usage = await getUsage(db, session.shop);
-  return json({ bundle, productDetails, collectionDetails, collectionTopProducts, giftVariantDetails, plan: usage.plan });
+  const [usage, countdowns, pgs] = await Promise.all([
+    getUsage(db, session.shop),
+    countdownRepo.listByShop(db, session.shop),
+    pgRepo.listByShop(db, session.shop),
+  ]);
+  return json({
+    bundle, productDetails, collectionDetails, collectionTopProducts, giftVariantDetails,
+    plan: usage.plan,
+    countdownOptions: countdowns.map((c) => ({ id: c.id, name: c.name })),
+    progressiveGiftOptions: pgs.map((p) => ({ id: p.id, name: p.name })),
+  });
 }
 
 export async function action({
@@ -193,6 +204,9 @@ export async function action({
 
   const db = getDb(ctx.cloudflare.env.DB);
 
+  const linkedCountdownId = ((form.get("linkedCountdownId") as string) || "").trim() || null;
+  const linkedProgressiveGiftId = ((form.get("linkedProgressiveGiftId") as string) || "").trim() || null;
+
   await bundleRepo.update(db, session.shop, params.id!, {
     ...input,
     status: input.status as "draft" | "active" | "paused",
@@ -201,6 +215,8 @@ export async function action({
       | "flat"
       | "fixed_total",
     mode: input.mode,
+    linkedCountdownId,
+    linkedProgressiveGiftId,
   });
 
   try {
@@ -221,7 +237,7 @@ export async function action({
 }
 
 export default function BundleEdit() {
-  const { bundle, productDetails, collectionDetails, collectionTopProducts, giftVariantDetails, plan } = useLoaderData<typeof loader>();
+  const { bundle, productDetails, collectionDetails, collectionTopProducts, giftVariantDetails, plan, countdownOptions, progressiveGiftOptions } = useLoaderData<typeof loader>();
   useSavedToast();
   const actionData = useActionData<typeof action>();
   const snippet = bundle.mode === "mix_match"
@@ -296,6 +312,8 @@ export default function BundleEdit() {
         image: detail.image ?? undefined,
       };
     })(),
+    linkedCountdownId: bundle.linkedCountdownId ?? null,
+    linkedProgressiveGiftId: bundle.linkedProgressiveGiftId ?? null,
   };
 
   const previewConfig = values
@@ -355,6 +373,8 @@ export default function BundleEdit() {
             errors={errors}
             initialValues={initial}
             onValuesChange={setValues}
+            countdownOptions={countdownOptions}
+            progressiveGiftOptions={progressiveGiftOptions}
           />
         </Layout.Section>
         <Layout.Section variant="oneThird">

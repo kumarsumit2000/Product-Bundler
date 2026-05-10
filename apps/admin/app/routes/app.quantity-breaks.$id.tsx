@@ -6,6 +6,8 @@ import { Page, Layout } from "@shopify/polaris";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
 import { getDb } from "~/db.server";
 import * as qbRepo from "~/lib/quantity-breaks/repo";
+import * as countdownRepo from "~/lib/countdowns/repo";
+import * as pgRepo from "~/lib/progressive-gifts/repo";
 import { validateQb } from "~/lib/quantity-breaks/validate";
 import { parseSubscriptionForm } from "~/lib/parse-subscription";
 import { syncShopConfig } from "~/lib/metafield-sync";
@@ -61,8 +63,16 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
     return {} as Awaited<ReturnType<typeof fetchVariantDetails>>;
   });
 
-  const usage = await getUsage(db, session.shop);
-  return json({ qb, productTitle, productImage, tierVariantDetails, plan: usage.plan });
+  const [usage, countdowns, pgs] = await Promise.all([
+    getUsage(db, session.shop),
+    countdownRepo.listByShop(db, session.shop),
+    pgRepo.listByShop(db, session.shop),
+  ]);
+  return json({
+    qb, productTitle, productImage, tierVariantDetails, plan: usage.plan,
+    countdownOptions: countdowns.map((c) => ({ id: c.id, name: c.name })),
+    progressiveGiftOptions: pgs.map((p) => ({ id: p.id, name: p.name })),
+  });
 }
 
 export async function action({
@@ -134,6 +144,8 @@ export async function action({
   const visibilityCollectionIds = (() => { try { return JSON.parse((form.get("visibilityCollectionIds") as string) || "[]") as string[]; } catch { return []; } })();
   const checkboxUpsellsEnabled = form.get("checkboxUpsellsEnabled") === "on";
   const checkboxUpsells = (() => { try { return JSON.parse((form.get("checkboxUpsells") as string) || "[]") as never[]; } catch { return [] as never[]; } })();
+  const linkedCountdownId = ((form.get("linkedCountdownId") as string) || "").trim() || null;
+  const linkedProgressiveGiftId = ((form.get("linkedProgressiveGiftId") as string) || "").trim() || null;
   const normalizedVisibility = ["all", "all_except", "specific", "collections"].includes(visibility)
     ? (visibility as "all" | "all_except" | "specific" | "collections")
     : "specific";
@@ -165,6 +177,8 @@ export async function action({
     visibilityCollectionIds,
     checkboxUpsellsEnabled,
     checkboxUpsells,
+    linkedCountdownId,
+    linkedProgressiveGiftId,
   });
 
   try {
@@ -185,7 +199,7 @@ export async function action({
 }
 
 export default function QbEdit() {
-  const { qb, productTitle, productImage, tierVariantDetails, plan } = useLoaderData<typeof loader>();
+  const { qb, productTitle, productImage, tierVariantDetails, plan, countdownOptions, progressiveGiftOptions } = useLoaderData<typeof loader>();
   useSavedToast();
   const actionData = useActionData<typeof action>();
   const snippet = `<div data-pumper-qb="${qb.id}"></div>`;
@@ -250,6 +264,8 @@ export default function QbEdit() {
     visibilityCollections: (qb.visibilityCollectionIds ?? []).map((cid) => ({
       collectionId: cid, title: cid,
     })),
+    linkedCountdownId: qb.linkedCountdownId ?? null,
+    linkedProgressiveGiftId: qb.linkedProgressiveGiftId ?? null,
     checkboxUpsellsEnabled: qb.checkboxUpsellsEnabled ?? false,
     checkboxUpsells: (qb.checkboxUpsells ?? []).map((u) => ({
       id: u.id,
@@ -344,6 +360,8 @@ export default function QbEdit() {
             errors={errors}
             initialValues={initial}
             onValuesChange={setValues}
+            countdownOptions={countdownOptions}
+            progressiveGiftOptions={progressiveGiftOptions}
           />
           <div style={{ height: 16 }} />
           <EmbedCodeCard plan={plan} snippet={snippet} />

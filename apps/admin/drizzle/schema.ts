@@ -147,6 +147,8 @@ export const bundles = sqliteTable("bundles", {
   mode: text("mode", { enum: ["classic", "mix_match"] }).notNull().default("classic"),
   collectionId: text("collection_id"),
   targetQty: integer("target_qty"),
+  linkedCountdownId: text("linked_countdown_id"),
+  linkedProgressiveGiftId: text("linked_progressive_gift_id"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 }, (t) => ({
@@ -188,6 +190,8 @@ export const quantityBreaks = sqliteTable("quantity_breaks", {
   visibilityCollectionIds: text("visibility_collection_ids", { mode: "json" }).$type<string[]>().notNull().default([]),
   checkboxUpsellsEnabled: integer("checkbox_upsells_enabled", { mode: "boolean" }).notNull().default(false),
   checkboxUpsells: text("checkbox_upsells", { mode: "json" }).$type<QbCheckboxUpsell[]>().notNull().default([]),
+  linkedCountdownId: text("linked_countdown_id"),
+  linkedProgressiveGiftId: text("linked_progressive_gift_id"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 }, (t) => ({

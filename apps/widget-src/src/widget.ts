@@ -150,12 +150,46 @@ const SHORTCODES: ShortcodeSpec[] = [
   { kind: "ct",     selector: "[data-pumper-countdown]:not([data-pumper-rendered])",   attr: "data-pumper-countdown" },
 ];
 
+function renderLinkedAddons(parent: HTMLElement, cfg: WidgetConfig, linkedCountdownId: string | null | undefined, linkedProgressiveGiftId: string | null | undefined): void {
+  // Renders linked countdown + progressive gift in a wrapper above the widget.
+  // Wrapper is created/cleared on each render to keep things idempotent.
+  const slotKey = "data-pumper-addons";
+  parent.querySelectorAll(`[${slotKey}]`).forEach((n) => n.remove());
+  const slot = document.createElement("div");
+  slot.setAttribute(slotKey, "1");
+  slot.style.display = "flex";
+  slot.style.flexDirection = "column";
+  slot.style.gap = "10px";
+  slot.style.marginBottom = "12px";
+
+  if (linkedCountdownId) {
+    const ct = (cfg.countdowns ?? []).find((c) => c.id === linkedCountdownId);
+    if (ct) {
+      const ctMount = document.createElement("div");
+      slot.appendChild(ctMount);
+      renderCountdown(ctMount, ct);
+    }
+  }
+  if (linkedProgressiveGiftId) {
+    const pg = (cfg.progressiveGifts ?? []).find((p) => p.id === linkedProgressiveGiftId);
+    if (pg) {
+      const pgMount = document.createElement("div");
+      slot.appendChild(pgMount);
+      renderProgressive(pgMount, pg);
+    }
+  }
+  if (slot.childElementCount > 0) {
+    parent.parentElement?.insertBefore(slot, parent);
+  }
+}
+
 function renderShortcode(el: HTMLElement, kind: ShortcodeKind, id: string, cfg: WidgetConfig): void {
   if (kind === "bundle") {
     const b = lookupBundle(cfg, id);
     if (!b) { el.innerHTML = ""; el.style.minHeight = ""; el.dataset.pumperRendered = "1"; return; }
     applyCssVars(el, cfg, b.styleOverrides);
     renderBundle(el, b, cfg);
+    renderLinkedAddons(el, cfg, b.linkedCountdownId, b.linkedProgressiveGiftId);
     el.dataset.pumperRendered = "1";
     return;
   }
@@ -164,6 +198,7 @@ function renderShortcode(el: HTMLElement, kind: ShortcodeKind, id: string, cfg: 
     if (!q) { el.innerHTML = ""; el.style.minHeight = ""; el.dataset.pumperRendered = "1"; return; }
     applyCssVars(el, cfg, q.styleOverrides);
     renderQb(el, q, cfg);
+    renderLinkedAddons(el, cfg, q.linkedCountdownId, q.linkedProgressiveGiftId);
     el.dataset.pumperRendered = "1";
     return;
   }
@@ -172,6 +207,7 @@ function renderShortcode(el: HTMLElement, kind: ShortcodeKind, id: string, cfg: 
     if (!m) { el.innerHTML = ""; el.style.minHeight = ""; el.dataset.pumperRendered = "1"; return; }
     applyCssVars(el, cfg, m.styleOverrides);
     renderMixMatch(el, m, cfg);
+    renderLinkedAddons(el, cfg, m.linkedCountdownId, m.linkedProgressiveGiftId);
     el.dataset.pumperRendered = "1";
     return;
   }

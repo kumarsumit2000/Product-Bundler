@@ -8,6 +8,8 @@ import { getDb } from "~/db.server";
 import { getUsage } from "~/lib/billing/usage";
 import { canCreateNew } from "~/lib/billing/gating";
 import * as bundleRepo from "~/lib/bundles/repo";
+import * as countdownRepo from "~/lib/countdowns/repo";
+import * as pgRepo from "~/lib/progressive-gifts/repo";
 import { validateBundle } from "~/lib/bundles/validate";
 import { parseSubscriptionForm } from "~/lib/parse-subscription";
 import { syncShopConfig } from "~/lib/metafield-sync";
@@ -24,9 +26,18 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
   const { session } = await authenticate.admin(request, ctx);
   const db = getDb(ctx.cloudflare.env.DB);
-  const usage = await getUsage(db, session.shop);
+  const [usage, countdowns, pgs] = await Promise.all([
+    getUsage(db, session.shop),
+    countdownRepo.listByShop(db, session.shop),
+    pgRepo.listByShop(db, session.shop),
+  ]);
   const gate = canCreateNew(usage);
-  return json({ gate, plan: usage.plan });
+  return json({
+    gate,
+    plan: usage.plan,
+    countdownOptions: countdowns.map((c) => ({ id: c.id, name: c.name })),
+    progressiveGiftOptions: pgs.map((p) => ({ id: p.id, name: p.name })),
+  });
 }
 
 export async function action({ request, context }: ActionFunctionArgs) {
@@ -109,6 +120,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
     return json({ errors: { _form: gate.reason }, values: input }, { status: 403 });
   }
 
+  const linkedCountdownId = ((form.get("linkedCountdownId") as string) || "").trim() || null;
+  const linkedProgressiveGiftId = ((form.get("linkedProgressiveGiftId") as string) || "").trim() || null;
   const created = await bundleRepo.create(db, session.shop, {
     ...input,
     status: input.status as "draft" | "active" | "paused",
@@ -117,6 +130,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
       | "flat"
       | "fixed_total",
     mode: input.mode,
+    linkedCountdownId,
+    linkedProgressiveGiftId,
   });
 
   try {
@@ -137,7 +152,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
 }
 
 export default function BundleNew() {
-  const { gate, plan } = useLoaderData<typeof loader>();
+  const { gate, plan, countdownOptions, progressiveGiftOptions } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const errors =
     actionData && "errors" in actionData ? actionData.errors : undefined;
@@ -232,6 +247,8 @@ export default function BundleNew() {
             submitLabel="Save bundle"
             errors={errors}
             onValuesChange={setValues}
+            countdownOptions={countdownOptions}
+            progressiveGiftOptions={progressiveGiftOptions}
           />
         </Layout.Section>
         <Layout.Section variant="oneThird">

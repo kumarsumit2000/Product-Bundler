@@ -127,6 +127,13 @@
       "when": 1778357400000,
       "tag": "0017_sticky_atc_and_countdowns",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1778358600000,
+      "tag": "0018_widget_addons",
+      "breakpoints": true
     }
   ]
 }

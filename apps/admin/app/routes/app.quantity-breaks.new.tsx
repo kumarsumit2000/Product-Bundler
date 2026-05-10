@@ -8,6 +8,8 @@ import { getDb } from "~/db.server";
 import { getUsage } from "~/lib/billing/usage";
 import { canCreateNew } from "~/lib/billing/gating";
 import * as qbRepo from "~/lib/quantity-breaks/repo";
+import * as countdownRepo from "~/lib/countdowns/repo";
+import * as pgRepo from "~/lib/progressive-gifts/repo";
 import { validateQb } from "~/lib/quantity-breaks/validate";
 import { parseSubscriptionForm } from "~/lib/parse-subscription";
 import { syncShopConfig } from "~/lib/metafield-sync";
@@ -24,9 +26,18 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
   const { session } = await authenticate.admin(request, ctx);
   const db = getDb(ctx.cloudflare.env.DB);
-  const usage = await getUsage(db, session.shop);
+  const [usage, countdowns, pgs] = await Promise.all([
+    getUsage(db, session.shop),
+    countdownRepo.listByShop(db, session.shop),
+    pgRepo.listByShop(db, session.shop),
+  ]);
   const gate = canCreateNew(usage);
-  return json({ gate, plan: usage.plan });
+  return json({
+    gate,
+    plan: usage.plan,
+    countdownOptions: countdowns.map((c) => ({ id: c.id, name: c.name })),
+    progressiveGiftOptions: pgs.map((p) => ({ id: p.id, name: p.name })),
+  });
 }
 
 export async function action({ request, context }: ActionFunctionArgs) {
@@ -94,6 +105,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const visibilityCollectionIds = (() => { try { return JSON.parse((form.get("visibilityCollectionIds") as string) || "[]") as string[]; } catch { return []; } })();
   const checkboxUpsellsEnabled = form.get("checkboxUpsellsEnabled") === "on";
   const checkboxUpsells = (() => { try { return JSON.parse((form.get("checkboxUpsells") as string) || "[]") as never[]; } catch { return [] as never[]; } })();
+  const linkedCountdownId = ((form.get("linkedCountdownId") as string) || "").trim() || null;
+  const linkedProgressiveGiftId = ((form.get("linkedProgressiveGiftId") as string) || "").trim() || null;
   const normalizedVisibility = ["all", "all_except", "specific", "collections"].includes(visibility)
     ? (visibility as "all" | "all_except" | "specific" | "collections")
     : "specific";
@@ -133,6 +146,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
     visibilityCollectionIds,
     checkboxUpsellsEnabled,
     checkboxUpsells,
+    linkedCountdownId,
+    linkedProgressiveGiftId,
   });
 
   try {
@@ -153,7 +168,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
 }
 
 export default function QbNew() {
-  const { gate, plan } = useLoaderData<typeof loader>();
+  const { gate, plan, countdownOptions, progressiveGiftOptions } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const errors =
     actionData && "errors" in actionData ? actionData.errors : undefined;
@@ -250,6 +265,8 @@ export default function QbNew() {
             submitLabel="Save quantity break"
             errors={errors}
             onValuesChange={setValues}
+            countdownOptions={countdownOptions}
+            progressiveGiftOptions={progressiveGiftOptions}
           />
           <div style={{ height: 16 }} />
           <EmbedCodeCard plan={plan} />
