@@ -221,6 +221,12 @@ export default function QbNew() {
           bogoMode: (t.bogoMode ?? "") as "" | "add_same" | "add_different" | "nth_free",
           bogoBonusQty: t.bogoBonusQty ?? 1,
         })),
+        ...(preset.freeGiftEnabled
+          ? {
+              freeGiftEnabled: true,
+              freeGiftMinQty: String(preset.freeGiftMinQty ?? 1),
+            }
+          : {}),
         ...(theme ? { primaryColor: theme } : {}),
       }
     : undefined;

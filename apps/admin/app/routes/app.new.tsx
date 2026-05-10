@@ -11,7 +11,19 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   return json({});
 }
 
-type CardKey = "qb_same" | "bxgy" | "qb_diff" | "bundle" | "newsletter" | "progressive";
+type CardKey =
+  | "qb_same"
+  | "bxgy"
+  | "qb_diff"
+  | "bundle"
+  | "newsletter"
+  | "progressive"
+  | "bogo_simple"
+  | "qb_volume_4"
+  | "qb_free_gift"
+  | "mix_match"
+  | "free_shipping_bar"
+  | "countdown_sale";
 type CardSpec = {
   key: CardKey;
   title: string;
@@ -262,13 +274,123 @@ function PreviewProgressive() {
   );
 }
 
+function PreviewBogoSimple() {
+  return (
+    <BlockStack gap="200">
+      <Row selected popular="Most Popular" title="Buy 1, get 1 free" save="SAVE 50%" price="$729.95" strike="$1,459.90" />
+      <Text as="p" tone="subdued" alignment="center" variant="bodySm">
+        Single-tier BOGO — simplest urgency offer.
+      </Text>
+    </BlockStack>
+  );
+}
+
+function PreviewQbVolume4() {
+  return (
+    <BlockStack gap="200">
+      <Row title="Single" price="$729.95" />
+      <Row title="2 pack" save="SAVE 10%" price="$1,313.91" strike="$1,459.90" />
+      <Row selected popular="Most Popular" title="4 pack" save="SAVE 20%" price="$2,335.84" strike="$2,919.80" />
+      <Row title="8 pack" save="SAVE 30%" price="$4,087.72" strike="$5,839.60" />
+    </BlockStack>
+  );
+}
+
+function PreviewQbFreeGift() {
+  return (
+    <BlockStack gap="200">
+      <Row title="Standard" price="$729.95" />
+      <Row title="2 pack" save="SAVE 10%" price="$1,313.91" />
+      <div style={{ ...r.card(true), flexDirection: "column", alignItems: "stretch", gap: 6 }}>
+        <Row selected popular="Most Popular" title="3 pack — Save 20%" save="SAVE 20%" price="$1,751.88" strike="$2,189.85" />
+        <div style={r.freeGiftBanner}>🎁 + FREE gift unlocked!</div>
+      </div>
+    </BlockStack>
+  );
+}
+
+function PreviewMixMatch() {
+  return (
+    <BlockStack gap="200">
+      <div style={{ ...r.card(true), flexDirection: "column", alignItems: "stretch", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontWeight: 600, fontSize: 13 }}>Pick any 3 — save 25%</span>
+          <span style={{ fontSize: 11, color: "var(--pumper-theme, #d9263a)", fontWeight: 600 }}>3 / 3</span>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
+          {["#86efac", "#fbcfe8", "#bfdbfe"].map((bg, i) => (
+            <div key={i} style={{ background: "#fff", border: `2px solid ${i === 0 ? "var(--pumper-theme, #d9263a)" : "#fbe4e7"}`, borderRadius: 6, padding: 6, textAlign: "center", fontSize: 9 }}>
+              <span style={{ ...r.thumb, width: "100%", height: 32, background: bg, display: "block", borderRadius: 3 }} />
+              <div style={{ marginTop: 4, fontWeight: 600 }}>Item {i + 1}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </BlockStack>
+  );
+}
+
+function PreviewFreeShippingBar() {
+  return (
+    <BlockStack gap="200">
+      <div style={{
+        background: "#fff7f8",
+        border: "2px solid #fbe4e7",
+        borderRadius: 10,
+        padding: 12,
+        textAlign: "center",
+      }}>
+        <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6 }}>🚚 Free shipping over $50</div>
+        <div style={{ fontSize: 11, color: "#666", marginBottom: 8 }}>Spend $25 more to unlock</div>
+        <div style={{ height: 6, background: "#fce4e7", borderRadius: 999 }}>
+          <div style={{ width: "50%", height: "100%", background: "var(--pumper-theme, #d9263a)", borderRadius: 999 }} />
+        </div>
+      </div>
+    </BlockStack>
+  );
+}
+
+function PreviewCountdownSale() {
+  return (
+    <BlockStack gap="200">
+      <div style={{
+        background: "#1a1a1a",
+        color: "#fff",
+        borderRadius: 8,
+        padding: "12px 14px",
+        textAlign: "center",
+      }}>
+        <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Sale ends in</div>
+        <div style={{ display: "inline-flex", alignItems: "baseline", gap: 8, fontVariantNumeric: "tabular-nums" }}>
+          <span><b style={{ color: "var(--pumper-theme, #d9263a)", fontSize: 18, fontWeight: 700 }}>06</b><i style={{ fontStyle: "normal", fontSize: 10, marginLeft: 1 }}>d</i></span>
+          <span style={{ color: "var(--pumper-theme, #d9263a)" }}>:</span>
+          <span><b style={{ color: "var(--pumper-theme, #d9263a)", fontSize: 18, fontWeight: 700 }}>22</b><i style={{ fontStyle: "normal", fontSize: 10, marginLeft: 1 }}>h</i></span>
+          <span style={{ color: "var(--pumper-theme, #d9263a)" }}>:</span>
+          <span><b style={{ color: "var(--pumper-theme, #d9263a)", fontSize: 18, fontWeight: 700 }}>14</b><i style={{ fontStyle: "normal", fontSize: 10, marginLeft: 1 }}>m</i></span>
+          <span style={{ color: "var(--pumper-theme, #d9263a)" }}>:</span>
+          <span><b style={{ color: "var(--pumper-theme, #d9263a)", fontSize: 18, fontWeight: 700 }}>03</b><i style={{ fontStyle: "normal", fontSize: 10, marginLeft: 1 }}>s</i></span>
+        </div>
+      </div>
+      <Text as="p" tone="subdued" alignment="center" variant="bodySm">
+        Drop in any page — pairs well with bundles + QBs.
+      </Text>
+    </BlockStack>
+  );
+}
+
 const CARDS: CardSpec[] = [
   { key: "qb_same", title: "Quantity breaks for the same product", href: "/app/quantity-breaks/new", preview: PreviewQbSame },
   { key: "bxgy", title: "Buy X, get Y (BXGY) deal", href: "/app/quantity-breaks/new", preview: PreviewBxgy },
   { key: "qb_diff", title: "Quantity breaks for different products", href: "/app/quantity-breaks/new", preview: PreviewQbDifferent },
+  { key: "bogo_simple", title: "Buy 1, get 1 free", href: "/app/quantity-breaks/new", preview: PreviewBogoSimple },
+  { key: "qb_volume_4", title: "Volume discount (4 tiers)", href: "/app/quantity-breaks/new", preview: PreviewQbVolume4 },
+  { key: "qb_free_gift", title: "Free gift with purchase", href: "/app/quantity-breaks/new", preview: PreviewQbFreeGift },
   { key: "bundle", title: "Complete the bundle", href: "/app/bundles/new", preview: PreviewBundle },
-  { key: "newsletter", title: "Newsletter signup", href: "/app/newsletter", preview: PreviewNewsletter },
+  { key: "mix_match", title: "Mix & match — pick any 3", href: "/app/bundles/new", preview: PreviewMixMatch },
   { key: "progressive", title: "Progressive gifts", href: "/app/progressive-gifts/new", preview: PreviewProgressive },
+  { key: "free_shipping_bar", title: "Free shipping bar", href: "/app/progressive-gifts/new", preview: PreviewFreeShippingBar },
+  { key: "countdown_sale", title: "Sale countdown", href: "/app/countdowns/new", preview: PreviewCountdownSale },
+  { key: "newsletter", title: "Newsletter signup", href: "/app/newsletter", preview: PreviewNewsletter },
 ];
 
 const THEMES = [

@@ -319,6 +319,8 @@ export default function BundleNew() {
                   ctaLabel: preset.ctaLabel,
                   discountType: preset.discountType,
                   discountValue: preset.discountValue,
+                  ...(preset.mode ? { mode: preset.mode } : {}),
+                  ...(preset.targetQty ? { targetQty: preset.targetQty } : {}),
                   ...(theme ? { primaryColor: theme } : {}),
                 }
               : undefined}

@@ -1,6 +1,6 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/cloudflare";
 import { json, redirect } from "@remix-run/cloudflare";
-import { useActionData } from "@remix-run/react";
+import { useActionData, useLoaderData } from "@remix-run/react";
 import { useState } from "react";
 import { Page, Layout } from "@shopify/polaris";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
@@ -8,11 +8,15 @@ import { getDb } from "~/db.server";
 import * as repo from "~/lib/countdowns/repo";
 import { CountdownForm, type CountdownFormValues } from "~/components/CountdownForm";
 import { CountdownPreview } from "~/components/CountdownPreview";
+import { countdownTemplate } from "~/lib/template-presets";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
   await authenticate.admin(request, ctx);
-  return json({});
+  const url = new URL(request.url);
+  const template = url.searchParams.get("template");
+  const theme = url.searchParams.get("theme");
+  return json({ preset: countdownTemplate(template), theme });
 }
 
 export async function action({ request, context }: ActionFunctionArgs) {
@@ -47,14 +51,27 @@ export async function action({ request, context }: ActionFunctionArgs) {
 }
 
 export default function CountdownNew() {
+  const { preset, theme } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const errors = actionData && "errors" in actionData ? actionData.errors : undefined;
   const [values, setValues] = useState<CountdownFormValues | null>(null);
+
+  const initialValues: Partial<CountdownFormValues> | undefined = preset
+    ? {
+        name: preset.name,
+        headline: preset.headline,
+        expiredHeadline: preset.expiredHeadline,
+        layout: preset.layout,
+        endAtIso: new Date(Date.now() + preset.daysFromNow * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
+        ...(theme ? { accentColor: theme } : {}),
+      }
+    : undefined;
+
   return (
     <Page title="Create countdown timer" backAction={{ content: "Countdown timers", url: "/app/countdowns" }}>
       <Layout>
         <Layout.Section>
-          <CountdownForm submitLabel="Save timer" errors={errors} onValuesChange={setValues} />
+          <CountdownForm submitLabel="Save timer" initialValues={initialValues} errors={errors} onValuesChange={setValues} />
         </Layout.Section>
         <Layout.Section variant="oneThird">
           {values && <CountdownPreview values={values} />}
