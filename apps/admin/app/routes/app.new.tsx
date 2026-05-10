@@ -13,12 +13,10 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 
 type CardKey =
   | "qb_same"
-  | "bxgy"
   | "qb_diff"
   | "bundle"
   | "newsletter"
   | "progressive"
-  | "bogo_simple"
   | "qb_volume_4"
   | "qb_free_gift"
   | "mix_match"
@@ -380,9 +378,7 @@ function PreviewCountdownSale() {
 
 const CARDS: CardSpec[] = [
   { key: "qb_same", title: "Quantity breaks for the same product", href: "/app/quantity-breaks/new", preview: PreviewQbSame },
-  { key: "bxgy", title: "Buy X, get Y (BXGY) deal", href: "/app/quantity-breaks/new", preview: PreviewBxgy },
   { key: "qb_diff", title: "Quantity breaks for different products", href: "/app/quantity-breaks/new", preview: PreviewQbDifferent },
-  { key: "bogo_simple", title: "Buy 1, get 1 free", href: "/app/quantity-breaks/new", preview: PreviewBogoSimple },
   { key: "qb_volume_4", title: "Volume discount (4 tiers)", href: "/app/quantity-breaks/new", preview: PreviewQbVolume4 },
   { key: "qb_free_gift", title: "Free gift with purchase", href: "/app/quantity-breaks/new", preview: PreviewQbFreeGift },
   { key: "bundle", title: "Complete the bundle", href: "/app/bundles/new", preview: PreviewBundle },
