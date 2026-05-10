@@ -16,6 +16,9 @@ const VALID: Parameters<typeof validateQb>[0] = {
   styleOverrides: null,
   textOverrides: null,
       subscription: null,
+  visibility: "all",
+  visibilityProductIds: [],
+  visibilityCollectionIds: [],
 };
 
 describe("validateQb", () => {
@@ -152,6 +155,9 @@ describe("validateQb textOverrides + styleOverrides + headline/cta", () => {
     headline: null,
     ctaLabel: null,
     subscription: null,
+    visibility: "all" as const,
+    visibilityProductIds: [],
+    visibilityCollectionIds: [],
   };
 
   it("accepts null overrides", () => {
