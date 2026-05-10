@@ -56,6 +56,18 @@ export type Subscription = {
   interval: "weekly" | "biweekly" | "monthly" | "quarterly";
 };
 
+export type StickyAtcConfig = {
+  enabled: boolean;
+  showImage: boolean;
+  showQty: boolean;
+  showPrice: boolean;
+  ctaLabel: string;
+  backgroundColor: string;
+  textColor: string;
+  buttonBg: string;
+  buttonText: string;
+};
+
 export type StyleOverrides = Partial<{
   // Layout
   layoutVariant: LayoutVariant;
@@ -149,6 +161,7 @@ export const bundles = sqliteTable("bundles", {
   targetQty: integer("target_qty"),
   linkedCountdownId: text("linked_countdown_id"),
   linkedProgressiveGiftId: text("linked_progressive_gift_id"),
+  stickyAtc: text("sticky_atc", { mode: "json" }).$type<StickyAtcConfig | null>(),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 }, (t) => ({
@@ -192,6 +205,7 @@ export const quantityBreaks = sqliteTable("quantity_breaks", {
   checkboxUpsells: text("checkbox_upsells", { mode: "json" }).$type<QbCheckboxUpsell[]>().notNull().default([]),
   linkedCountdownId: text("linked_countdown_id"),
   linkedProgressiveGiftId: text("linked_progressive_gift_id"),
+  stickyAtc: text("sticky_atc", { mode: "json" }).$type<StickyAtcConfig | null>(),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 }, (t) => ({

@@ -12,6 +12,7 @@ import * as countdownRepo from "~/lib/countdowns/repo";
 import * as pgRepo from "~/lib/progressive-gifts/repo";
 import { validateBundle } from "~/lib/bundles/validate";
 import { parseSubscriptionForm } from "~/lib/parse-subscription";
+import { parseStickyAtc } from "~/lib/parse-sticky-atc";
 import { syncShopConfig } from "~/lib/metafield-sync";
 import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { BundleForm, type BundleFormValues } from "~/components/BundleForm";
@@ -122,6 +123,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
   const linkedCountdownId = ((form.get("linkedCountdownId") as string) || "").trim() || null;
   const linkedProgressiveGiftId = ((form.get("linkedProgressiveGiftId") as string) || "").trim() || null;
+  const stickyAtc = parseStickyAtc(form.get("stickyAtc") as string | null);
   const created = await bundleRepo.create(db, session.shop, {
     ...input,
     status: input.status as "draft" | "active" | "paused",
@@ -132,6 +134,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     mode: input.mode,
     linkedCountdownId,
     linkedProgressiveGiftId,
+    stickyAtc,
   });
 
   try {

@@ -5,7 +5,9 @@ import { Page, Layout } from "@shopify/polaris";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
 import { getDb } from "~/db.server";
 import * as repo from "~/lib/countdowns/repo";
+import { useState } from "react";
 import { CountdownForm, type CountdownFormValues } from "~/components/CountdownForm";
+import { CountdownPreview } from "~/components/CountdownPreview";
 import { EmbedCodeCard } from "~/components/EmbedCodeCard";
 import { useSavedToast } from "~/lib/toast";
 
@@ -66,13 +68,17 @@ export default function CountdownEdit() {
     borderRadius: typeof so.borderRadius === "number" ? String(so.borderRadius) : "",
   };
   const snippet = `<div data-pumper-countdown="${ct.id}"></div>`;
+  const [values, setValues] = useState<CountdownFormValues | null>(null);
   return (
     <Page title={ct.name} backAction={{ content: "Countdown timers", url: "/app/countdowns" }}>
       <Layout>
         <Layout.Section>
-          <CountdownForm submitLabel="Save changes" initialValues={initial} errors={errors} />
+          <CountdownForm submitLabel="Save changes" initialValues={initial} errors={errors} onValuesChange={setValues} />
           <div style={{ height: 16 }} />
           <EmbedCodeCard plan="free" snippet={snippet} />
+        </Layout.Section>
+        <Layout.Section variant="oneThird">
+          {values && <CountdownPreview values={values} />}
         </Layout.Section>
       </Layout>
     </Page>

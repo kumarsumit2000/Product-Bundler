@@ -10,6 +10,8 @@ import * as countdownRepo from "~/lib/countdowns/repo";
 import * as pgRepo from "~/lib/progressive-gifts/repo";
 import { validateBundle } from "~/lib/bundles/validate";
 import { parseSubscriptionForm } from "~/lib/parse-subscription";
+import { parseStickyAtc } from "~/lib/parse-sticky-atc";
+import { STICKY_ATC_DEFAULTS } from "~/components/StickyAtcCard";
 import { syncShopConfig } from "~/lib/metafield-sync";
 import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { BundleForm, type BundleFormValues } from "~/components/BundleForm";
@@ -206,6 +208,7 @@ export async function action({
 
   const linkedCountdownId = ((form.get("linkedCountdownId") as string) || "").trim() || null;
   const linkedProgressiveGiftId = ((form.get("linkedProgressiveGiftId") as string) || "").trim() || null;
+  const stickyAtc = parseStickyAtc(form.get("stickyAtc") as string | null);
 
   await bundleRepo.update(db, session.shop, params.id!, {
     ...input,
@@ -217,6 +220,7 @@ export async function action({
     mode: input.mode,
     linkedCountdownId,
     linkedProgressiveGiftId,
+    stickyAtc,
   });
 
   try {
@@ -314,6 +318,9 @@ export default function BundleEdit() {
     })(),
     linkedCountdownId: bundle.linkedCountdownId ?? null,
     linkedProgressiveGiftId: bundle.linkedProgressiveGiftId ?? null,
+    stickyAtc: bundle.stickyAtc
+      ? { ...STICKY_ATC_DEFAULTS, ...bundle.stickyAtc, enabled: true }
+      : { ...STICKY_ATC_DEFAULTS },
   };
 
   const previewConfig = values

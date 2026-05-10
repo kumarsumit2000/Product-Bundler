@@ -37,6 +37,7 @@ const NEW_QB_INPUT = {
   checkboxUpsells: [],
   linkedCountdownId: null,
   linkedProgressiveGiftId: null,
+  stickyAtc: null,
 };
 
 describe("quantity-breaks repo", () => {

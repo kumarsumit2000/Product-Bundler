@@ -37,6 +37,7 @@ const NEW_BUNDLE_INPUT = {
   targetQty: null,
   linkedCountdownId: null,
   linkedProgressiveGiftId: null,
+  stickyAtc: null,
 };
 
 describe("bundles repo", () => {

@@ -330,9 +330,21 @@ export async function initWidget(): Promise<void> {
     maybeStartNewsletterPopup(cfg.newsletter);
   }
 
-  // Auto sticky-ATC (PDP only — startStickyAtc bails if no cart-add form found)
-  if (cfg.stickyAtc && !window._pumperPreview) {
-    startStickyAtc(cfg.stickyAtc);
+  // Auto sticky-ATC (PDP only). Picks the sticky config from any active bundle
+  // or QB that targets the current product and has stickyAtc.enabled. The first
+  // matching widget wins; QBs take precedence over bundles when both match.
+  if (!window._pumperPreview) {
+    const pdpProductId = window._pumperConfig?.productId;
+    if (pdpProductId) {
+      const matchedQb = matchQb(cfg, pdpProductId);
+      const matchedBundle = matchBundle(cfg, pdpProductId) ?? matchMixMatch(cfg, pdpProductId);
+      const stickyConfig = matchedQb?.stickyAtc?.enabled
+        ? matchedQb.stickyAtc
+        : matchedBundle?.stickyAtc?.enabled
+          ? matchedBundle.stickyAtc
+          : null;
+      if (stickyConfig) startStickyAtc(stickyConfig);
+    }
   }
 
   startObserver(cfg);

@@ -10,6 +10,8 @@ import * as countdownRepo from "~/lib/countdowns/repo";
 import * as pgRepo from "~/lib/progressive-gifts/repo";
 import { validateQb } from "~/lib/quantity-breaks/validate";
 import { parseSubscriptionForm } from "~/lib/parse-subscription";
+import { parseStickyAtc } from "~/lib/parse-sticky-atc";
+import { STICKY_ATC_DEFAULTS } from "~/components/StickyAtcCard";
 import { syncShopConfig } from "~/lib/metafield-sync";
 import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { QbForm, type QbFormValues } from "~/components/QbForm";
@@ -146,6 +148,7 @@ export async function action({
   const checkboxUpsells = (() => { try { return JSON.parse((form.get("checkboxUpsells") as string) || "[]") as never[]; } catch { return [] as never[]; } })();
   const linkedCountdownId = ((form.get("linkedCountdownId") as string) || "").trim() || null;
   const linkedProgressiveGiftId = ((form.get("linkedProgressiveGiftId") as string) || "").trim() || null;
+  const stickyAtc = parseStickyAtc(form.get("stickyAtc") as string | null);
   const normalizedVisibility = ["all", "all_except", "specific", "collections"].includes(visibility)
     ? (visibility as "all" | "all_except" | "specific" | "collections")
     : "specific";
@@ -179,6 +182,7 @@ export async function action({
     checkboxUpsells,
     linkedCountdownId,
     linkedProgressiveGiftId,
+    stickyAtc,
   });
 
   try {
@@ -266,6 +270,9 @@ export default function QbEdit() {
     })),
     linkedCountdownId: qb.linkedCountdownId ?? null,
     linkedProgressiveGiftId: qb.linkedProgressiveGiftId ?? null,
+    stickyAtc: qb.stickyAtc
+      ? { ...STICKY_ATC_DEFAULTS, ...qb.stickyAtc, enabled: true }
+      : { ...STICKY_ATC_DEFAULTS },
     checkboxUpsellsEnabled: qb.checkboxUpsellsEnabled ?? false,
     checkboxUpsells: (qb.checkboxUpsells ?? []).map((u) => ({
       id: u.id,

@@ -1,11 +1,13 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/cloudflare";
 import { json, redirect } from "@remix-run/cloudflare";
 import { useActionData } from "@remix-run/react";
+import { useState } from "react";
 import { Page, Layout } from "@shopify/polaris";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
 import { getDb } from "~/db.server";
 import * as repo from "~/lib/countdowns/repo";
-import { CountdownForm } from "~/components/CountdownForm";
+import { CountdownForm, type CountdownFormValues } from "~/components/CountdownForm";
+import { CountdownPreview } from "~/components/CountdownPreview";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
@@ -47,11 +49,15 @@ export async function action({ request, context }: ActionFunctionArgs) {
 export default function CountdownNew() {
   const actionData = useActionData<typeof action>();
   const errors = actionData && "errors" in actionData ? actionData.errors : undefined;
+  const [values, setValues] = useState<CountdownFormValues | null>(null);
   return (
     <Page title="Create countdown timer" backAction={{ content: "Countdown timers", url: "/app/countdowns" }}>
       <Layout>
         <Layout.Section>
-          <CountdownForm submitLabel="Save timer" errors={errors} />
+          <CountdownForm submitLabel="Save timer" errors={errors} onValuesChange={setValues} />
+        </Layout.Section>
+        <Layout.Section variant="oneThird">
+          {values && <CountdownPreview values={values} />}
         </Layout.Section>
       </Layout>
     </Page>

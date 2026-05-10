@@ -17,8 +17,10 @@ import { DiscountValueInput } from "./DiscountValueInput";
 import { CollectionPicker, type PickedCollection } from "./CollectionPicker";
 import { StylePanel, type StylePanelValues } from "./StylePanel";
 import { WidgetAddonsCard } from "./WidgetAddonsCard";
+import { StickyAtcCard, STICKY_ATC_DEFAULTS } from "./StickyAtcCard";
 import { VariantPicker, type PickedVariant } from "./VariantPicker";
 import { EMPTY_STYLE_FORM, buildStyleOverrides } from "~/lib/preview-overrides";
+import type { StickyAtcConfig } from "../../drizzle/schema";
 
 type DiscountType = "percentage" | "flat" | "fixed_total";
 type Status = "draft" | "active" | "paused";
@@ -43,6 +45,7 @@ export type BundleFormValues = StylePanelValues & {
   freeGiftVariant: PickedVariant | null;
   linkedCountdownId: string | null;
   linkedProgressiveGiftId: string | null;
+  stickyAtc: StickyAtcConfig;
 };
 
 type AddonOption = { id: string; name: string };
@@ -75,6 +78,7 @@ const DEFAULTS: BundleFormValues = {
   freeGiftVariant: null,
   linkedCountdownId: null,
   linkedProgressiveGiftId: null,
+  stickyAtc: STICKY_ATC_DEFAULTS,
 };
 
 export function BundleForm({ initialValues, errors, submitLabel, onValuesChange, countdownOptions = [], progressiveGiftOptions = [] }: Props) {
@@ -119,6 +123,7 @@ export function BundleForm({ initialValues, errors, submitLabel, onValuesChange,
       <input type="hidden" name="subscription" value="null" />
       <input type="hidden" name="linkedCountdownId" value={values.linkedCountdownId ?? ""} />
       <input type="hidden" name="linkedProgressiveGiftId" value={values.linkedProgressiveGiftId ?? ""} />
+      <input type="hidden" name="stickyAtc" value={JSON.stringify(values.stickyAtc)} />
 
       <BlockStack gap="500">
         {hasErrors && (
@@ -308,6 +313,11 @@ export function BundleForm({ initialValues, errors, submitLabel, onValuesChange,
           linkedCountdownId={values.linkedCountdownId}
           linkedProgressiveGiftId={values.linkedProgressiveGiftId}
           onChange={(patch) => setValues((s) => ({ ...s, ...patch }))}
+        />
+
+        <StickyAtcCard
+          value={values.stickyAtc}
+          onChange={(stickyAtc) => update("stickyAtc", stickyAtc)}
         />
 
         <StylePanel values={values} onChange={(next) => setValues((s) => ({ ...s, ...next }))} />

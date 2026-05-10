@@ -17,7 +17,9 @@ import { type PickedCollection } from "./CollectionPicker";
 import { MultiCollectionPicker } from "./MultiCollectionPicker";
 import { QbUpsellsBuilder, EMPTY_UPSELL, type UpsellFormValue } from "./QbUpsellsBuilder";
 import { WidgetAddonsCard } from "./WidgetAddonsCard";
+import { StickyAtcCard, STICKY_ATC_DEFAULTS } from "./StickyAtcCard";
 import { QbTierBuilder, type TierFormValue } from "./QbTierBuilder";
+import type { StickyAtcConfig } from "../../drizzle/schema";
 import { type StylePanelValues } from "./StylePanel";
 import { SimpleQbStylePanel } from "./SimpleQbStylePanel";
 import { EMPTY_STYLE_FORM, buildStyleOverrides } from "~/lib/preview-overrides";
@@ -41,6 +43,7 @@ export type QbFormValues = StylePanelValues & {
   checkboxUpsells: UpsellFormValue[];
   linkedCountdownId: string | null;
   linkedProgressiveGiftId: string | null;
+  stickyAtc: StickyAtcConfig;
 };
 
 type AddonOption = { id: string; name: string };
@@ -76,6 +79,7 @@ const DEFAULTS: QbFormValues = {
   checkboxUpsells: [],
   linkedCountdownId: null,
   linkedProgressiveGiftId: null,
+  stickyAtc: STICKY_ATC_DEFAULTS,
 };
 
 export function QbForm({ initialValues, errors, submitLabel, onValuesChange, countdownOptions = [], progressiveGiftOptions = [] }: Props) {
@@ -112,6 +116,7 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange, cou
       />
       <input type="hidden" name="linkedCountdownId" value={values.linkedCountdownId ?? ""} />
       <input type="hidden" name="linkedProgressiveGiftId" value={values.linkedProgressiveGiftId ?? ""} />
+      <input type="hidden" name="stickyAtc" value={JSON.stringify(values.stickyAtc)} />
       <input type="hidden" name="checkboxUpsellsEnabled" value={values.checkboxUpsellsEnabled ? "on" : ""} />
       <input
         type="hidden"
@@ -254,6 +259,11 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange, cou
           onEnabledChange={(checkboxUpsellsEnabled) => update("checkboxUpsellsEnabled", checkboxUpsellsEnabled)}
           upsells={values.checkboxUpsells}
           onUpsellsChange={(checkboxUpsells) => update("checkboxUpsells", checkboxUpsells)}
+        />
+
+        <StickyAtcCard
+          value={values.stickyAtc}
+          onChange={(stickyAtc) => update("stickyAtc", stickyAtc)}
         />
 
         <Card>

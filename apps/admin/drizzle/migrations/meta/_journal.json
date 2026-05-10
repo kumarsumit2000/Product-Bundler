@@ -134,6 +134,13 @@
       "when": 1778358600000,
       "tag": "0018_widget_addons",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1778359800000,
+      "tag": "0019_per_widget_sticky_atc",
+      "breakpoints": true
     }
   ]
 }

@@ -4,7 +4,6 @@ import * as bundleRepo from "./bundles/repo";
 import * as qbRepo from "./quantity-breaks/repo";
 import * as newsletterRepo from "./newsletter/repo";
 import * as pgRepo from "./progressive-gifts/repo";
-import * as stickyRepo from "./sticky-atc/repo";
 import * as countdownRepo from "./countdowns/repo";
 import {
   fetchProductDetails,
@@ -22,7 +21,7 @@ export async function buildStorefrontConfig(
   admin: AdminGraphqlClient,
   shopId: string,
 ) {
-  const [bundlesAll, qbsAll, settingsRow, shopRow, newsletter, pgsAll, stickyAtc, countdownsAll] = await Promise.all([
+  const [bundlesAll, qbsAll, settingsRow, shopRow, newsletter, pgsAll, countdownsAll] = await Promise.all([
     bundleRepo.listByShop(db, shopId),
     qbRepo.listByShop(db, shopId),
     db
@@ -39,7 +38,6 @@ export async function buildStorefrontConfig(
       .then((r: { currency: string; primaryLocale: string }[]) => r[0] ?? null),
     newsletterRepo.getOrDefault(db, shopId),
     pgRepo.listByShop(db, shopId),
-    stickyRepo.getOrDefault(db, shopId),
     countdownRepo.listByShop(db, shopId),
   ]);
   // (typed-deconstruct overflow — handled below)
@@ -185,6 +183,7 @@ export async function buildStorefrontConfig(
       visibilityCollectionIds: q.visibilityCollectionIds ?? [],
       linkedCountdownId: q.linkedCountdownId ?? null,
       linkedProgressiveGiftId: q.linkedProgressiveGiftId ?? null,
+      stickyAtc: q.stickyAtc ?? null,
       checkboxUpsellsEnabled: q.checkboxUpsellsEnabled ?? false,
       checkboxUpsells: q.checkboxUpsells ?? [],
     };
@@ -229,6 +228,7 @@ export async function buildStorefrontConfig(
       subscription: b.subscription ?? null,
       linkedCountdownId: b.linkedCountdownId ?? null,
       linkedProgressiveGiftId: b.linkedProgressiveGiftId ?? null,
+      stickyAtc: b.stickyAtc ?? null,
     })),
     quantityBreaks: qbs.map(buildQb),
     progressiveGifts: progressiveGifts.map((pg) => ({
@@ -265,18 +265,6 @@ export async function buildStorefrontConfig(
         };
       }),
     })),
-    stickyAtc: stickyAtc.enabled
-      ? {
-          showImage: stickyAtc.showImage,
-          showQty: stickyAtc.showQty,
-          showPrice: stickyAtc.showPrice,
-          ctaLabel: stickyAtc.ctaLabel,
-          backgroundColor: stickyAtc.backgroundColor,
-          textColor: stickyAtc.textColor,
-          buttonBg: stickyAtc.buttonBg,
-          buttonText: stickyAtc.buttonText,
-        }
-      : null,
     countdowns: countdownsAll
       .filter((c) => c.status === "active")
       .map((c) => ({

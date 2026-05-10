@@ -84,6 +84,7 @@ describe("syncShopConfig", () => {
       freeGiftVariantId: null,
       linkedCountdownId: null,
       linkedProgressiveGiftId: null,
+      stickyAtc: null,
     });
     const { admin, calls } = makeAdmin();
     await syncShopConfig(setup.db, admin, SHOP);
@@ -122,6 +123,7 @@ describe("syncShopConfig", () => {
       checkboxUpsells: [],
       linkedCountdownId: null,
       linkedProgressiveGiftId: null,
+      stickyAtc: null,
     });
     const { admin, calls } = makeAdmin();
     await syncShopConfig(setup.db, admin, SHOP);
@@ -161,6 +163,7 @@ describe("syncShopConfig", () => {
       targetQty: 3,
       linkedCountdownId: null,
       linkedProgressiveGiftId: null,
+      stickyAtc: null,
     });
     const { admin, calls } = makeAdmin();
     await syncShopConfig(setup.db, admin, SHOP);
@@ -206,6 +209,7 @@ describe("syncShopConfig", () => {
       checkboxUpsells: [],
       linkedCountdownId: null,
       linkedProgressiveGiftId: null,
+      stickyAtc: null,
     });
     const { admin, calls } = makeAdmin();
     await syncShopConfig(setup.db, admin, SHOP);
@@ -242,6 +246,7 @@ describe("syncShopConfig", () => {
       freeGiftVariantId: null,
       linkedCountdownId: null,
       linkedProgressiveGiftId: null,
+      stickyAtc: null,
     });
     const { admin } = makeAdmin();
     await expect(syncShopConfig(setup.db, admin, SHOP)).rejects.toThrow(

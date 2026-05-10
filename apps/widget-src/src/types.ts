@@ -107,6 +107,7 @@ export type BundleConfig = {
   subscription?: SubscriptionConfig | null;
   linkedCountdownId?: string | null;
   linkedProgressiveGiftId?: string | null;
+  stickyAtc?: StickyAtcConfig | null;
 };
 
 export type QbVariant = {
@@ -176,6 +177,7 @@ export type QbConfig = {
   checkboxUpsells?: QbCheckboxUpsell[];
   linkedCountdownId?: string | null;
   linkedProgressiveGiftId?: string | null;
+  stickyAtc?: StickyAtcConfig | null;
 };
 
 export type Settings = {
@@ -284,6 +286,7 @@ export type ProgressiveGiftConfig = {
 };
 
 export type StickyAtcConfig = {
+  enabled: boolean;
   showImage: boolean;
   showQty: boolean;
   showPrice: boolean;
@@ -311,7 +314,6 @@ export type WidgetConfig = {
   quantityBreaks: QbConfig[];
   progressiveGifts?: ProgressiveGiftConfig[];
   newsletter?: NewsletterConfig | null;
-  stickyAtc?: StickyAtcConfig | null;
   countdowns?: CountdownConfig[];
 };
 
