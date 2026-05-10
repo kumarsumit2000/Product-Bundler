@@ -63,6 +63,9 @@ export async function buildStorefrontConfig(
   for (const b of bundles) {
     if (b.freeGiftProductId) allProductIds.add(b.freeGiftProductId);
   }
+  for (const q of qbs) {
+    if (q.freeGiftProductId) allProductIds.add(q.freeGiftProductId);
+  }
 
   const productMap = await fetchProductDetails(admin, [...allProductIds]);
 
@@ -77,6 +80,9 @@ export async function buildStorefrontConfig(
   }
   for (const b of bundles) {
     if (b.freeGiftVariantId) tierVariantIds.add(b.freeGiftVariantId);
+  }
+  for (const q of qbs) {
+    if (q.freeGiftVariantId) tierVariantIds.add(q.freeGiftVariantId);
   }
 
   const variantAvailability: Record<string, boolean> = {};
@@ -190,6 +196,20 @@ export async function buildStorefrontConfig(
       addonsOrder: q.addonsOrder ?? null,
       checkboxUpsellsEnabled: q.checkboxUpsellsEnabled ?? false,
       checkboxUpsells: q.checkboxUpsells ?? [],
+      freeGiftVariantId: q.freeGiftVariantId ?? null,
+      freeGiftVariantTitle: q.freeGiftVariantId ? (variantTitles[q.freeGiftVariantId] ?? null) : null,
+      freeGiftAvailable: q.freeGiftVariantId ? (variantAvailability[q.freeGiftVariantId] ?? false) : null,
+      freeGiftProductId: q.freeGiftProductId ?? null,
+      freeGiftProductTitle: q.freeGiftProductId ? (productMap[q.freeGiftProductId]?.title ?? null) : null,
+      freeGiftProductImage: q.freeGiftProductId ? (productMap[q.freeGiftProductId]?.image ?? null) : null,
+      freeGiftProductVariants: q.freeGiftProductId
+        ? (productMap[q.freeGiftProductId]?.variants ?? []).map((v) => ({
+            variantId: v.variantId,
+            title: v.title,
+            available: v.available,
+            priceCents: v.priceCents,
+          }))
+        : null,
     };
   };
 

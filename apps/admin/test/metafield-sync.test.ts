@@ -130,6 +130,8 @@ describe("syncShopConfig", () => {
       linkedProgressiveGiftId: null,
       stickyAtc: null,
       addonsOrder: null,
+      freeGiftVariantId: null,
+      freeGiftProductId: null,
     });
     const { admin, calls } = makeAdmin();
     await syncShopConfig(setup.db, admin, SHOP);
@@ -221,6 +223,8 @@ describe("syncShopConfig", () => {
       linkedProgressiveGiftId: null,
       stickyAtc: null,
       addonsOrder: null,
+      freeGiftVariantId: null,
+      freeGiftProductId: null,
     });
     const { admin, calls } = makeAdmin();
     await syncShopConfig(setup.db, admin, SHOP);

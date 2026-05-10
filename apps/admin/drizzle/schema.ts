@@ -212,6 +212,8 @@ export const quantityBreaks = sqliteTable("quantity_breaks", {
   linkedProgressiveGiftId: text("linked_progressive_gift_id"),
   stickyAtc: text("sticky_atc", { mode: "json" }).$type<StickyAtcConfig | null>(),
   addonsOrder: text("addons_order", { mode: "json" }).$type<string[] | null>(),
+  freeGiftVariantId: text("free_gift_variant_id"),
+  freeGiftProductId: text("free_gift_product_id"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 }, (t) => ({

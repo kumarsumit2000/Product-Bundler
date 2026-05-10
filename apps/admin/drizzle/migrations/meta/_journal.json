@@ -169,6 +169,13 @@
       "when": 1778364600000,
       "tag": "0023_bundle_free_gift_product",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1778365800000,
+      "tag": "0024_qb_free_gift",
+      "breakpoints": true
     }
   ]
 }

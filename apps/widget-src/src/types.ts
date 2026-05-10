@@ -191,6 +191,18 @@ export type QbConfig = {
   linkedProgressiveGiftId?: string | null;
   stickyAtc?: StickyAtcConfig | null;
   addonsOrder?: string[] | null;
+  freeGiftVariantId?: string | null;
+  freeGiftVariantTitle?: string | null;
+  freeGiftAvailable?: boolean | null;
+  freeGiftProductId?: string | null;
+  freeGiftProductTitle?: string | null;
+  freeGiftProductImage?: string | null;
+  freeGiftProductVariants?: Array<{
+    variantId: string;
+    title: string;
+    available: boolean;
+    priceCents: number;
+  }> | null;
 };
 
 export type Settings = {

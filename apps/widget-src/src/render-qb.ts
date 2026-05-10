@@ -173,11 +173,52 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
     return `<div class="pumper-upsells">${cards}</div>`;
   };
 
+  const renderQbGiftRow = (): string => {
+    if (qb.freeGiftVariantId && qb.freeGiftAvailable) {
+      return `
+        <div class="pumper-bundle-row pumper-bundle-row--gift">
+          <div class="pumper-thumb pumper-thumb-emoji">🎁</div>
+          <div class="pumper-row-meta">
+            <div class="pumper-row-title">${escapeHtml(qb.freeGiftVariantTitle ?? "Free gift")}</div>
+            <div class="pumper-row-sub"><strong class="pumper-row-free">FREE</strong> with this offer</div>
+          </div>
+        </div>
+      `;
+    }
+    if (qb.freeGiftProductId && (qb.freeGiftProductVariants?.length ?? 0) > 0) {
+      const variants = qb.freeGiftProductVariants ?? [];
+      const hasAvailable = variants.some((v) => v.available);
+      if (!hasAvailable) return "";
+      const img = qb.freeGiftProductImage
+        ? `<img src="${escapeHtml(qb.freeGiftProductImage)}" alt="" class="pumper-thumb" loading="lazy" />`
+        : `<div class="pumper-thumb pumper-thumb-emoji">🎁</div>`;
+      const select = variants.length > 1
+        ? `<select class="pumper-gift-variant" data-pumper-qb-gift-variant>
+             ${variants
+               .map((v) => `<option value="${escapeHtml(v.variantId)}" ${!v.available ? "disabled" : ""}>${escapeHtml(v.title)}${!v.available ? " (out of stock)" : ""}</option>`)
+               .join("")}
+           </select>`
+        : "";
+      return `
+        <div class="pumper-bundle-row pumper-bundle-row--gift">
+          ${img}
+          <div class="pumper-row-meta">
+            <div class="pumper-row-title">${escapeHtml(qb.freeGiftProductTitle ?? "Free gift")}</div>
+            <div class="pumper-row-sub"><strong class="pumper-row-free">FREE</strong> with this offer</div>
+            ${select}
+          </div>
+        </div>
+      `;
+    }
+    return "";
+  };
+
   const renderAll = () => {
     mount.innerHTML = `
       <section class="pumper-card pumper-qb">
         <h3 class="pumper-qb-heading">${escapeHtml(heading)}</h3>
         <div class="pumper-qb-tiers">${renderRows()}</div>
+        ${renderQbGiftRow()}
         ${renderUpsells()}
         ${renderCta()}
       </section>
@@ -215,6 +256,31 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
             bundleId: qb.id,
             giftBundleId: qb.id,
           });
+        }
+
+        // QB-level free gift (set on the QB itself, applies to any tier).
+        const qbGiftTag = `${qb.id}:gift`;
+        if (qb.freeGiftVariantId && qb.freeGiftAvailable) {
+          lines.push({
+            variantId: qb.freeGiftVariantId,
+            qty: 1,
+            bundleId: qb.id,
+            giftBundleId: qbGiftTag,
+          });
+        } else if (qb.freeGiftProductId && (qb.freeGiftProductVariants?.length ?? 0) > 0) {
+          const giftVariants = qb.freeGiftProductVariants ?? [];
+          const giftSelect = mount.querySelector<HTMLSelectElement>("[data-pumper-qb-gift-variant]");
+          const chosenGift = giftSelect?.value
+            || giftVariants.find((v) => v.available)?.variantId
+            || giftVariants[0]?.variantId;
+          if (chosenGift) {
+            lines.push({
+              variantId: chosenGift,
+              qty: 1,
+              bundleId: qb.id,
+              giftBundleId: qbGiftTag,
+            });
+          }
         }
 
         if (tr.bogo

@@ -13,6 +13,7 @@ import {
 } from "@shopify/polaris";
 import { useEffect, useState } from "react";
 import { ProductPicker, type PickedProduct } from "./ProductPicker";
+import { VariantPicker, type PickedVariant } from "./VariantPicker";
 import { type PickedCollection } from "./CollectionPicker";
 import { MultiCollectionPicker } from "./MultiCollectionPicker";
 import { QbUpsellsBuilder, EMPTY_UPSELL, type UpsellFormValue } from "./QbUpsellsBuilder";
@@ -45,6 +46,10 @@ export type QbFormValues = StylePanelValues & {
   linkedProgressiveGiftId: string | null;
   addonsOrder: AddonsOrderItem[];
   stickyAtc: StickyAtcConfig;
+  freeGiftEnabled: boolean;
+  freeGiftMode: "variant" | "product";
+  freeGiftVariant: PickedVariant | null;
+  freeGiftProduct: PickedProduct | null;
 };
 
 type AddonOption = { id: string; name: string };
@@ -82,6 +87,10 @@ const DEFAULTS: QbFormValues = {
   linkedProgressiveGiftId: null,
   addonsOrder: [...DEFAULT_ADDONS_ORDER],
   stickyAtc: STICKY_ATC_DEFAULTS,
+  freeGiftEnabled: false,
+  freeGiftMode: "product",
+  freeGiftVariant: null,
+  freeGiftProduct: null,
 };
 
 export function QbForm({ initialValues, errors, submitLabel, onValuesChange, countdownOptions = [], progressiveGiftOptions = [] }: Props) {
@@ -120,6 +129,16 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange, cou
       <input type="hidden" name="linkedProgressiveGiftId" value={values.linkedProgressiveGiftId ?? ""} />
       <input type="hidden" name="addonsOrder" value={JSON.stringify(values.addonsOrder)} />
       <input type="hidden" name="stickyAtc" value={JSON.stringify(values.stickyAtc)} />
+      <input
+        type="hidden"
+        name="freeGiftVariantId"
+        value={values.freeGiftEnabled && values.freeGiftMode === "variant" ? values.freeGiftVariant?.variantId ?? "" : ""}
+      />
+      <input
+        type="hidden"
+        name="freeGiftProductId"
+        value={values.freeGiftEnabled && values.freeGiftMode === "product" ? values.freeGiftProduct?.productId ?? "" : ""}
+      />
       <input type="hidden" name="checkboxUpsellsEnabled" value={values.checkboxUpsellsEnabled ? "on" : ""} />
       <input
         type="hidden"
@@ -258,6 +277,66 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange, cou
           widgetLabel="Quantity break widget"
           onChange={(patch) => setValues((s) => ({ ...s, ...patch }))}
         />
+
+        <Card>
+          <BlockStack gap="400">
+            <Text as="h2" variant="headingMd">Free gift</Text>
+            <Checkbox
+              label="Include a free gift with this quantity break"
+              checked={values.freeGiftEnabled}
+              onChange={(enabled) => {
+                update("freeGiftEnabled", enabled);
+                if (!enabled) {
+                  update("freeGiftVariant", null);
+                  update("freeGiftProduct", null);
+                }
+              }}
+            />
+            {values.freeGiftEnabled && (
+              <BlockStack gap="300">
+                <Text as="p" tone="subdued">
+                  The gift is added free when the customer picks any tier and is discounted
+                  100% at checkout.
+                </Text>
+                <ChoiceList
+                  title="Pick from"
+                  titleHidden
+                  choices={[
+                    {
+                      label: "Any product (customer picks the variant)",
+                      value: "product",
+                      helpText: "Show every product in your catalog. The shopper chooses which variant to claim.",
+                    },
+                    {
+                      label: "A specific variant",
+                      value: "variant",
+                      helpText: "Pin one exact variant — useful for one-size or sample SKUs.",
+                    },
+                  ]}
+                  selected={[values.freeGiftMode]}
+                  onChange={(s) => {
+                    const mode = s[0] as QbFormValues["freeGiftMode"];
+                    update("freeGiftMode", mode);
+                    if (mode === "product") update("freeGiftVariant", null);
+                    else update("freeGiftProduct", null);
+                  }}
+                />
+                {values.freeGiftMode === "product" ? (
+                  <ProductPicker
+                    products={values.freeGiftProduct ? [values.freeGiftProduct] : []}
+                    onChange={(p) => update("freeGiftProduct", p[0] ?? null)}
+                    showQty={false}
+                  />
+                ) : (
+                  <VariantPicker
+                    variant={values.freeGiftVariant}
+                    onChange={(v) => update("freeGiftVariant", v)}
+                  />
+                )}
+              </BlockStack>
+            )}
+          </BlockStack>
+        </Card>
 
         <QbUpsellsBuilder
           enabled={values.checkboxUpsellsEnabled}

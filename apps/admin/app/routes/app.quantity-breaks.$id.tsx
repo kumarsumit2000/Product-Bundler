@@ -24,7 +24,7 @@ import { EmbedCodeCard } from "~/components/EmbedCodeCard";
 import { buildPreviewQbConfig, defaultPreviewSettings } from "~/lib/preview-config";
 import { buildStyleOverrides, buildTextOverrides, styleOverridesToFormFields } from "~/lib/preview-overrides";
 import type { TierFormValue } from "~/components/QbTierBuilder";
-import { fetchVariantDetails } from "~/lib/shopify-product-fetch";
+import { fetchVariantDetails, fetchProductDetails } from "~/lib/shopify-product-fetch";
 import { getUsage } from "~/lib/billing/usage";
 import { useSavedToast } from "~/lib/toast";
 import type { StyleOverrides, TextOverrides } from "../../drizzle/schema";
@@ -58,16 +58,25 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
     }
   }
 
-  // Collect all variant ids referenced by tier gift/BOGO config
+  // Collect all variant ids referenced by tier gift/BOGO config + the QB-level
+  // free gift (when set in variant mode).
   const tierVariantIds = new Set<string>();
   for (const tr of qb.tiers) {
     if (tr.freeGiftVariantId) tierVariantIds.add(tr.freeGiftVariantId);
     if (tr.bogo?.targetVariantId) tierVariantIds.add(tr.bogo.targetVariantId);
   }
+  if (qb.freeGiftVariantId) tierVariantIds.add(qb.freeGiftVariantId);
   const tierVariantDetails = await fetchVariantDetails(admin, [...tierVariantIds]).catch((err) => {
     console.error("[app.quantity-breaks.$id] fetchVariantDetails failed (non-fatal):", err);
     return {} as Awaited<ReturnType<typeof fetchVariantDetails>>;
   });
+
+  const giftProductDetails = qb.freeGiftProductId
+    ? await fetchProductDetails(admin, [qb.freeGiftProductId]).catch((err) => {
+        console.error("[app.quantity-breaks.$id] gift product fetch failed (non-fatal):", err);
+        return {} as Awaited<ReturnType<typeof fetchProductDetails>>;
+      })
+    : {};
 
   const [usage, countdowns, pgs] = await Promise.all([
     getUsage(db, session.shop),
@@ -75,7 +84,7 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
     pgRepo.listByShop(db, session.shop),
   ]);
   return json({
-    qb, productTitle, productImage, tierVariantDetails, plan: usage.plan,
+    qb, productTitle, productImage, tierVariantDetails, giftProductDetails, plan: usage.plan,
     countdownOptions: countdowns.map((c) => ({ id: c.id, name: c.name })),
     progressiveGiftOptions: pgs.map((p) => ({ id: p.id, name: p.name })),
     allCountdowns: countdowns
@@ -166,6 +175,8 @@ export async function action({
   const linkedProgressiveGiftId = ((form.get("linkedProgressiveGiftId") as string) || "").trim() || null;
   const stickyAtc = parseStickyAtc(form.get("stickyAtc") as string | null);
   const addonsOrder = parseAddonsOrder(form.get("addonsOrder") as string | null);
+  const freeGiftVariantId = ((form.get("freeGiftVariantId") as string) || "").trim() || null;
+  const freeGiftProductId = ((form.get("freeGiftProductId") as string) || "").trim() || null;
   const normalizedVisibility = ["all", "all_except", "specific", "collections"].includes(visibility)
     ? (visibility as "all" | "all_except" | "specific" | "collections")
     : "specific";
@@ -201,6 +212,8 @@ export async function action({
     linkedProgressiveGiftId,
     stickyAtc,
     addonsOrder,
+    freeGiftVariantId,
+    freeGiftProductId,
   });
 
   try {
@@ -221,7 +234,7 @@ export async function action({
 }
 
 export default function QbEdit() {
-  const { qb, productTitle, productImage, tierVariantDetails, plan, countdownOptions, progressiveGiftOptions, allCountdowns, allProgressiveGifts } = useLoaderData<typeof loader>();
+  const { qb, productTitle, productImage, tierVariantDetails, giftProductDetails, plan, countdownOptions, progressiveGiftOptions, allCountdowns, allProgressiveGifts } = useLoaderData<typeof loader>();
   useSavedToast();
   const actionData = useActionData<typeof action>();
   const snippet = `<div data-pumper-qb="${qb.id}"></div>`;
@@ -292,6 +305,33 @@ export default function QbEdit() {
     stickyAtc: qb.stickyAtc
       ? { ...STICKY_ATC_DEFAULTS, ...qb.stickyAtc, enabled: true }
       : { ...STICKY_ATC_DEFAULTS },
+    freeGiftEnabled: !!(qb.freeGiftVariantId || qb.freeGiftProductId),
+    freeGiftMode: (qb.freeGiftProductId
+      ? "product"
+      : qb.freeGiftVariantId
+        ? "variant"
+        : "product") as "variant" | "product",
+    freeGiftVariant: (() => {
+      const id = qb.freeGiftVariantId;
+      const detail = id ? tierVariantDetails[id] : undefined;
+      if (!id || !detail) return null;
+      return {
+        variantId: id,
+        productId: "",
+        productTitle: detail.productTitle,
+        variantTitle: detail.variantTitle,
+        image: detail.image ?? undefined,
+      };
+    })(),
+    freeGiftProduct: qb.freeGiftProductId
+      ? {
+          productId: qb.freeGiftProductId,
+          variantId: null,
+          qty: 1,
+          title: giftProductDetails[qb.freeGiftProductId]?.title ?? "",
+          image: giftProductDetails[qb.freeGiftProductId]?.image ?? undefined,
+        }
+      : null,
     checkboxUpsellsEnabled: qb.checkboxUpsellsEnabled ?? false,
     checkboxUpsells: (qb.checkboxUpsells ?? []).map((u) => ({
       id: u.id,

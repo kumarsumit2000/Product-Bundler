@@ -133,6 +133,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const linkedProgressiveGiftId = ((form.get("linkedProgressiveGiftId") as string) || "").trim() || null;
   const stickyAtc = parseStickyAtc(form.get("stickyAtc") as string | null);
   const addonsOrder = parseAddonsOrder(form.get("addonsOrder") as string | null);
+  const freeGiftVariantId = ((form.get("freeGiftVariantId") as string) || "").trim() || null;
+  const freeGiftProductId = ((form.get("freeGiftProductId") as string) || "").trim() || null;
   const normalizedVisibility = ["all", "all_except", "specific", "collections"].includes(visibility)
     ? (visibility as "all" | "all_except" | "specific" | "collections")
     : "specific";
@@ -176,6 +178,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
     linkedProgressiveGiftId,
     stickyAtc,
     addonsOrder,
+    freeGiftVariantId,
+    freeGiftProductId,
   });
 
   try {
