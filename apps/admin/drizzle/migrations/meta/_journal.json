@@ -155,6 +155,13 @@
       "when": 1778362200000,
       "tag": "0021_shipping_discount_id",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "6",
+      "when": 1778363400000,
+      "tag": "0022_bundle_visibility",
+      "breakpoints": true
     }
   ]
 }

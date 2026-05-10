@@ -97,6 +97,8 @@ export type BundleConfig = {
   discountValue: number;
   combinable: boolean;
   triggerProductIds: string[];
+  visibility?: "same_as_members" | "all" | "all_except" | "specific" | "collections";
+  visibilityCollectionIds?: string[];
   headline: string | null;
   ctaLabel: string | null;
   styleOverrides: StyleOverrides | null;

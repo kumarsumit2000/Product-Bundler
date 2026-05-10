@@ -151,6 +151,8 @@ export const bundles = sqliteTable("bundles", {
   discountValue: real("discount_value").notNull(),
   combinable: integer("combinable", { mode: "boolean" }).notNull().default(false),
   triggerProductIds: text("trigger_product_ids", { mode: "json" }).$type<string[]>().notNull(),
+  visibility: text("visibility").notNull().default("same_as_members"),
+  visibilityCollectionIds: text("visibility_collection_ids", { mode: "json" }).$type<string[]>().notNull().default([]),
   styleOverrides: text("style_overrides", { mode: "json" }).$type<StyleOverrides | null>(),
   textOverrides: text("text_overrides", { mode: "json" }).$type<TextOverrides | null>(),
   headline: text("headline"),

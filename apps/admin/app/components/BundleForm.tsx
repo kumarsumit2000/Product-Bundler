@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import { ProductPicker, type PickedProduct } from "./ProductPicker";
 import { DiscountValueInput } from "./DiscountValueInput";
 import { CollectionPicker, type PickedCollection } from "./CollectionPicker";
+import { MultiCollectionPicker } from "./MultiCollectionPicker";
 import { type StylePanelValues } from "./StylePanel";
 import { SimpleBundleStylePanel } from "./SimpleBundleStylePanel";
 import { WidgetAddonsCard, DEFAULT_ADDONS_ORDER, type AddonsOrderItem } from "./WidgetAddonsCard";
@@ -25,7 +26,7 @@ import type { StickyAtcConfig } from "../../drizzle/schema";
 
 type DiscountType = "percentage" | "flat" | "fixed_total";
 type Status = "draft" | "active" | "paused";
-type TriggerMode = "same_as_members" | "specific";
+export type BundleVisibility = "same_as_members" | "all" | "all_except" | "specific" | "collections";
 type Mode = "classic" | "mix_match";
 
 export type BundleFormValues = StylePanelValues & {
@@ -37,8 +38,9 @@ export type BundleFormValues = StylePanelValues & {
   discountType: DiscountType;
   discountValue: string;
   combinable: boolean;
-  triggerMode: TriggerMode;
+  visibility: BundleVisibility;
   triggerProducts: PickedProduct[];
+  visibilityCollections: PickedCollection[];
   status: Status;
   headline: string;
   ctaLabel: string;
@@ -71,8 +73,9 @@ const DEFAULTS: BundleFormValues = {
   discountType: "percentage",
   discountValue: "10",
   combinable: false,
-  triggerMode: "same_as_members",
+  visibility: "same_as_members",
   triggerProducts: [],
+  visibilityCollections: [],
   status: "draft",
   headline: "",
   ctaLabel: "",
@@ -103,6 +106,12 @@ export function BundleForm({ initialValues, errors, submitLabel, onValuesChange,
     <Form method="post">
       <input type="hidden" name="products" value={JSON.stringify(values.products)} />
       <input type="hidden" name="triggerProducts" value={JSON.stringify(values.triggerProducts)} />
+      <input type="hidden" name="visibility" value={values.visibility} />
+      <input
+        type="hidden"
+        name="visibilityCollectionIds"
+        value={JSON.stringify(values.visibilityCollections.map((c) => c.collectionId))}
+      />
       <input type="hidden" name="mode" value={values.mode} />
       <input type="hidden" name="collectionId" value={values.collection?.collectionId ?? ""} />
       <input type="hidden" name="targetQty" value={values.targetQty} />
@@ -242,37 +251,43 @@ export function BundleForm({ initialValues, errors, submitLabel, onValuesChange,
           </BlockStack>
         </Card>
 
-        {values.mode === "classic" && (
-          <Card>
-            <BlockStack gap="400">
-              <Text as="h2" variant="headingMd">
-                3. Trigger products
-              </Text>
-              <Text as="p" variant="bodyMd">
-                Choose which product pages show this bundle.
-              </Text>
-              <ChoiceList
-                title="Trigger mode"
-                titleHidden
-                choices={[
-                  { label: "Same as bundle members", value: "same_as_members" },
-                  { label: "Specific products", value: "specific" },
-                ]}
-                selected={[values.triggerMode]}
-                onChange={(s) => update("triggerMode", s[0] as TriggerMode)}
-                name="triggerMode"
+        <Card>
+          <BlockStack gap="400">
+            <Text as="h2" variant="headingMd">
+              {values.mode === "classic" ? "3. Visibility" : "Visibility"}
+            </Text>
+            <Text as="p" tone="subdued">Choose which product pages show this bundle.</Text>
+            <ChoiceList
+              title="Show on"
+              titleHidden
+              choices={[
+                ...(values.mode === "classic"
+                  ? [{ label: "Same as bundle members", value: "same_as_members" }]
+                  : []),
+                { label: "All products", value: "all" },
+                { label: "All products except selected", value: "all_except" },
+                { label: "Specific products", value: "specific" },
+                { label: "Products in selected collections", value: "collections" },
+              ]}
+              selected={[values.visibility]}
+              onChange={(s) => update("visibility", s[0] as BundleVisibility)}
+            />
+            {(values.visibility === "all_except" || values.visibility === "specific") && (
+              <ProductPicker
+                products={values.triggerProducts}
+                onChange={(p) => update("triggerProducts", p)}
+                multiple
+                showQty={false}
               />
-              {values.triggerMode === "specific" && (
-                <ProductPicker
-                  products={values.triggerProducts}
-                  onChange={(p) => update("triggerProducts", p)}
-                  multiple
-                  showQty={false}
-                />
-              )}
-            </BlockStack>
-          </Card>
-        )}
+            )}
+            {values.visibility === "collections" && (
+              <MultiCollectionPicker
+                collections={values.visibilityCollections}
+                onChange={(c) => update("visibilityCollections", c)}
+              />
+            )}
+          </BlockStack>
+        </Card>
 
         <Card>
           <BlockStack gap="400">

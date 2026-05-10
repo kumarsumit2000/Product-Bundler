@@ -219,6 +219,8 @@ export async function buildStorefrontConfig(
       discountValue: b.discountValue,
       combinable: b.combinable,
       triggerProductIds: b.triggerProductIds,
+      visibility: b.visibility ?? "same_as_members",
+      visibilityCollectionIds: b.visibilityCollectionIds ?? [],
       headline: b.headline,
       ctaLabel: b.ctaLabel,
       styleOverrides: b.styleOverrides,

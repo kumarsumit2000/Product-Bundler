@@ -87,6 +87,8 @@ describe("syncShopConfig", () => {
       linkedProgressiveGiftId: null,
       stickyAtc: null,
       addonsOrder: null,
+      visibility: "same_as_members",
+      visibilityCollectionIds: [],
     });
     const { admin, calls } = makeAdmin();
     await syncShopConfig(setup.db, admin, SHOP);
@@ -168,6 +170,8 @@ describe("syncShopConfig", () => {
       linkedProgressiveGiftId: null,
       stickyAtc: null,
       addonsOrder: null,
+      visibility: "same_as_members",
+      visibilityCollectionIds: [],
     });
     const { admin, calls } = makeAdmin();
     await syncShopConfig(setup.db, admin, SHOP);
@@ -253,6 +257,8 @@ describe("syncShopConfig", () => {
       linkedProgressiveGiftId: null,
       stickyAtc: null,
       addonsOrder: null,
+      visibility: "same_as_members",
+      visibilityCollectionIds: [],
     });
     const { admin } = makeAdmin();
     await expect(syncShopConfig(setup.db, admin, SHOP)).rejects.toThrow(

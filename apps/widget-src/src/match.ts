@@ -1,13 +1,27 @@
 import type { BundleConfig, QbConfig, WidgetConfig } from "./types";
 
+function bundleVisibleOn(b: BundleConfig, productId: string, pageCollectionIds: string[]): boolean {
+  const visibility = b.visibility ?? (b.triggerProductIds.length > 0 ? "specific" : "same_as_members");
+  if (visibility === "all") return true;
+  if (visibility === "all_except") return !b.triggerProductIds.includes(productId);
+  if (visibility === "specific") return b.triggerProductIds.includes(productId);
+  if (visibility === "collections") {
+    const list = b.visibilityCollectionIds ?? [];
+    return pageCollectionIds.some((cid) => list.includes(cid));
+  }
+  // same_as_members
+  if (b.mode === "classic") {
+    return b.products.some((p) => p.productId === productId);
+  }
+  // mix_match: any product in the linked collection
+  return (b.collectionProducts ?? []).some((p) => p.productId === productId);
+}
+
 export function matchBundle(config: WidgetConfig, productId: string): BundleConfig | null {
+  const pageCollections = (typeof window !== "undefined" ? window._pumperConfig?.productCollectionIds : undefined) ?? [];
   for (const b of config.bundles) {
     if (b.mode !== "classic") continue;
-    if (b.triggerProductIds.length > 0) {
-      if (b.triggerProductIds.includes(productId)) return b;
-    } else {
-      if (b.products.some((p) => p.productId === productId)) return b;
-    }
+    if (bundleVisibleOn(b, productId, pageCollections)) return b;
   }
   return null;
 }
@@ -41,14 +55,10 @@ function qbVisibleOn(q: QbConfig, productId: string, pageCollectionIds: string[]
 }
 
 export function matchMixMatch(config: WidgetConfig, productId: string): BundleConfig | null {
+  const pageCollections = (typeof window !== "undefined" ? window._pumperConfig?.productCollectionIds : undefined) ?? [];
   for (const b of config.bundles) {
     if (b.mode !== "mix_match") continue;
-    if (b.triggerProductIds.length > 0) {
-      if (b.triggerProductIds.includes(productId)) return b;
-    } else {
-      const inCollection = (b.collectionProducts ?? []).some((p) => p.productId === productId);
-      if (inCollection) return b;
-    }
+    if (bundleVisibleOn(b, productId, pageCollections)) return b;
   }
   return null;
 }

@@ -39,6 +39,8 @@ const NEW_BUNDLE_INPUT = {
   linkedProgressiveGiftId: null,
   stickyAtc: null,
   addonsOrder: null,
+  visibility: "same_as_members",
+  visibilityCollectionIds: [],
 };
 
 describe("bundles repo", () => {

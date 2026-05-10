@@ -159,11 +159,18 @@ export async function action({
   const triggerProducts: PickedProduct[] = JSON.parse(
     (form.get("triggerProducts") as string) || "[]"
   );
-  const triggerMode = form.get("triggerMode") as string;
+  const visibilityRaw = (form.get("visibility") as string) || "same_as_members";
+  const visibility = (["same_as_members", "all", "all_except", "specific", "collections"].includes(visibilityRaw)
+    ? visibilityRaw
+    : "same_as_members") as "same_as_members" | "all" | "all_except" | "specific" | "collections";
   const triggerProductIds =
-    triggerMode === "specific"
+    visibility === "specific" || visibility === "all_except"
       ? triggerProducts.map((p) => p.productId)
       : [];
+  const visibilityCollectionIds = (() => {
+    try { return JSON.parse((form.get("visibilityCollectionIds") as string) || "[]") as string[]; }
+    catch { return []; }
+  })();
 
   const mode = ((form.get("mode") as string) || "classic") as "classic" | "mix_match";
   const collectionIdRaw = (form.get("collectionId") as string) || "";
@@ -206,7 +213,9 @@ export async function action({
     discountType: (form.get("discountType") as string) || "percentage",
     discountValue: parseFloat((form.get("discountValue") as string) || "0"),
     combinable: form.get("combinable") === "on",
-    triggerProductIds: mode === "mix_match" ? [] : triggerProductIds,
+    triggerProductIds,
+    visibility,
+    visibilityCollectionIds,
     headline: (form.get("headline") as string) || null,
     ctaLabel: (form.get("ctaLabel") as string) || null,
     styleOverrides: parsedStyleOverrides,
@@ -305,14 +314,18 @@ export default function BundleEdit() {
     discountType: bundle.discountType as BundleFormValues["discountType"],
     discountValue: String(bundle.discountValue),
     combinable: bundle.combinable,
-    triggerMode:
-      bundle.triggerProductIds.length > 0 ? "specific" : "same_as_members",
+    visibility: ((bundle.visibility as BundleFormValues["visibility"] | undefined) ??
+      (bundle.triggerProductIds.length > 0 ? "specific" : "same_as_members")) as BundleFormValues["visibility"],
     triggerProducts: bundle.triggerProductIds.map((id: string) => ({
       productId: id,
       variantId: null,
       qty: 1,
       title: productDetails[id]?.title,
       image: productDetails[id]?.image ?? undefined,
+    })),
+    visibilityCollections: (bundle.visibilityCollectionIds ?? []).map((cid: string) => ({
+      collectionId: cid,
+      title: cid,
     })),
     status: bundle.status as BundleFormValues["status"],
     headline: bundle.headline ?? "",
