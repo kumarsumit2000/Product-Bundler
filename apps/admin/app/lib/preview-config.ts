@@ -61,6 +61,19 @@ type QbShape = {
   textOverrides: Record<string, string> | null;
   headline: string | null;
   ctaLabel: string | null;
+  checkboxUpsellsEnabled?: boolean;
+  checkboxUpsells?: Array<{
+    id: string;
+    productId: string;
+    variantId: string | null;
+    productTitle: string;
+    productImage: string | null;
+    productPriceCents: number | null;
+    discountType: "percentage" | "flat";
+    discountValue: number;
+    title: string;
+    subtitle: string;
+  }>;
 };
 
 type MockProduct = { productId: string; title: string; priceCents: number };

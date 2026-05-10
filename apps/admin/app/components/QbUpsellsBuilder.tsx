@@ -67,32 +67,12 @@ export function QbUpsellsBuilder({ enabled, onEnabledChange, upsells, onUpsellsC
 
                   <BlockStack gap="100">
                     <Text as="span" variant="bodyMd">Product</Text>
-                    {u.product ? (
-                      <Box borderWidth="025" borderColor="border" borderRadius="200" padding="200">
-                        <InlineStack gap="300" blockAlign="center" align="space-between">
-                          <InlineStack gap="300" blockAlign="center">
-                            <Thumbnail source={u.product.image ?? ImageIcon} alt={u.product.title ?? ""} size="small" />
-                            <Text as="span" variant="bodyMd">{u.product.title ?? u.product.productId}</Text>
-                          </InlineStack>
-                          <InlineStack gap="200">
-                            <ProductPicker
-                              products={[u.product]}
-                              onChange={(p) => update(i, { product: p[0] ?? null })}
-                              multiple={false}
-                              showQty={false}
-                            />
-                            <Button variant="plain" tone="critical" onClick={() => update(i, { product: null })}>Remove</Button>
-                          </InlineStack>
-                        </InlineStack>
-                      </Box>
-                    ) : (
-                      <ProductPicker
-                        products={[]}
-                        onChange={(p) => update(i, { product: p[0] ?? null })}
-                        multiple={false}
-                        showQty={false}
-                      />
-                    )}
+                    <ProductPicker
+                      products={u.product ? [u.product] : []}
+                      onChange={(p) => update(i, { product: p[0] ?? null })}
+                      multiple={false}
+                      showQty={false}
+                    />
                   </BlockStack>
 
                   <FormLayout>

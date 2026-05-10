@@ -308,6 +308,19 @@ export default function QbEdit() {
           textOverrides: buildTextOverrides(values.textOverrides),
           headline: values.headline || null,
           ctaLabel: values.ctaLabel || null,
+          checkboxUpsellsEnabled: values.checkboxUpsellsEnabled,
+          checkboxUpsells: values.checkboxUpsells.map((u) => ({
+            id: u.id,
+            productId: u.product?.productId ?? "",
+            variantId: u.product?.variantId ?? null,
+            productTitle: u.product?.title ?? "",
+            productImage: u.product?.image ?? null,
+            productPriceCents: u.product?.priceCents ?? null,
+            discountType: u.discountType,
+            discountValue: parseFloat(u.discountValue) || 0,
+            title: u.title,
+            subtitle: u.subtitle,
+          })),
         },
       })
     : null;

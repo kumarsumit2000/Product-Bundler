@@ -110,11 +110,52 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
     return `<button class="pumper-cta" data-action="add-to-cart" ${tr.available ? "" : "disabled"}>${escapeHtml(label)}</button>`;
   };
 
+  const renderUpsells = () => {
+    if (!qb.checkboxUpsellsEnabled || !qb.checkboxUpsells?.length) return "";
+    const cards = qb.checkboxUpsells
+      .filter((u) => u.productId && u.productTitle)
+      .map((u) => {
+        const baseCents = u.productPriceCents ?? 0;
+        const discountedCents = u.discountType === "percentage"
+          ? Math.round(baseCents * (1 - u.discountValue / 100))
+          : Math.max(0, baseCents - Math.round(u.discountValue * 100));
+        const savedCents = Math.max(0, baseCents - discountedCents);
+        const discountText = u.discountType === "percentage"
+          ? `${u.discountValue}% off`
+          : `${formatMoney(Math.round(u.discountValue * 100), config.settings.currency, config.settings.locale)} off`;
+        const expand = (s: string) => s
+          .replace(/\{\{product\}\}/g, escapeHtml(u.productTitle))
+          .replace(/\{\{saved_amount\}\}/g, escapeHtml(formatMoney(savedCents, config.settings.currency, config.settings.locale)))
+          .replace(/\{\{discount\}\}/g, escapeHtml(discountText));
+        const img = u.productImage
+          ? `<img src="${escapeHtml(u.productImage)}" alt="" class="pumper-upsell-img" />`
+          : `<div class="pumper-upsell-img pumper-upsell-img-empty"></div>`;
+        const priceLine = baseCents > 0
+          ? `<span class="pumper-upsell-price">${formatMoney(discountedCents, config.settings.currency, config.settings.locale)}</span> <span class="pumper-strike">${formatMoney(baseCents, config.settings.currency, config.settings.locale)}</span>`
+          : "";
+        return `
+          <label class="pumper-upsell" data-pumper-upsell="${escapeHtml(u.id)}">
+            <input type="checkbox" class="pumper-upsell-check" />
+            ${img}
+            <div class="pumper-upsell-meta">
+              <div class="pumper-upsell-title">${expand(u.title)}</div>
+              ${u.subtitle ? `<div class="pumper-upsell-sub">${expand(u.subtitle)}</div>` : ""}
+            </div>
+            ${priceLine ? `<div class="pumper-upsell-pricing">${priceLine}</div>` : ""}
+          </label>
+        `;
+      })
+      .join("");
+    if (!cards) return "";
+    return `<div class="pumper-upsells">${cards}</div>`;
+  };
+
   const renderAll = () => {
     mount.innerHTML = `
       <section class="pumper-card pumper-qb">
         <h3 class="pumper-qb-heading">${escapeHtml(heading)}</h3>
         <div class="pumper-qb-tiers">${renderRows()}</div>
+        ${renderUpsells()}
         ${renderCta()}
       </section>
     `;

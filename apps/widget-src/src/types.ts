@@ -140,6 +140,19 @@ export type QbTier = {
   }>;
 };
 
+export type QbCheckboxUpsell = {
+  id: string;
+  productId: string;
+  variantId: string | null;
+  productTitle: string;
+  productImage: string | null;
+  productPriceCents: number | null;
+  discountType: "percentage" | "flat";
+  discountValue: number;
+  title: string;
+  subtitle: string;
+};
+
 export type QbConfig = {
   id: string;
   name: string;
@@ -157,6 +170,8 @@ export type QbConfig = {
   visibility?: "all" | "all_except" | "specific" | "collections";
   visibilityProductIds?: string[];
   visibilityCollectionIds?: string[];
+  checkboxUpsellsEnabled?: boolean;
+  checkboxUpsells?: QbCheckboxUpsell[];
 };
 
 export type Settings = {
