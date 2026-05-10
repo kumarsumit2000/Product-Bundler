@@ -8,6 +8,7 @@ import { getDb } from "~/db.server";
 import * as bxgyRepo from "~/lib/bxgy-offers/repo";
 import * as countdownRepo from "~/lib/countdowns/repo";
 import * as pgRepo from "~/lib/progressive-gifts/repo";
+import { enrichProgressiveGiftsForPreview } from "~/lib/preview-pg-enrich";
 import { syncShopConfig } from "~/lib/metafield-sync";
 import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { parseStickyAtc } from "~/lib/parse-sticky-atc";
@@ -15,17 +16,19 @@ import { parseAddonsOrder } from "~/lib/parse-addons-order";
 import { BxgyForm, type BxgyFormValues } from "~/components/BxgyForm";
 import { PreviewPane } from "~/components/PreviewPane";
 import { buildPreviewBxgyConfig, defaultMockProduct, defaultPreviewSettings } from "~/lib/preview-config";
+import { buildStyleOverrides } from "~/lib/preview-overrides";
 import type { BxgyBarValue } from "~/components/BxgyBarBuilder";
 import type { StyleOverrides } from "../../drizzle/schema";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
-  const { session } = await authenticate.admin(request, ctx);
+  const { session, admin } = await authenticate.admin(request, ctx);
   const db = getDb(ctx.cloudflare.env.DB);
   const [countdowns, pgs] = await Promise.all([
     countdownRepo.listByShop(db, session.shop),
     pgRepo.listByShop(db, session.shop),
   ]);
+  const allProgressiveGifts = await enrichProgressiveGiftsForPreview(admin, pgs);
   const url = new URL(request.url);
   const template = url.searchParams.get("template");
   const theme = url.searchParams.get("theme");
@@ -46,6 +49,18 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     theme,
     countdownOptions: countdowns.map((c) => ({ id: c.id, name: c.name })),
     progressiveGiftOptions: pgs.map((p) => ({ id: p.id, name: p.name })),
+    allCountdowns: countdowns
+      .filter((c) => c.status === "active")
+      .map((c) => ({
+        id: c.id,
+        name: c.name,
+        endAt: new Date(c.endAt).getTime(),
+        headline: c.headline,
+        expiredHeadline: c.expiredHeadline,
+        layout: c.layout as "inline" | "bar",
+        styleOverrides: (c.styleOverrides ?? null) as Record<string, unknown> | null,
+      })),
+    allProgressiveGifts,
   });
 }
 
@@ -137,7 +152,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
 }
 
 export default function BxgyNew() {
-  const { preset, countdownOptions, progressiveGiftOptions } = useLoaderData<typeof loader>();
+  const { preset, countdownOptions, progressiveGiftOptions, allCountdowns, allProgressiveGifts } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const errors = actionData && "errors" in actionData ? actionData.errors : undefined;
   const [values, setValues] = useState<BxgyFormValues | null>(null);
@@ -169,6 +184,51 @@ export default function BxgyNew() {
           combinable: values.combinable,
           headline: values.headline || null,
           ctaLabel: values.ctaLabel || null,
+          styleOverrides: buildStyleOverrides(values),
+          linkedCountdownId: values.linkedCountdownId,
+          linkedProgressiveGiftId: values.linkedProgressiveGiftId,
+          addonsOrder: values.addonsOrder,
+          freeGiftVariantId: values.freeGiftEnabled && values.freeGiftMode === "variant"
+            ? values.freeGiftVariant?.variantId ?? null
+            : null,
+          freeGiftVariantTitle: values.freeGiftEnabled && values.freeGiftMode === "variant"
+            ? [values.freeGiftVariant?.productTitle, values.freeGiftVariant?.variantTitle]
+                .filter(Boolean)
+                .join(" – ") || null
+            : null,
+          freeGiftAvailable: values.freeGiftEnabled && values.freeGiftMode === "variant" && values.freeGiftVariant ? true : null,
+          freeGiftMinBuyQty: values.freeGiftEnabled
+            ? Math.max(1, parseInt(values.freeGiftMinBuyQty || "1", 10) || 1)
+            : null,
+          freeGiftProductId: values.freeGiftEnabled && values.freeGiftMode === "product"
+            ? values.freeGiftProduct?.productId ?? null
+            : null,
+          freeGiftProductTitle: values.freeGiftEnabled && values.freeGiftMode === "product"
+            ? values.freeGiftProduct?.title ?? null
+            : null,
+          freeGiftProductImage: values.freeGiftEnabled && values.freeGiftMode === "product"
+            ? values.freeGiftProduct?.image ?? null
+            : null,
+          freeGiftProductVariants: values.freeGiftEnabled && values.freeGiftMode === "product" && values.freeGiftProduct
+            ? [{ variantId: values.freeGiftProduct.variantId ?? "v0", title: values.freeGiftProduct.title ?? "Default", available: true, priceCents: 0 }]
+            : null,
+          checkboxUpsellsEnabled: values.checkboxUpsellsEnabled,
+          checkboxUpsells: values.checkboxUpsells.map((u) => ({
+            id: u.id,
+            productId: u.product?.productId ?? "",
+            variantId: u.product?.variantId ?? null,
+            productTitle: u.product?.title ?? "",
+            productImage: u.product?.image ?? null,
+            productPriceCents: u.product?.priceCents ?? null,
+            discountType: u.discountType,
+            discountValue: parseFloat(u.discountValue) || 0,
+            title: u.title,
+            subtitle: u.subtitle,
+          })),
+        },
+        addons: {
+          countdowns: allCountdowns,
+          progressiveGifts: allProgressiveGifts,
         },
       })
     : null;

@@ -241,6 +241,36 @@ type BxgyShape = {
   combinable: boolean;
   headline: string | null;
   ctaLabel: string | null;
+  styleOverrides?: Record<string, unknown> | null;
+  linkedCountdownId?: string | null;
+  linkedProgressiveGiftId?: string | null;
+  addonsOrder?: string[] | null;
+  freeGiftVariantId?: string | null;
+  freeGiftVariantTitle?: string | null;
+  freeGiftAvailable?: boolean | null;
+  freeGiftMinBuyQty?: number | null;
+  freeGiftProductId?: string | null;
+  freeGiftProductTitle?: string | null;
+  freeGiftProductImage?: string | null;
+  freeGiftProductVariants?: Array<{
+    variantId: string;
+    title: string;
+    available: boolean;
+    priceCents: number;
+  }> | null;
+  checkboxUpsellsEnabled?: boolean;
+  checkboxUpsells?: Array<{
+    id: string;
+    productId: string;
+    variantId: string | null;
+    productTitle: string;
+    productImage: string | null;
+    productPriceCents: number | null;
+    discountType: "percentage" | "flat";
+    discountValue: number;
+    title: string;
+    subtitle: string;
+  }>;
 };
 
 export function buildPreviewBxgyConfig(args: {
@@ -248,6 +278,7 @@ export function buildPreviewBxgyConfig(args: {
   mockProduct: MockProduct;
   settings: Settings;
   offer: BxgyShape;
+  addons?: AddonsShape;
 }) {
   return {
     shop: args.shop,
@@ -262,5 +293,7 @@ export function buildPreviewBxgyConfig(args: {
       visibilityProductIds: [] as string[],
       visibilityCollectionIds: [] as string[],
     }],
+    countdowns: args.addons?.countdowns ?? [],
+    progressiveGifts: args.addons?.progressiveGifts ?? [],
   };
 }
