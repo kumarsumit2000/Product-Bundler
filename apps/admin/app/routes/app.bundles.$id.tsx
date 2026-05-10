@@ -8,6 +8,7 @@ import { getDb } from "~/db.server";
 import * as bundleRepo from "~/lib/bundles/repo";
 import * as countdownRepo from "~/lib/countdowns/repo";
 import * as pgRepo from "~/lib/progressive-gifts/repo";
+import { enrichProgressiveGiftsForPreview } from "~/lib/preview-pg-enrich";
 import { validateBundle } from "~/lib/bundles/validate";
 import { parseSubscriptionForm } from "~/lib/parse-subscription";
 import { parseStickyAtc } from "~/lib/parse-sticky-atc";
@@ -139,33 +140,7 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
         layout: c.layout as "inline" | "bar",
         styleOverrides: (c.styleOverrides ?? null) as Record<string, unknown> | null,
       })),
-    allProgressiveGifts: pgs
-      .filter((p) => p.status === "active")
-      .map((p) => ({
-        id: p.id,
-        name: p.name,
-        headline: p.headline,
-        subtitle: p.subtitle,
-        layout: p.layout as "stacked" | "grid" | "inline",
-        hideLocked: p.hideLocked,
-        showLockedLabels: p.showLockedLabels,
-        styleOverrides: (p.styleOverrides ?? null) as Record<string, unknown> | null,
-        thresholds: p.thresholds.map((t) => ({
-          minSpendCents: t.minSpendCents,
-          kind: (t.kind ?? "free_gift") as "free_gift" | "free_shipping",
-          label: t.label,
-          title: t.title ?? null,
-          lockedTitle: t.lockedTitle ?? null,
-          labelCrossedOut: t.labelCrossedOut ?? null,
-          lockedLabel: t.lockedLabel ?? null,
-          iconUrl: t.iconUrl ?? null,
-          giftProductId: t.giftProductId ?? null,
-          giftVariantId: t.giftVariantId ?? null,
-          productTitle: null,
-          productImage: null,
-          variants: [] as Array<{ variantId: string; title: string; available: boolean; priceCents: number }>,
-        })),
-      })),
+    allProgressiveGifts: await enrichProgressiveGiftsForPreview(admin, pgs),
   });
 }
 
