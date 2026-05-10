@@ -304,7 +304,14 @@ export type CountdownConfig = {
   headline: string;
   expiredHeadline: string;
   layout: "inline" | "bar";
-  styleOverrides: { backgroundColor?: string; textColor?: string; accentColor?: string; borderRadius?: number } | null;
+  styleOverrides: {
+    backgroundColor?: string;
+    textColor?: string;
+    accentColor?: string;
+    borderColor?: string;
+    borderRadius?: number;
+    textAlign?: "left" | "center" | "right";
+  } | null;
 };
 
 export type WidgetConfig = {

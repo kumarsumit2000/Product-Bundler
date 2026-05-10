@@ -13,7 +13,9 @@ function applyVars(target: HTMLElement, c: CountdownConfig): void {
   set("--ct-bg", s.backgroundColor);
   set("--ct-text", s.textColor);
   set("--ct-accent", s.accentColor);
+  set("--ct-border", s.borderColor);
   set("--ct-radius", s.borderRadius);
+  set("--ct-align", s.textAlign);
 }
 
 function pad(n: number): string {
@@ -53,9 +55,7 @@ export function renderCountdown(mount: HTMLElement, c: CountdownConfig): void {
         <span class="pumper-ct-clock">
           ${showDays ? `<span class="pumper-ct-unit"><b>${pad(d)}</b><i>d</i></span>` : ""}
           <span class="pumper-ct-unit"><b>${pad(h)}</b><i>h</i></span>
-          <span class="pumper-ct-sep">:</span>
           <span class="pumper-ct-unit"><b>${pad(m)}</b><i>m</i></span>
-          <span class="pumper-ct-sep">:</span>
           <span class="pumper-ct-unit"><b>${pad(s)}</b><i>s</i></span>
         </span>
       </div>

@@ -233,7 +233,9 @@ export type CountdownStyleOverrides = Partial<{
   backgroundColor: string;
   textColor: string;
   accentColor: string;
+  borderColor: string;
   borderRadius: number;
+  textAlign: "left" | "center" | "right";
 }>;
 
 export const countdownTimers = sqliteTable("countdown_timers", {

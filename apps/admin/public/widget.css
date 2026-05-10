@@ -402,16 +402,21 @@
   background: var(--ct-bg, #1a1a1a);
   color: var(--ct-text, #fff);
   border-radius: var(--ct-radius, 6px);
+  border: 1px solid var(--ct-border, transparent);
   padding: 10px 14px;
+  text-align: var(--ct-align, center);
 }
-.pumper-ct--bar { border-radius: 0; padding: 12px 16px; text-align: center; }
-.pumper-ct-inner { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; }
+.pumper-ct--bar { border-radius: 0; padding: 12px 16px; }
+.pumper-ct-inner { display: flex; flex-direction: column; gap: 8px; align-items: var(--ct-align-items, center); }
+.pumper-ct[style*="--ct-align: left"] .pumper-ct-inner,
+.pumper-ct[style*="--ct-align:left"] .pumper-ct-inner { align-items: flex-start; }
+.pumper-ct[style*="--ct-align: right"] .pumper-ct-inner,
+.pumper-ct[style*="--ct-align:right"] .pumper-ct-inner { align-items: flex-end; }
 .pumper-ct-headline { font-size: 13px; font-weight: 600; display: block; }
-.pumper-ct-clock { display: inline-flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
-.pumper-ct-unit { display: inline-flex; flex-direction: column; align-items: center; min-width: 28px; }
+.pumper-ct-clock { display: inline-flex; align-items: baseline; gap: 8px; font-variant-numeric: tabular-nums; }
+.pumper-ct-unit { display: inline-flex; align-items: baseline; gap: 2px; }
 .pumper-ct-unit b { font-size: 18px; font-weight: 700; line-height: 1; color: var(--ct-accent, #d9263a); }
-.pumper-ct-unit i { font-size: 9px; font-style: normal; opacity: .8; margin-top: 2px; }
-.pumper-ct-sep { color: var(--ct-accent, #d9263a); font-weight: 700; font-size: 16px; line-height: 1; }
+.pumper-ct-unit i { font-size: 11px; font-style: normal; opacity: .8; font-weight: 600; }
 .pumper-ct-expired { opacity: .85; font-style: italic; }
 
 /* Sticky add to cart */

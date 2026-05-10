@@ -65,7 +65,9 @@ export default function CountdownEdit() {
     backgroundColor: typeof so.backgroundColor === "string" ? so.backgroundColor : "",
     textColor: typeof so.textColor === "string" ? so.textColor : "",
     accentColor: typeof so.accentColor === "string" ? so.accentColor : "",
+    borderColor: typeof so.borderColor === "string" ? so.borderColor : "",
     borderRadius: typeof so.borderRadius === "number" ? String(so.borderRadius) : "",
+    textAlign: (so.textAlign === "left" || so.textAlign === "right" ? so.textAlign : "center") as "left" | "center" | "right",
   };
   const snippet = `<div data-pumper-countdown="${ct.id}"></div>`;
   const [values, setValues] = useState<CountdownFormValues | null>(null);

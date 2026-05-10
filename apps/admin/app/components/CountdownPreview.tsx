@@ -33,7 +33,10 @@ export function CountdownPreview({ values }: Props) {
   const bg = values.backgroundColor || "#1a1a1a";
   const text = values.textColor || "#ffffff";
   const accent = values.accentColor || "#d9263a";
+  const border = values.borderColor || "transparent";
   const radius = parseInt(values.borderRadius || "6", 10) || 6;
+  const align = values.textAlign || "center";
+  const itemsAlign = align === "left" ? "flex-start" : align === "right" ? "flex-end" : "center";
   const isBar = values.layout === "bar";
 
   return (
@@ -44,14 +47,15 @@ export function CountdownPreview({ values }: Props) {
           style={{
             background: bg,
             color: text,
+            border: `1px solid ${border}`,
             borderRadius: isBar ? 0 : radius,
             padding: isBar ? "12px 16px" : "10px 14px",
             fontFamily: "system-ui, -apple-system, sans-serif",
-            textAlign: isBar ? ("center" as const) : ("left" as const),
+            textAlign: align,
           }}
         >
           {expired ? (
-            <div style={{ display: "flex", justifyContent: "center", fontStyle: "italic", opacity: 0.85 }}>
+            <div style={{ display: "flex", justifyContent: itemsAlign, fontStyle: "italic", opacity: 0.85 }}>
               <span style={{ fontSize: 13, fontWeight: 600 }}>{values.expiredHeadline || "This deal has ended"}</span>
             </div>
           ) : (
@@ -59,18 +63,16 @@ export function CountdownPreview({ values }: Props) {
               style={{
                 display: "flex",
                 flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
+                alignItems: itemsAlign,
                 gap: 8,
-                textAlign: "center",
               }}
             >
               <span style={{ fontSize: 13, fontWeight: 600 }}>{values.headline || "Sale ends in"}</span>
               <span
                 style={{
                   display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
+                  alignItems: "baseline",
+                  gap: 8,
                   fontVariantNumeric: "tabular-nums" as const,
                 }}
               >
@@ -78,9 +80,7 @@ export function CountdownPreview({ values }: Props) {
                   <Unit value={pad(d)} unit="d" accent={accent} />
                 )}
                 <Unit value={pad(h)} unit="h" accent={accent} />
-                <Sep accent={accent} />
                 <Unit value={pad(m)} unit="m" accent={accent} />
-                <Sep accent={accent} />
                 <Unit value={pad(s)} unit="s" accent={accent} />
               </span>
             </div>
@@ -98,13 +98,9 @@ export function CountdownPreview({ values }: Props) {
 
 function Unit({ value, unit, accent }: { value: string; unit: string; accent: string }) {
   return (
-    <span style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", minWidth: 28 }}>
+    <span style={{ display: "inline-flex", alignItems: "baseline", gap: 2 }}>
       <b style={{ fontSize: 18, fontWeight: 700, lineHeight: 1, color: accent }}>{value}</b>
-      <i style={{ fontSize: 9, fontStyle: "normal", opacity: 0.8, marginTop: 2 }}>{unit}</i>
+      <i style={{ fontSize: 11, fontStyle: "normal", opacity: 0.8, fontWeight: 600 }}>{unit}</i>
     </span>
   );
-}
-
-function Sep({ accent }: { accent: string }) {
-  return <span style={{ color: accent, fontWeight: 700, fontSize: 16, lineHeight: 1 }}>:</span>;
 }

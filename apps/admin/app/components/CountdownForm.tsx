@@ -15,7 +15,9 @@ export type CountdownFormValues = {
   backgroundColor: string;
   textColor: string;
   accentColor: string;
+  borderColor: string;
   borderRadius: string;
+  textAlign: "left" | "center" | "right";
 };
 
 const DEFAULTS: CountdownFormValues = {
@@ -28,7 +30,9 @@ const DEFAULTS: CountdownFormValues = {
   backgroundColor: "",
   textColor: "",
   accentColor: "",
+  borderColor: "",
   borderRadius: "",
+  textAlign: "center",
 };
 
 type Props = {
@@ -58,10 +62,12 @@ export function CountdownForm({ submitLabel, initialValues, errors, onValuesChan
     if (values.backgroundColor) styles.backgroundColor = values.backgroundColor;
     if (values.textColor) styles.textColor = values.textColor;
     if (values.accentColor) styles.accentColor = values.accentColor;
+    if (values.borderColor) styles.borderColor = values.borderColor;
     if (values.borderRadius) {
       const n = parseInt(values.borderRadius, 10);
       if (Number.isFinite(n)) styles.borderRadius = n;
     }
+    if (values.textAlign && values.textAlign !== "center") styles.textAlign = values.textAlign;
     fd.set("styleOverrides", JSON.stringify(styles));
     submit(fd, { method: "post" });
   };
@@ -153,16 +159,34 @@ export function CountdownForm({ submitLabel, initialValues, errors, onValuesChan
                   placeholder="#D9263A"
                 />
               </FormLayout.Group>
-              <TextField
-                label="Border radius (px)"
-                type="number"
-                value={values.borderRadius}
-                onChange={(borderRadius) => set("borderRadius", borderRadius)}
-                autoComplete="off"
-                min={0}
-                max={48}
-                placeholder="6"
-              />
+              <FormLayout.Group>
+                <ColorSwatchPicker
+                  label="Border"
+                  value={values.borderColor}
+                  onChange={(borderColor) => set("borderColor", borderColor)}
+                  placeholder="Transparent"
+                />
+                <TextField
+                  label="Border radius (px)"
+                  type="number"
+                  value={values.borderRadius}
+                  onChange={(borderRadius) => set("borderRadius", borderRadius)}
+                  autoComplete="off"
+                  min={0}
+                  max={48}
+                  placeholder="6"
+                />
+                <Select
+                  label="Text alignment"
+                  options={[
+                    { label: "Left", value: "left" },
+                    { label: "Center", value: "center" },
+                    { label: "Right", value: "right" },
+                  ]}
+                  value={values.textAlign}
+                  onChange={(textAlign) => set("textAlign", textAlign as "left" | "center" | "right")}
+                />
+              </FormLayout.Group>
             </FormLayout>
           </BlockStack>
         </Card>
