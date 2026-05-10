@@ -59,7 +59,7 @@ const DEFAULTS: QbFormValues = {
     "qb.mostPopular": "",
     "qb.giftBadge": "",
   },
-  visibility: "specific",
+  visibility: "all",
   visibilityProducts: [],
   visibilityCollections: [],
 };

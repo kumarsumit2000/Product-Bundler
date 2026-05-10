@@ -108,6 +108,14 @@ export function buildPreviewQbConfig(args: {
     shop: args.shop,
     settings: args.settings,
     bundles: [],
-    quantityBreaks: [args.qb],
+    // Force visibility=all in preview so the widget renders regardless of
+    // the merchant's saved visibility choice (otherwise a "Specific products"
+    // QB with no products picked would show as blank in the admin preview).
+    quantityBreaks: [{
+      ...args.qb,
+      visibility: "all" as const,
+      visibilityProductIds: [] as string[],
+      visibilityCollectionIds: [] as string[],
+    }],
   };
 }
