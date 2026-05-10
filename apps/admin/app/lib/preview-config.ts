@@ -49,6 +49,9 @@ type BundleShape = {
   linkedCountdownId?: string | null;
   linkedProgressiveGiftId?: string | null;
   addonsOrder?: string[] | null;
+  freeGiftVariantId?: string | null;
+  freeGiftVariantTitle?: string | null;
+  freeGiftAvailable?: boolean | null;
 };
 
 type AddonsShape = {

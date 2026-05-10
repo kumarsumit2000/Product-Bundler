@@ -21,7 +21,7 @@ export function renderBundle(mount: HTMLElement, bundle: BundleConfig, config: W
   const totals = computeBundleTotals(bundle, bundle.discountType, bundle.discountValue);
   const heading = bundle.headline || config.settings.bundleHeadline || t("bundle.heading");
 
-  const rows = bundle.products.map((p) => {
+  const productRows = bundle.products.map((p) => {
     const oosBadge = p.available
       ? ""
       : `<span class="pumper-oos-badge">Out of stock</span>`;
@@ -38,7 +38,22 @@ export function renderBundle(mount: HTMLElement, bundle: BundleConfig, config: W
         ${oosBadge}
       </div>
     `;
-  }).join('<div class="pumper-plus">+</div>');
+  });
+
+  const giftRow = bundle.freeGiftVariantId && bundle.freeGiftAvailable
+    ? `
+      <div class="pumper-bundle-row pumper-bundle-row--gift">
+        <div class="pumper-thumb pumper-thumb-emoji">🎁</div>
+        <div class="pumper-row-meta">
+          <div class="pumper-row-title">${escapeHtml(bundle.freeGiftVariantTitle ?? "Free gift")}</div>
+          <div class="pumper-row-sub"><strong class="pumper-row-free">FREE</strong> with this bundle</div>
+        </div>
+      </div>
+    `
+    : null;
+
+  const allRows = giftRow ? [...productRows, giftRow] : productRows;
+  const rows = allRows.join('<div class="pumper-plus">+</div>');
 
   const savingsBadge = totals.savingsCents > 0
     ? `<span class="pumper-bundle-savings">${escapeHtml(tWith(bundle.textOverrides, "bundle.savingsBadge", { savings: formatMoney(totals.savingsCents, config.settings.currency, config.settings.locale) }))}</span>`
@@ -54,11 +69,12 @@ export function renderBundle(mount: HTMLElement, bundle: BundleConfig, config: W
     </div>
   `;
 
-  const giftBadge = bundle.freeGiftVariantId && bundle.freeGiftAvailable
-    ? `<div class="pumper-qb-gift-badge">🎁 + Free ${escapeHtml(bundle.freeGiftVariantTitle ?? "gift")}</div>`
-    : bundle.freeGiftVariantId
-      ? `<div class="pumper-qb-gift-badge pumper-qb-gift-badge--unavailable">🎁 Free gift unavailable — out of stock</div>`
-      : "";
+  // Gift in-stock cases render as their own bundle row above. The badge
+  // here is just the out-of-stock fallback so the customer still sees the
+  // promised gift even when we can't include it.
+  const giftBadge = bundle.freeGiftVariantId && !bundle.freeGiftAvailable
+    ? `<div class="pumper-qb-gift-badge pumper-qb-gift-badge--unavailable">🎁 Free gift unavailable — out of stock</div>`
+    : "";
 
   const ctaLabel = anyOOS
     ? t("bundle.unavailable")

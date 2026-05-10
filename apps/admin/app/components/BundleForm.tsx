@@ -45,6 +45,7 @@ export type BundleFormValues = StylePanelValues & {
   headline: string;
   ctaLabel: string;
   textOverrides: Record<string, string>;
+  freeGiftEnabled: boolean;
   freeGiftVariant: PickedVariant | null;
   linkedCountdownId: string | null;
   linkedProgressiveGiftId: string | null;
@@ -80,6 +81,7 @@ const DEFAULTS: BundleFormValues = {
   headline: "",
   ctaLabel: "",
   textOverrides: { "bundle.totalLabel": "", "bundle.savingsBadge": "" },
+  freeGiftEnabled: false,
   freeGiftVariant: null,
   linkedCountdownId: null,
   linkedProgressiveGiftId: null,
@@ -239,15 +241,27 @@ export function BundleForm({ initialValues, errors, submitLabel, onValuesChange,
 
         <Card>
           <BlockStack gap="400">
-            <Text as="h2" variant="headingMd">Free gift (optional)</Text>
-            <Text as="p" tone="subdued">
-              Pick a variant to include free with this bundle. The gift is added
-              alongside the bundle items at checkout.
-            </Text>
-            <VariantPicker
-              variant={values.freeGiftVariant}
-              onChange={(v) => update("freeGiftVariant", v)}
+            <Text as="h2" variant="headingMd">Free gift</Text>
+            <Checkbox
+              label="Include a free gift with this bundle"
+              checked={values.freeGiftEnabled}
+              onChange={(enabled) => {
+                update("freeGiftEnabled", enabled);
+                if (!enabled) update("freeGiftVariant", null);
+              }}
             />
+            {values.freeGiftEnabled && (
+              <BlockStack gap="200">
+                <Text as="p" tone="subdued">
+                  Pick any product variant from your catalog. It&apos;s added free alongside the
+                  bundle items, shown as a row inside the bundle, and discounted 100% at checkout.
+                </Text>
+                <VariantPicker
+                  variant={values.freeGiftVariant}
+                  onChange={(v) => update("freeGiftVariant", v)}
+                />
+              </BlockStack>
+            )}
           </BlockStack>
         </Card>
 

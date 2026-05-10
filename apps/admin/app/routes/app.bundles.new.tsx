@@ -265,6 +265,13 @@ export default function BundleNew() {
           linkedCountdownId: values.linkedCountdownId,
           linkedProgressiveGiftId: values.linkedProgressiveGiftId,
           addonsOrder: values.addonsOrder,
+          freeGiftVariantId: values.freeGiftEnabled ? values.freeGiftVariant?.variantId ?? null : null,
+          freeGiftVariantTitle: values.freeGiftEnabled
+            ? [values.freeGiftVariant?.productTitle, values.freeGiftVariant?.variantTitle]
+                .filter(Boolean)
+                .join(" – ") || null
+            : null,
+          freeGiftAvailable: values.freeGiftEnabled && values.freeGiftVariant ? true : null,
         },
         addons: {
           countdowns: allCountdowns,

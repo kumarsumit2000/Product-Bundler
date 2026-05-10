@@ -335,6 +335,7 @@ export default function BundleEdit() {
       "bundle.totalLabel": (bundle.textOverrides as Record<string, string> | null)?.["bundle.totalLabel"] ?? "",
       "bundle.savingsBadge": (bundle.textOverrides as Record<string, string> | null)?.["bundle.savingsBadge"] ?? "",
     },
+    freeGiftEnabled: !!bundle.freeGiftVariantId,
     freeGiftVariant: (() => {
       const id = bundle.freeGiftVariantId;
       const detail = id ? giftVariantDetails[id] : undefined;
@@ -399,6 +400,13 @@ export default function BundleEdit() {
           linkedCountdownId: values.linkedCountdownId,
           linkedProgressiveGiftId: values.linkedProgressiveGiftId,
           addonsOrder: values.addonsOrder,
+          freeGiftVariantId: values.freeGiftEnabled ? values.freeGiftVariant?.variantId ?? null : null,
+          freeGiftVariantTitle: values.freeGiftEnabled
+            ? [values.freeGiftVariant?.productTitle, values.freeGiftVariant?.variantTitle]
+                .filter(Boolean)
+                .join(" – ") || null
+            : null,
+          freeGiftAvailable: values.freeGiftEnabled && values.freeGiftVariant ? true : null,
         },
         addons: {
           countdowns: allCountdowns,
