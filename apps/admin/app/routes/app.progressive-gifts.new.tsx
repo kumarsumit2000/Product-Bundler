@@ -1,6 +1,6 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/cloudflare";
 import { json, redirect } from "@remix-run/cloudflare";
-import { useActionData } from "@remix-run/react";
+import { useActionData, useLoaderData } from "@remix-run/react";
 import { useState } from "react";
 import { Page, Layout } from "@shopify/polaris";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
@@ -12,12 +12,16 @@ import { ProgressiveGiftPreview } from "~/components/ProgressiveGiftPreview";
 import { EmbedCodeCard } from "~/components/EmbedCodeCard";
 import { syncShopConfig } from "~/lib/metafield-sync";
 import { ensureDiscountNodes } from "~/lib/discount-nodes";
+import { progressiveTemplate } from "~/lib/template-presets";
 import type { ProgressiveThreshold } from "../../drizzle/schema";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
   await authenticate.admin(request, ctx);
-  return json({});
+  const url = new URL(request.url);
+  const template = url.searchParams.get("template");
+  const theme = url.searchParams.get("theme");
+  return json({ preset: progressiveTemplate(template), theme });
 }
 
 export async function action({ request, context }: ActionFunctionArgs) {
@@ -74,9 +78,52 @@ export async function action({ request, context }: ActionFunctionArgs) {
 }
 
 export default function ProgressiveGiftNew() {
+  const { preset, theme } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const errors = actionData && "errors" in actionData ? actionData.errors : undefined;
   const [values, setValues] = useState<ProgressiveGiftFormValues | null>(null);
+
+  const initialValues: Partial<ProgressiveGiftFormValues> | undefined = preset
+    ? {
+        name: preset.name,
+        headline: preset.headline,
+        thresholds: preset.thresholds.map((t) => ({
+          minSpend: String(t.minSpendCents / 100),
+          variant: null,
+          product: null,
+          label: t.label,
+          title: "",
+          lockedTitle: "",
+          labelCrossedOut: "",
+          lockedLabel: "",
+          kind: t.kind,
+          iconUrl: "",
+        })),
+        ...(theme
+          ? {
+              style: {
+                backgroundColor: "",
+                borderColor: "",
+                headingColor: "",
+                textColor: "",
+                progressFill: theme,
+                progressTrack: "",
+                cardBg: "",
+                cardBorder: theme,
+                cardBgInactive: "",
+                cardBorderInactive: "",
+                badgeBg: theme,
+                badgeBgInactive: "",
+                badgeText: "",
+                borderRadius: "",
+                paddingX: "",
+                paddingY: "",
+              },
+            }
+          : {}),
+      }
+    : undefined;
+
   return (
     <Page
       title="Create progressive gift"
@@ -89,6 +136,7 @@ export default function ProgressiveGiftNew() {
           <ProgressiveGiftForm
             submitLabel="Save progressive gift"
             errors={errors}
+            initialValues={initialValues}
             onValuesChange={setValues}
           />
           <div style={{ height: 16 }} />

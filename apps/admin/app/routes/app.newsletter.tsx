@@ -20,7 +20,9 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const { session } = await authenticate.admin(request, ctx);
   const db = getDb(ctx.cloudflare.env.DB);
   const settings = await repo.getOrDefault(db, session.shop);
-  return json({ settings });
+  const url = new URL(request.url);
+  const theme = url.searchParams.get("theme");
+  return json({ settings, theme });
 }
 
 export async function action({ request, context }: ActionFunctionArgs) {
@@ -208,11 +210,18 @@ function buildStyleOverrides(s: StyleForm): Record<string, unknown> {
 }
 
 export default function NewsletterPage() {
-  const { settings } = useLoaderData<typeof loader>();
+  const { settings, theme } = useLoaderData<typeof loader>();
   useSavedToast();
+  const baseStyle = styleFromSettings((settings as { styleOverrides?: unknown }).styleOverrides);
+  // When the merchant arrives via the dashboard's "Choose" with a theme picked,
+  // apply that color to the button background — but only when the form hasn't
+  // been styled yet, so we don't trample saved overrides.
+  const seededStyle = theme && !baseStyle.buttonBg
+    ? { ...baseStyle, buttonBg: theme }
+    : baseStyle;
   const [values, setValues] = useState({
     ...settings,
-    style: styleFromSettings((settings as { styleOverrides?: unknown }).styleOverrides),
+    style: seededStyle,
   });
   const setStyle = (patch: Partial<StyleForm>) =>
     setValues((v) => ({ ...v, style: { ...v.style, ...patch } }));
