@@ -7,7 +7,7 @@ const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
 
 const COLOR_KEYS = new Set([
   "primaryColor", "textColor", "backgroundColor",
-  "cardsBg", "selectedBg", "borderColor", "blockTitleColor",
+  "cardsBg", "tierBg", "selectedBg", "borderColor", "blockTitleColor",
   "titleColor", "subtitleColor", "priceColor", "fullPriceColor",
   "labelBg", "labelText",
   "badgeBg", "badgeText",
