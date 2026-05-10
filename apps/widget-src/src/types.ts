@@ -153,6 +153,9 @@ export type QbConfig = {
   headline: string | null;
   ctaLabel: string | null;
   subscription?: SubscriptionConfig | null;
+  visibility?: "all" | "all_except" | "specific" | "collections";
+  visibilityProductIds?: string[];
+  visibilityCollectionIds?: string[];
 };
 
 export type Settings = {
@@ -278,7 +281,14 @@ export type WidgetType = "bundle" | "qb" | "mix_match";
 
 declare global {
   interface Window {
-    _pumperConfig?: { shop: string; locale: string; currency: string; apiBase: string };
+    _pumperConfig?: {
+      shop: string;
+      locale: string;
+      currency: string;
+      apiBase: string;
+      productId?: string;
+      productCollectionIds?: string[];
+    };
     _pumperPreview?: boolean;
     _pumperPreviewConfig?: WidgetConfig;
     _pumperRerender?: () => void;

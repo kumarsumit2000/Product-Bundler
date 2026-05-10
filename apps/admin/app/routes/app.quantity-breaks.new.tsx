@@ -102,6 +102,10 @@ export async function action({ request, context }: ActionFunctionArgs) {
     return json({ errors: { _form: gate.reason } }, { status: 403 });
   }
 
+  const visibility = ((form.get("visibility") as string) || "specific");
+  const visibilityProductIds = (() => { try { return JSON.parse((form.get("visibilityProductIds") as string) || "[]") as string[]; } catch { return []; } })();
+  const visibilityCollectionIds = (() => { try { return JSON.parse((form.get("visibilityCollectionIds") as string) || "[]") as string[]; } catch { return []; } })();
+
   const created = await qbRepo.create(db, session.shop, {
     name: input.name,
     status: input.status as "draft" | "active" | "paused",
@@ -114,6 +118,9 @@ export async function action({ request, context }: ActionFunctionArgs) {
     subscription: input.subscription,
     headline: input.headline,
     ctaLabel: input.ctaLabel,
+    visibility: ["all", "all_except", "specific", "collections"].includes(visibility) ? visibility : "specific",
+    visibilityProductIds,
+    visibilityCollectionIds,
   });
 
   try {

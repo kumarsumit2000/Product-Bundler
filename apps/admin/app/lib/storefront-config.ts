@@ -175,6 +175,9 @@ export async function buildStorefrontConfig(
       headline: q.headline,
       ctaLabel: q.ctaLabel,
       subscription: q.subscription ?? null,
+      visibility: q.visibility ?? "specific",
+      visibilityProductIds: q.visibilityProductIds ?? [],
+      visibilityCollectionIds: q.visibilityCollectionIds ?? [],
     };
   };
 

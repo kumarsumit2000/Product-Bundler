@@ -30,6 +30,9 @@ const NEW_QB_INPUT = {
       subscription: null,
   headline: null,
   ctaLabel: null,
+  visibility: "specific" as const,
+  visibilityProductIds: [],
+  visibilityCollectionIds: [],
 };
 
 describe("quantity-breaks repo", () => {

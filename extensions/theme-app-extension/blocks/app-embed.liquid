@@ -4,7 +4,11 @@
     shop: "{{ shop.permanent_domain }}",
     locale: "{{ request.locale.iso_code }}",
     currency: "{{ cart.currency.iso_code }}",
-    apiBase: "{{ block.settings.api_base | default: 'https://bundler.deepseatools.in/api/storefront' }}"
+    apiBase: "{{ block.settings.api_base | default: 'https://bundler.deepseatools.in/api/storefront' }}",
+    {% if template contains 'product' and product %}
+    productId: "gid://shopify/Product/{{ product.id }}",
+    productCollectionIds: [{% for c in product.collections %}"gid://shopify/Collection/{{ c.id }}"{% unless forloop.last %},{% endunless %}{% endfor %}]
+    {% endif %}
   };
 </script>
 <script src="{{ 'widget.js' | asset_url }}" defer></script>

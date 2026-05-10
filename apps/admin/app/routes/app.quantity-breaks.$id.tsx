@@ -136,6 +136,10 @@ export async function action({
 
   const db = getDb(ctx.cloudflare.env.DB);
 
+  const visibility = ((form.get("visibility") as string) || "specific");
+  const visibilityProductIds = (() => { try { return JSON.parse((form.get("visibilityProductIds") as string) || "[]") as string[]; } catch { return []; } })();
+  const visibilityCollectionIds = (() => { try { return JSON.parse((form.get("visibilityCollectionIds") as string) || "[]") as string[]; } catch { return []; } })();
+
   await qbRepo.update(db, session.shop, params.id!, {
     name: input.name,
     status: input.status as "draft" | "active" | "paused",
@@ -146,6 +150,9 @@ export async function action({
     textOverrides: input.textOverrides,
     headline: input.headline,
     ctaLabel: input.ctaLabel,
+    visibility: ["all", "all_except", "specific", "collections"].includes(visibility) ? visibility : "specific",
+    visibilityProductIds,
+    visibilityCollectionIds,
   });
 
   try {
@@ -224,6 +231,13 @@ export default function QbEdit() {
       "qb.mostPopular": (qb.textOverrides as Record<string, string> | null)?.["qb.mostPopular"] ?? "",
       "qb.giftBadge": (qb.textOverrides as Record<string, string> | null)?.["qb.giftBadge"] ?? "",
     },
+    visibility: (qb.visibility as QbFormValues["visibility"]) ?? "specific",
+    visibilityProducts: (qb.visibilityProductIds ?? []).map((pid) => ({
+      productId: pid, variantId: null, qty: 1,
+    })),
+    visibilityCollections: (qb.visibilityCollectionIds ?? []).map((cid) => ({
+      collectionId: cid, title: cid,
+    })),
   };
 
   const previewConfig = values

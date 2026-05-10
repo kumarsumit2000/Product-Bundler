@@ -166,6 +166,9 @@ export const quantityBreaks = sqliteTable("quantity_breaks", {
   headline: text("headline"),
   ctaLabel: text("cta_label"),
   subscription: text("subscription", { mode: "json" }).$type<Subscription | null>(),
+  visibility: text("visibility").notNull().default("specific"),
+  visibilityProductIds: text("visibility_product_ids", { mode: "json" }).$type<string[]>().notNull().default([]),
+  visibilityCollectionIds: text("visibility_collection_ids", { mode: "json" }).$type<string[]>().notNull().default([]),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 }, (t) => ({

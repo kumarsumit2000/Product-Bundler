@@ -13,12 +13,15 @@ import {
 } from "@shopify/polaris";
 import { useEffect, useState } from "react";
 import { ProductPicker, type PickedProduct } from "./ProductPicker";
+import { type PickedCollection } from "./CollectionPicker";
+import { MultiCollectionPicker } from "./MultiCollectionPicker";
 import { QbTierBuilder, type TierFormValue } from "./QbTierBuilder";
 import { type StylePanelValues } from "./StylePanel";
 import { SimpleQbStylePanel } from "./SimpleQbStylePanel";
 import { EMPTY_STYLE_FORM, buildStyleOverrides } from "~/lib/preview-overrides";
 
 type Status = "draft" | "active" | "paused";
+export type QbVisibility = "all" | "all_except" | "specific" | "collections";
 
 export type QbFormValues = StylePanelValues & {
   name: string;
@@ -29,6 +32,9 @@ export type QbFormValues = StylePanelValues & {
   headline: string;
   ctaLabel: string;
   textOverrides: Record<string, string>;
+  visibility: QbVisibility;
+  visibilityProducts: PickedProduct[];
+  visibilityCollections: PickedCollection[];
 };
 
 type Props = {
@@ -53,6 +59,9 @@ const DEFAULTS: QbFormValues = {
     "qb.mostPopular": "",
     "qb.giftBadge": "",
   },
+  visibility: "specific",
+  visibilityProducts: [],
+  visibilityCollections: [],
 };
 
 export function QbForm({ initialValues, errors, submitLabel, onValuesChange }: Props) {
@@ -72,6 +81,17 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange }: P
   return (
     <Form method="post">
       <input type="hidden" name="productId" value={values.product[0]?.productId ?? ""} />
+      <input type="hidden" name="visibility" value={values.visibility} />
+      <input
+        type="hidden"
+        name="visibilityProductIds"
+        value={JSON.stringify(values.visibilityProducts.map((p) => p.productId))}
+      />
+      <input
+        type="hidden"
+        name="visibilityCollectionIds"
+        value={JSON.stringify(values.visibilityCollections.map((c) => c.collectionId))}
+      />
       <input type="hidden" name="headline" value={values.headline} />
       <input type="hidden" name="ctaLabel" value={values.ctaLabel} />
       <input
@@ -150,6 +170,39 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange }: P
               restrictToProductId={values.product[0]?.productId ?? null}
             />
             {errors?.tiers && <Banner tone="critical">{errors.tiers}</Banner>}
+          </BlockStack>
+        </Card>
+
+        <Card>
+          <BlockStack gap="400">
+            <Text as="h2" variant="headingMd">Visibility</Text>
+            <Text as="p" tone="subdued">Control which product pages this widget shows on.</Text>
+            <ChoiceList
+              title="Show on"
+              titleHidden
+              choices={[
+                { label: "All products", value: "all" },
+                { label: "All products except selected", value: "all_except" },
+                { label: "Specific products", value: "specific" },
+                { label: "Products in selected collections", value: "collections" },
+              ]}
+              selected={[values.visibility]}
+              onChange={(s) => update("visibility", s[0] as QbVisibility)}
+            />
+            {(values.visibility === "all_except" || values.visibility === "specific") && (
+              <ProductPicker
+                products={values.visibilityProducts}
+                onChange={(p) => update("visibilityProducts", p)}
+                multiple
+                showQty={false}
+              />
+            )}
+            {values.visibility === "collections" && (
+              <MultiCollectionPicker
+                collections={values.visibilityCollections}
+                onChange={(c) => update("visibilityCollections", c)}
+              />
+            )}
           </BlockStack>
         </Card>
 

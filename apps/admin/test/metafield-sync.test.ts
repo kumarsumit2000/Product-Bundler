@@ -113,6 +113,9 @@ describe("syncShopConfig", () => {
       subscription: null,
       headline: null,
       ctaLabel: null,
+      visibility: "specific",
+      visibilityProductIds: [],
+      visibilityCollectionIds: [],
     });
     const { admin, calls } = makeAdmin();
     await syncShopConfig(setup.db, admin, SHOP);
@@ -188,6 +191,9 @@ describe("syncShopConfig", () => {
       subscription: null,
       headline: null,
       ctaLabel: null,
+      visibility: "specific",
+      visibilityProductIds: [],
+      visibilityCollectionIds: [],
     });
     const { admin, calls } = makeAdmin();
     await syncShopConfig(setup.db, admin, SHOP);
