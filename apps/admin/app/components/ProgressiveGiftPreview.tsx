@@ -212,24 +212,6 @@ export function ProgressiveGiftPreview({ values, demoCartTotal = 75 }: Props) {
                               </select>
                             )}
                           </div>
-                          <span
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 4,
-                              padding: "2px 8px",
-                              borderRadius: 999,
-                              fontSize: 10,
-                              fontWeight: 600,
-                              letterSpacing: 0.3,
-                              textTransform: "uppercase",
-                              background: unlocked ? "#dcfce7" : "#f3f4f6",
-                              color: unlocked ? "#166534" : "#6b7280",
-                              flexShrink: 0,
-                            }}
-                          >
-                            {unlocked ? "● Unlocked" : "○ Locked"}
-                          </span>
                           {showBadge && (
                             <div
                               style={{

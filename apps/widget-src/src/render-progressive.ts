@@ -175,17 +175,12 @@ function renderTier(
     actionHtml = `<span class="pg-claimed">✓ Applied at checkout</span>`;
   }
 
-  const statusPill = unlocked
-    ? `<span class="pg-status pg-status--unlocked">● Unlocked</span>`
-    : `<span class="pg-status pg-status--locked">○ Locked</span>`;
-
   return `
     <div class="pg-tier${unlocked ? " pg-tier--unlocked" : " pg-tier--locked"}" data-pg-tier="${i}">
       ${imageHtml}
       <div class="pg-tier-meta">
         <div class="pg-tier-title">${escapeHtml(unlocked ? title : lockedTitle)}</div>
       </div>
-      ${statusPill}
       ${showBadge ? `<div class="pg-badge">${badgeContent}</div>` : ""}
       ${actionHtml ? `<div class="pg-action">${actionHtml}</div>` : ""}
     </div>
