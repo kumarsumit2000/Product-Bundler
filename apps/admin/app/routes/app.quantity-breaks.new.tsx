@@ -313,12 +313,12 @@ export default function QbNew() {
           />
         </Layout.Section>
         <Layout.Section variant="oneHalf">
-          {previewConfig && (
-            <PreviewPane type="qb" id="new" config={previewConfig} />
-          )}
-        </Layout.Section>
-        <Layout.Section>
-          <EmbedCodeCard plan={plan} />
+          <div style={{ position: "sticky", top: 16, display: "flex", flexDirection: "column", gap: 16 }}>
+            {previewConfig && (
+              <PreviewPane type="qb" id="new" config={previewConfig} />
+            )}
+            <EmbedCodeCard plan={plan} />
+          </div>
         </Layout.Section>
       </Layout>
     </Page>

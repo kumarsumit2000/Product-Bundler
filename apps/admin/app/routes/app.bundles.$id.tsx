@@ -429,16 +429,16 @@ export default function BundleEdit() {
           />
         </Layout.Section>
         <Layout.Section variant="oneHalf">
-          {previewConfig && (
-            <PreviewPane
-              type={values?.mode === "mix_match" ? "mix_match" : "bundle"}
-              id={bundle.id}
-              config={previewConfig}
-            />
-          )}
-        </Layout.Section>
-        <Layout.Section>
-          <EmbedCodeCard plan={plan} snippet={snippet} />
+          <div style={{ position: "sticky", top: 16, display: "flex", flexDirection: "column", gap: 16 }}>
+            {previewConfig && (
+              <PreviewPane
+                type={values?.mode === "mix_match" ? "mix_match" : "bundle"}
+                id={bundle.id}
+                config={previewConfig}
+              />
+            )}
+            <EmbedCodeCard plan={plan} snippet={snippet} />
+          </div>
         </Layout.Section>
       </Layout>
     </Page>

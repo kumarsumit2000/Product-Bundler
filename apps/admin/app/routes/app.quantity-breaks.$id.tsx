@@ -412,12 +412,12 @@ export default function QbEdit() {
           />
         </Layout.Section>
         <Layout.Section variant="oneHalf">
-          {previewConfig && (
-            <PreviewPane type="qb" id={qb.id} config={previewConfig} />
-          )}
-        </Layout.Section>
-        <Layout.Section>
-          <EmbedCodeCard plan={plan} snippet={snippet} />
+          <div style={{ position: "sticky", top: 16, display: "flex", flexDirection: "column", gap: 16 }}>
+            {previewConfig && (
+              <PreviewPane type="qb" id={qb.id} config={previewConfig} />
+            )}
+            <EmbedCodeCard plan={plan} snippet={snippet} />
+          </div>
         </Layout.Section>
       </Layout>
     </Page>
