@@ -18,6 +18,7 @@
 .pumper-total-label { font-size: 12px; }
 .pumper-total-value { font-size: 14px; font-weight: 700; color: var(--pumper-primary, #7B1E2A); }
 .pumper-strike { text-decoration: line-through; color: #aaa; margin-left: 6px; }
+.pumper-qb-tier-sub > .pumper-strike:first-child { margin-left: 0; }
 .pumper-bundle-savings { background: #fde7ea; color: var(--pumper-primary, #7B1E2A); font-size: 11px; padding: 3px 6px; border-radius: 4px; font-weight: 600; margin-left: 8px; }
 .pumper-cta {
   width: 100%;
