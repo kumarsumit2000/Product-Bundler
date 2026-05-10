@@ -387,6 +387,29 @@ export default function QbEdit() {
             label: tr.label,
             isMostPopular: tr.isMostPopular,
             available: true,
+            freeGiftVariantId: tr.freeGiftVariant?.variantId ?? null,
+            freeGiftVariantTitle: tr.freeGiftVariant
+              ? [tr.freeGiftVariant.productTitle, tr.freeGiftVariant.variantTitle].filter(Boolean).join(" – ") || null
+              : null,
+            freeGiftAvailable: tr.freeGiftVariant ? true : null,
+            bogo: tr.bogoMode
+              ? {
+                  mode: tr.bogoMode as "add_same" | "add_different" | "nth_free",
+                  targetVariantId: tr.bogoTargetVariant?.variantId ?? null,
+                  bonusQty: tr.bogoBonusQty ?? 1,
+                  targetAvailable: tr.bogoTargetVariant ? true : null,
+                  targetVariantTitle: tr.bogoTargetVariant
+                    ? [tr.bogoTargetVariant.productTitle, tr.bogoTargetVariant.variantTitle].filter(Boolean).join(" – ") || null
+                    : null,
+                }
+              : null,
+            extraProducts: (tr.extraProducts ?? []).map((p) => ({
+              productId: p.productId,
+              variantId: p.variantId ?? null,
+              qty: p.qty,
+              title: p.title,
+              image: p.image,
+            })),
           })),
           combinable: values.combinable,
           styleOverrides: buildStyleOverrides(values),

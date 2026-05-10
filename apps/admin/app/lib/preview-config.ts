@@ -94,7 +94,31 @@ type QbShape = {
   productTitle: string;
   productImage: string | null;
   productVariants: Array<{ variantId: string; title: string; available: boolean; priceCents: number }>;
-  tiers: Array<{ qty: number; discountType: string; discountValue: number; label: string; isMostPopular: boolean; available: boolean }>;
+  tiers: Array<{
+    qty: number;
+    discountType: string;
+    discountValue: number;
+    label: string;
+    isMostPopular: boolean;
+    available: boolean;
+    freeGiftVariantId?: string | null;
+    freeGiftVariantTitle?: string | null;
+    freeGiftAvailable?: boolean | null;
+    bogo?: {
+      mode: "add_same" | "add_different" | "nth_free";
+      targetVariantId?: string | null;
+      bonusQty: number;
+      targetAvailable?: boolean | null;
+      targetVariantTitle?: string | null;
+    } | null;
+    extraProducts?: Array<{
+      productId: string;
+      variantId: string | null;
+      qty: number;
+      title?: string;
+      image?: string | null;
+    }>;
+  }>;
   combinable: boolean;
   styleOverrides: Record<string, unknown> | null;
   textOverrides: Record<string, string> | null;
