@@ -340,11 +340,42 @@ export type CountdownConfig = {
   } | null;
 };
 
+export type BxgyBarConfig = {
+  id: string;
+  buyQty: number;
+  buyDiscountPercent: number;
+  getQty: number;
+  getDiscountPercent: number;
+  title: string;
+  subtitle: string;
+  badgeStyle: "save_percent" | "save_amount" | "custom" | "none";
+  badgeText: string;
+  label: string;
+  isMostPopular: boolean;
+};
+
+export type BxgyOfferConfig = {
+  id: string;
+  name: string;
+  productId: string;
+  productTitle: string;
+  productImage: string | null;
+  productVariants: QbVariant[];
+  bars: BxgyBarConfig[];
+  combinable: boolean;
+  headline: string | null;
+  ctaLabel: string | null;
+  visibility?: "all" | "all_except" | "specific" | "collections";
+  visibilityProductIds?: string[];
+  visibilityCollectionIds?: string[];
+};
+
 export type WidgetConfig = {
   shop: string;
   settings: Settings;
   bundles: BundleConfig[];
   quantityBreaks: QbConfig[];
+  bxgyOffers?: BxgyOfferConfig[];
   progressiveGifts?: ProgressiveGiftConfig[];
   newsletter?: NewsletterConfig | null;
   countdowns?: CountdownConfig[];
@@ -355,7 +386,7 @@ export type CartLine = {
   qty: number;
 };
 
-export type WidgetType = "bundle" | "qb" | "mix_match";
+export type WidgetType = "bundle" | "qb" | "mix_match" | "bxgy";
 
 declare global {
   interface Window {

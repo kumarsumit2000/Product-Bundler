@@ -1,4 +1,4 @@
-import type { BundleConfig, QbConfig, WidgetConfig } from "./types";
+import type { BundleConfig, BxgyOfferConfig, QbConfig, WidgetConfig } from "./types";
 
 export function lookupBundle(
   cfg: WidgetConfig,
@@ -16,4 +16,8 @@ export function lookupMixMatch(
   id: string
 ): BundleConfig | null {
   return cfg.bundles.find((b) => b.id === id && b.mode === "mix_match") ?? null;
+}
+
+export function lookupBxgy(cfg: WidgetConfig, id: string): BxgyOfferConfig | null {
+  return (cfg.bxgyOffers ?? []).find((o) => o.id === id) ?? null;
 }

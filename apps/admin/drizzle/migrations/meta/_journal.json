@@ -183,6 +183,13 @@
       "when": 1778367000000,
       "tag": "0025_qb_free_gift_min_qty",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "6",
+      "when": 1778368200000,
+      "tag": "0026_bxgy_offers",
+      "breakpoints": true
     }
   ]
 }

@@ -1,4 +1,4 @@
-import type { BundleConfig, QbConfig, WidgetConfig } from "./types";
+import type { BundleConfig, BxgyOfferConfig, QbConfig, WidgetConfig } from "./types";
 
 function bundleVisibleOn(b: BundleConfig, productId: string, pageCollectionIds: string[]): boolean {
   const visibility = b.visibility ?? (b.triggerProductIds.length > 0 ? "specific" : "same_as_members");
@@ -59,6 +59,25 @@ export function matchMixMatch(config: WidgetConfig, productId: string): BundleCo
   for (const b of config.bundles) {
     if (b.mode !== "mix_match") continue;
     if (bundleVisibleOn(b, productId, pageCollections)) return b;
+  }
+  return null;
+}
+
+function bxgyVisibleOn(o: BxgyOfferConfig, productId: string, pageCollectionIds: string[]): boolean {
+  const visibility = o.visibility ?? "all";
+  const products = o.visibilityProductIds ?? [];
+  const collections = o.visibilityCollectionIds ?? [];
+  if (visibility === "all") return true;
+  if (visibility === "all_except") return !products.includes(productId);
+  if (visibility === "specific") return products.includes(productId);
+  if (visibility === "collections") return pageCollectionIds.some((cid) => collections.includes(cid));
+  return false;
+}
+
+export function matchBxgy(config: WidgetConfig, productId: string): BxgyOfferConfig | null {
+  const pageCollections = (typeof window !== "undefined" ? window._pumperConfig?.productCollectionIds : undefined) ?? [];
+  for (const o of config.bxgyOffers ?? []) {
+    if (bxgyVisibleOn(o, productId, pageCollections)) return o;
   }
   return null;
 }

@@ -341,6 +341,49 @@ export type ProgressiveGiftStyleOverrides = Partial<{
   paddingY: number;
 }>;
 
+// ─── Buy X, get Y offers ─────────────────────────────────
+export type BxgyBar = {
+  id: string;
+  buyQty: number;
+  buyDiscountPercent: number; // 0-100, where 0 = full price
+  getQty: number;
+  getDiscountPercent: number; // 0-100, currently fixed at 100 (free)
+  title: string;              // "Buy 1, get 1 free"
+  subtitle: string;           // optional
+  badgeStyle: "save_percent" | "save_amount" | "custom" | "none";
+  badgeText: string;          // template like "SAVE {{saved_percentage}}"
+  label: string;
+  isMostPopular: boolean;
+};
+
+export const bxgyOffers = sqliteTable("bxgy_offers", {
+  id: text("id").primaryKey(),
+  shopId: text("shop_id").notNull().references(() => shops.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  status: text("status").notNull().default("draft"),
+  productId: text("product_id").notNull(),
+  headline: text("headline"),
+  ctaLabel: text("cta_label"),
+  bars: text("bars", { mode: "json" }).$type<BxgyBar[]>().notNull(),
+  combinable: integer("combinable", { mode: "boolean" }).notNull().default(false),
+  visibility: text("visibility").notNull().default("all"),
+  visibilityProductIds: text("visibility_product_ids", { mode: "json" }).$type<string[]>().notNull().default([]),
+  visibilityCollectionIds: text("visibility_collection_ids", { mode: "json" }).$type<string[]>().notNull().default([]),
+  styleOverrides: text("style_overrides", { mode: "json" }).$type<StyleOverrides | null>(),
+  textOverrides: text("text_overrides", { mode: "json" }).$type<TextOverrides | null>(),
+  linkedCountdownId: text("linked_countdown_id"),
+  linkedProgressiveGiftId: text("linked_progressive_gift_id"),
+  stickyAtc: text("sticky_atc", { mode: "json" }).$type<StickyAtcConfig | null>(),
+  addonsOrder: text("addons_order", { mode: "json" }).$type<string[] | null>(),
+  freeGiftVariantId: text("free_gift_variant_id"),
+  freeGiftProductId: text("free_gift_product_id"),
+  freeGiftMinBuyQty: integer("free_gift_min_buy_qty").notNull().default(1),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+}, (t) => ({
+  shopIdx: index("bxgy_shop_idx").on(t.shopId),
+}));
+
 export const progressiveGifts = sqliteTable("progressive_gifts", {
   id: text("id").primaryKey(),
   shopId: text("shop_id").notNull().references(() => shops.id, { onDelete: "cascade" }),
@@ -380,6 +423,8 @@ export type NewBundle = typeof bundles.$inferInsert;
 export type QuantityBreak = typeof quantityBreaks.$inferSelect;
 export type ProgressiveGift = typeof progressiveGifts.$inferSelect;
 export type NewProgressiveGift = typeof progressiveGifts.$inferInsert;
+export type BxgyOffer = typeof bxgyOffers.$inferSelect;
+export type NewBxgyOffer = typeof bxgyOffers.$inferInsert;
 export type NewsletterSettings = typeof newsletterSettings.$inferSelect;
 export type NewNewsletterSettings = typeof newsletterSettings.$inferInsert;
 export type StickyAtcSettings = typeof stickyAtcSettings.$inferSelect;

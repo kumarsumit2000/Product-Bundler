@@ -72,6 +72,7 @@ export default function App() {
           <Link to="/app/new">Create new</Link>
           <Link to="/app/bundles">Bundles</Link>
           <Link to="/app/quantity-breaks">Quantity breaks</Link>
+          <Link to="/app/bxgy-offers">Buy X, get Y</Link>
           <Link to="/app/progressive-gifts">Progressive gifts</Link>
           <Link to="/app/countdowns">Countdowns</Link>
           <Link to="/app/newsletter">Newsletter</Link>

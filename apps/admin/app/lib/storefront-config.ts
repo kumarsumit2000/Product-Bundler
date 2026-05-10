@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { schema } from "~/db.server";
 import * as bundleRepo from "./bundles/repo";
 import * as qbRepo from "./quantity-breaks/repo";
+import * as bxgyRepo from "./bxgy-offers/repo";
 import * as newsletterRepo from "./newsletter/repo";
 import * as pgRepo from "./progressive-gifts/repo";
 import * as countdownRepo from "./countdowns/repo";
@@ -21,9 +22,10 @@ export async function buildStorefrontConfig(
   admin: AdminGraphqlClient,
   shopId: string,
 ) {
-  const [bundlesAll, qbsAll, settingsRow, shopRow, newsletter, pgsAll, countdownsAll] = await Promise.all([
+  const [bundlesAll, qbsAll, bxgyAll, settingsRow, shopRow, newsletter, pgsAll, countdownsAll] = await Promise.all([
     bundleRepo.listByShop(db, shopId),
     qbRepo.listByShop(db, shopId),
+    bxgyRepo.listByShop(db, shopId),
     db
       .select()
       .from(schema.shopSettings)
@@ -46,6 +48,7 @@ export async function buildStorefrontConfig(
 
   const bundles = bundlesAll.filter((b) => b.status === "active");
   const qbs = qbsAll.filter((q) => q.status === "active");
+  const bxgyOffers = bxgyAll.filter((o) => o.status === "active");
 
   // Collect all product IDs that need details
   const allProductIds = new Set<string>();
@@ -55,6 +58,9 @@ export async function buildStorefrontConfig(
     }
   }
   for (const q of qbs) allProductIds.add(q.productId);
+  for (const o of bxgyOffers) {
+    if (o.productId) allProductIds.add(o.productId);
+  }
   for (const pg of progressiveGifts) {
     for (const t of pg.thresholds) {
       if (t.giftProductId) allProductIds.add(t.giftProductId);
@@ -270,6 +276,30 @@ export async function buildStorefrontConfig(
       addonsOrder: b.addonsOrder ?? null,
     })),
     quantityBreaks: qbs.map(buildQb),
+    bxgyOffers: bxgyOffers.map((o) => {
+      const detail = productMap[o.productId];
+      const variants = (detail?.variants ?? []).map((v) => ({
+        variantId: v.variantId,
+        title: v.title,
+        available: v.available,
+        priceCents: v.priceCents,
+      }));
+      return {
+        id: o.id,
+        name: o.name,
+        productId: o.productId,
+        productTitle: detail?.title ?? "",
+        productImage: detail?.image ?? null,
+        productVariants: variants,
+        bars: o.bars,
+        combinable: o.combinable,
+        headline: o.headline,
+        ctaLabel: o.ctaLabel,
+        visibility: o.visibility as "all" | "all_except" | "specific" | "collections",
+        visibilityProductIds: o.visibilityProductIds,
+        visibilityCollectionIds: o.visibilityCollectionIds,
+      };
+    }),
     progressiveGifts: progressiveGifts.map((pg) => ({
       id: pg.id,
       name: pg.name,

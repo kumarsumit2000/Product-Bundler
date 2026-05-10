@@ -21,7 +21,8 @@ type CardKey =
   | "qb_free_gift"
   | "mix_match"
   | "free_shipping_bar"
-  | "countdown_sale";
+  | "countdown_sale"
+  | "bxgy";
 type CardSpec = {
   key: CardKey;
   title: string;
@@ -381,6 +382,7 @@ const CARDS: CardSpec[] = [
   { key: "qb_diff", title: "Quantity breaks for different products", href: "/app/quantity-breaks/new", preview: PreviewQbDifferent },
   { key: "qb_volume_4", title: "Volume discount (4 tiers)", href: "/app/quantity-breaks/new", preview: PreviewQbVolume4 },
   { key: "qb_free_gift", title: "Free gift with purchase", href: "/app/quantity-breaks/new", preview: PreviewQbFreeGift },
+  { key: "bxgy", title: "Buy X, get Y (BXGY) deal", href: "/app/bxgy-offers/new", preview: PreviewBxgy },
   { key: "bundle", title: "Complete the bundle", href: "/app/bundles/new", preview: PreviewBundle },
   { key: "mix_match", title: "Mix & match — pick any 3", href: "/app/bundles/new", preview: PreviewMixMatch },
   { key: "progressive", title: "Progressive gifts", href: "/app/progressive-gifts/new", preview: PreviewProgressive },

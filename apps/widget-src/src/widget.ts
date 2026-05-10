@@ -1,9 +1,10 @@
 import type { WidgetConfig, WidgetType, StyleOverrides } from "./types";
-import { matchBundle, matchQb, matchMixMatch } from "./match";
-import { lookupBundle, lookupQb, lookupMixMatch } from "./lookup";
+import { matchBundle, matchQb, matchMixMatch, matchBxgy } from "./match";
+import { lookupBundle, lookupQb, lookupMixMatch, lookupBxgy } from "./lookup";
 import { renderBundle } from "./render-bundle";
 import { renderQb } from "./render-qb";
 import { renderMixMatch } from "./render-mix-match";
+import { renderBxgy } from "./render-bxgy";
 import { renderNewsletter, renderPopupInline, maybeStartNewsletterPopup } from "./render-newsletter";
 import { renderProgressive } from "./render-progressive";
 import { renderCountdown } from "./render-countdown";
@@ -139,13 +140,14 @@ export function applyCssVars(
   }
 }
 
-type ShortcodeKind = "bundle" | "qb" | "mix" | "pg" | "ct";
+type ShortcodeKind = "bundle" | "qb" | "mix" | "pg" | "ct" | "bxgy";
 type ShortcodeSpec = { kind: ShortcodeKind; selector: string; attr: string };
 
 const SHORTCODES: ShortcodeSpec[] = [
   { kind: "bundle", selector: "[data-pumper-bundle]:not([data-pumper-rendered])",    attr: "data-pumper-bundle"    },
   { kind: "qb",     selector: "[data-pumper-qb]:not([data-pumper-rendered])",        attr: "data-pumper-qb"        },
   { kind: "mix",    selector: "[data-pumper-mix-match]:not([data-pumper-rendered])", attr: "data-pumper-mix-match" },
+  { kind: "bxgy",   selector: "[data-pumper-bxgy]:not([data-pumper-rendered])",      attr: "data-pumper-bxgy"      },
   { kind: "pg",     selector: "[data-pumper-progressive]:not([data-pumper-rendered])", attr: "data-pumper-progressive" },
   { kind: "ct",     selector: "[data-pumper-countdown]:not([data-pumper-rendered])",   attr: "data-pumper-countdown" },
 ];
@@ -272,6 +274,14 @@ function renderShortcode(el: HTMLElement, kind: ShortcodeKind, id: string, cfg: 
     el.dataset.pumperRendered = "1";
     return;
   }
+  if (kind === "bxgy") {
+    const o = lookupBxgy(cfg, id);
+    if (!o) { el.innerHTML = ""; el.style.minHeight = ""; el.dataset.pumperRendered = "1"; return; }
+    applyCssVars(el, cfg, null);
+    renderBxgy(el, o, cfg);
+    el.dataset.pumperRendered = "1";
+    return;
+  }
   if (kind === "pg") {
     const pg = (cfg.progressiveGifts ?? []).find((p) => p.id === id);
     if (!pg) { el.innerHTML = ""; el.style.minHeight = ""; el.dataset.pumperRendered = "1"; return; }
@@ -322,6 +332,11 @@ function renderMount(mount: HTMLElement, cfg: WidgetConfig): void {
     applyCssVars(mount, cfg, m.styleOverrides);
     renderMixMatch(mount, m, cfg);
     renderLinkedAddons(mount, cfg, m.linkedCountdownId, m.linkedProgressiveGiftId, m.addonsOrder);
+  } else if (type === "bxgy") {
+    const o = matchBxgy(cfg, productId);
+    if (!o) { mount.innerHTML = ""; mount.style.minHeight = ""; return; }
+    applyCssVars(mount, cfg, null);
+    renderBxgy(mount, o, cfg);
   }
   mount.dataset.pumperRendered = "1";
 }
