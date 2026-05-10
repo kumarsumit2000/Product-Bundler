@@ -1,5 +1,5 @@
 import type { BundleConfig, WidgetConfig } from "./types";
-import { addToCart } from "./add-to-cart";
+import { addToCart, type CartLineInput } from "./add-to-cart";
 import { emit } from "./analytics";
 import { computeBundleTotals, formatMoney } from "./format";
 import { t, tWith } from "./i18n";
@@ -129,7 +129,7 @@ export function renderBundle(mount: HTMLElement, bundle: BundleConfig, config: W
     cta.addEventListener("click", async () => {
       cta.disabled = true;
       emit("widget_click", { widgetType: "bundle", widgetId: bundle.id, productId: bundle.products[0]?.productId ?? "" });
-      const lines = bundle.products
+      const lines: CartLineInput[] = bundle.products
         .filter((p) => p.variantId)
         .map((p) => ({ variantId: p.variantId!, qty: p.qty, bundleId: bundle.id }));
       const giftTag = `${bundle.id}:gift`;

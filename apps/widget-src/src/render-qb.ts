@@ -9,14 +9,17 @@ function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 }
 
-function renderGiftBadges(tier: QbTier, textOverrides: Record<string, string> | null | undefined): string {
-  const badges: string[] = [];
+function renderGiftCallout(tier: QbTier, textOverrides: Record<string, string> | null | undefined): string {
+  const lines: Array<{ text: string; unavailable: boolean }> = [];
 
   if (tier.freeGiftVariantId) {
     if (tier.freeGiftAvailable === false) {
-      badges.push(`<div class="pumper-qb-gift-badge pumper-qb-gift-badge--unavailable">${escapeHtml(t("qb.giftBadgeUnavailable"))}</div>`);
+      lines.push({ text: t("qb.giftBadgeUnavailable"), unavailable: true });
     } else {
-      badges.push(`<div class="pumper-qb-gift-badge">${escapeHtml(tWith(textOverrides, "qb.giftBadge", { variantTitle: tier.freeGiftVariantTitle ?? "gift" }))}</div>`);
+      lines.push({
+        text: tWith(textOverrides, "qb.giftBadge", { variantTitle: tier.freeGiftVariantTitle ?? "gift" }),
+        unavailable: false,
+      });
     }
   }
 
@@ -24,26 +27,27 @@ function renderGiftBadges(tier: QbTier, textOverrides: Record<string, string> | 
     const b = tier.bogo;
     if (b.mode === "nth_free") {
       const paidQty = Math.max(0, tier.qty - b.bonusQty);
-      badges.push(`<div class="pumper-qb-gift-badge">${escapeHtml(t("qb.bogoNthFree", { qty: tier.qty, paidQty }))}</div>`);
+      lines.push({ text: t("qb.bogoNthFree", { qty: tier.qty, paidQty }), unavailable: false });
     } else if (b.mode === "add_same") {
       if (b.targetAvailable === false) {
-        badges.push(`<div class="pumper-qb-gift-badge pumper-qb-gift-badge--unavailable">${escapeHtml(t("qb.giftBadgeUnavailable"))}</div>`);
+        lines.push({ text: t("qb.giftBadgeUnavailable"), unavailable: true });
       } else {
         const text = b.bonusQty === 1
           ? t("qb.bogoSameOne")
           : t("qb.bogoSameMany", { n: b.bonusQty });
-        badges.push(`<div class="pumper-qb-gift-badge">${escapeHtml(text)}</div>`);
+        lines.push({ text, unavailable: false });
       }
     } else if (b.mode === "add_different") {
       if (b.targetAvailable === false) {
-        badges.push(`<div class="pumper-qb-gift-badge pumper-qb-gift-badge--unavailable">${escapeHtml(t("qb.giftBadgeUnavailable"))}</div>`);
+        lines.push({ text: t("qb.giftBadgeUnavailable"), unavailable: true });
       } else {
-        badges.push(`<div class="pumper-qb-gift-badge">${escapeHtml(t("qb.bogoDifferent", { variantTitle: b.targetVariantTitle ?? "gift" }))}</div>`);
+        lines.push({ text: t("qb.bogoDifferent", { variantTitle: b.targetVariantTitle ?? "gift" }), unavailable: false });
       }
     }
   }
 
-  return badges.join("");
+  if (lines.length === 0) return "";
+  return lines.map((l) => `<div class="pumper-qb-tier-gift${l.unavailable ? " pumper-qb-tier-gift--unavailable" : ""}">${escapeHtml(l.text)}</div>`).join("");
 }
 
 function tierUnitCents(tier: QbTier, basePriceCents: number): number {
@@ -83,19 +87,38 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
       i === selectedIndex ? "pumper-qb-tier--selected" : "",
       tr.available ? "" : "pumper-qb-tier--unavailable",
     ].filter(Boolean).join(" ");
+
+    const extras = (tr.extraProducts ?? []).filter((p) => p.title || p.image);
+    const extrasRow = extras.length > 0
+      ? `<div class="pumper-qb-tier-extras">
+          ${extras.map((ep) => {
+            const img = ep.image
+              ? `<img src="${escapeHtml(ep.image)}" alt="" class="pumper-qb-extra-img" loading="lazy" />`
+              : `<span class="pumper-qb-extra-img pumper-qb-extra-img--empty"></span>`;
+            const qty = ep.qty && ep.qty > 1 ? `<span class="pumper-qb-extra-qty">×${ep.qty}</span>` : "";
+            return `<span class="pumper-qb-extra">${img}<span class="pumper-qb-extra-title">${escapeHtml(ep.title ?? "")}</span>${qty}</span>`;
+          }).join("")}
+        </div>`
+      : "";
+
+    const giftCallout = renderGiftCallout(tr, qb.textOverrides);
+
     return `
       <div class="${classes}" data-tier-index="${i}" data-action="select-tier" role="button" tabindex="0">
         ${popularBadge}
-        <div class="pumper-qb-tier-meta">
-          <div class="pumper-qb-tier-title">${escapeHtml(tWith(qb.textOverrides, "qb.tierLabel", { qty: tr.qty }))}${tr.discountValue > 0 ? ` — ${escapeHtml(tr.label)}` : ""}</div>
-          <div class="pumper-qb-tier-sub">
-            ${tr.discountValue > 0
-              ? `<span class="pumper-strike">${formatMoney(variant.priceCents, config.settings.currency, config.settings.locale)}</span> `
-              : ""}<strong>${formatMoney(unitCents, config.settings.currency, config.settings.locale)}</strong> each · ${formatMoney(totalCents, config.settings.currency, config.settings.locale)} total
+        <div class="pumper-qb-tier-row">
+          <div class="pumper-qb-tier-meta">
+            <div class="pumper-qb-tier-title">${escapeHtml(tWith(qb.textOverrides, "qb.tierLabel", { qty: tr.qty }))}${tr.discountValue > 0 ? ` — ${escapeHtml(tr.label)}` : ""}</div>
+            <div class="pumper-qb-tier-sub">
+              ${tr.discountValue > 0
+                ? `<span class="pumper-strike">${formatMoney(variant.priceCents, config.settings.currency, config.settings.locale)}</span> `
+                : ""}<strong>${formatMoney(unitCents, config.settings.currency, config.settings.locale)}</strong> each · ${formatMoney(totalCents, config.settings.currency, config.settings.locale)} total
+            </div>
           </div>
+          ${savingsBadge}
         </div>
-        ${savingsBadge}
-        ${renderGiftBadges(tr, qb.textOverrides)}
+        ${extrasRow}
+        ${giftCallout}
       </div>
     `;
   }).join("");
