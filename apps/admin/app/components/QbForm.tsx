@@ -50,6 +50,7 @@ export type QbFormValues = StylePanelValues & {
   freeGiftMode: "variant" | "product";
   freeGiftVariant: PickedVariant | null;
   freeGiftProduct: PickedProduct | null;
+  freeGiftMinQty: string;
 };
 
 type AddonOption = { id: string; name: string };
@@ -91,6 +92,7 @@ const DEFAULTS: QbFormValues = {
   freeGiftMode: "product",
   freeGiftVariant: null,
   freeGiftProduct: null,
+  freeGiftMinQty: "2",
 };
 
 export function QbForm({ initialValues, errors, submitLabel, onValuesChange, countdownOptions = [], progressiveGiftOptions = [] }: Props) {
@@ -139,6 +141,7 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange, cou
         name="freeGiftProductId"
         value={values.freeGiftEnabled && values.freeGiftMode === "product" ? values.freeGiftProduct?.productId ?? "" : ""}
       />
+      <input type="hidden" name="freeGiftMinQty" value={values.freeGiftMinQty} />
       <input type="hidden" name="checkboxUpsellsEnabled" value={values.checkboxUpsellsEnabled ? "on" : ""} />
       <input
         type="hidden"
@@ -295,9 +298,18 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange, cou
             {values.freeGiftEnabled && (
               <BlockStack gap="300">
                 <Text as="p" tone="subdued">
-                  The gift is added free when the customer picks any tier and is discounted
-                  100% at checkout.
+                  The gift unlocks once the customer picks a tier whose qty is at least
+                  the minimum below — discounted 100% at checkout.
                 </Text>
+                <TextField
+                  label="Minimum quantity to unlock the gift"
+                  type="number"
+                  min={1}
+                  value={values.freeGiftMinQty}
+                  onChange={(v) => update("freeGiftMinQty", v)}
+                  autoComplete="off"
+                  helpText="Tip: set this to your highest tier's qty for the &ldquo;BXGY&rdquo; pattern."
+                />
                 <ChoiceList
                   title="Pick from"
                   titleHidden

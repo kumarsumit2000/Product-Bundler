@@ -41,6 +41,7 @@ const NEW_QB_INPUT = {
   addonsOrder: null,
   freeGiftVariantId: null,
   freeGiftProductId: null,
+  freeGiftMinQty: 1,
 };
 
 describe("quantity-breaks repo", () => {

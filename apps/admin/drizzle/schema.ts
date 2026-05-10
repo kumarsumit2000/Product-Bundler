@@ -214,6 +214,7 @@ export const quantityBreaks = sqliteTable("quantity_breaks", {
   addonsOrder: text("addons_order", { mode: "json" }).$type<string[] | null>(),
   freeGiftVariantId: text("free_gift_variant_id"),
   freeGiftProductId: text("free_gift_product_id"),
+  freeGiftMinQty: integer("free_gift_min_qty").notNull().default(1),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 }, (t) => ({

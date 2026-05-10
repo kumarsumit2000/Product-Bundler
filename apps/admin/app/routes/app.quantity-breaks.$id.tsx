@@ -177,6 +177,7 @@ export async function action({
   const addonsOrder = parseAddonsOrder(form.get("addonsOrder") as string | null);
   const freeGiftVariantId = ((form.get("freeGiftVariantId") as string) || "").trim() || null;
   const freeGiftProductId = ((form.get("freeGiftProductId") as string) || "").trim() || null;
+  const freeGiftMinQty = Math.max(1, parseInt((form.get("freeGiftMinQty") as string) || "1", 10) || 1);
   const normalizedVisibility = ["all", "all_except", "specific", "collections"].includes(visibility)
     ? (visibility as "all" | "all_except" | "specific" | "collections")
     : "specific";
@@ -214,6 +215,7 @@ export async function action({
     addonsOrder,
     freeGiftVariantId,
     freeGiftProductId,
+    freeGiftMinQty,
   });
 
   try {
@@ -332,6 +334,7 @@ export default function QbEdit() {
           image: giftProductDetails[qb.freeGiftProductId]?.image ?? undefined,
         }
       : null,
+    freeGiftMinQty: String(qb.freeGiftMinQty ?? 1),
     checkboxUpsellsEnabled: qb.checkboxUpsellsEnabled ?? false,
     checkboxUpsells: (qb.checkboxUpsells ?? []).map((u) => ({
       id: u.id,
@@ -415,6 +418,7 @@ export default function QbEdit() {
                 .join(" – ") || null
             : null,
           freeGiftAvailable: values.freeGiftEnabled && values.freeGiftMode === "variant" && values.freeGiftVariant ? true : null,
+          freeGiftMinQty: values.freeGiftEnabled ? Math.max(1, parseInt(values.freeGiftMinQty || "1", 10) || 1) : null,
           freeGiftProductId: values.freeGiftEnabled && values.freeGiftMode === "product"
             ? values.freeGiftProduct?.productId ?? null
             : null,

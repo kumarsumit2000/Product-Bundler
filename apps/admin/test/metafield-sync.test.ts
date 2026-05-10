@@ -132,6 +132,7 @@ describe("syncShopConfig", () => {
       addonsOrder: null,
       freeGiftVariantId: null,
       freeGiftProductId: null,
+      freeGiftMinQty: 1,
     });
     const { admin, calls } = makeAdmin();
     await syncShopConfig(setup.db, admin, SHOP);
@@ -225,6 +226,7 @@ describe("syncShopConfig", () => {
       addonsOrder: null,
       freeGiftVariantId: null,
       freeGiftProductId: null,
+      freeGiftMinQty: 1,
     });
     const { admin, calls } = makeAdmin();
     await syncShopConfig(setup.db, admin, SHOP);

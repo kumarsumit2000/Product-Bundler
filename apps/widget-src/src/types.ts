@@ -194,6 +194,7 @@ export type QbConfig = {
   freeGiftVariantId?: string | null;
   freeGiftVariantTitle?: string | null;
   freeGiftAvailable?: boolean | null;
+  freeGiftMinQty?: number | null;
   freeGiftProductId?: string | null;
   freeGiftProductTitle?: string | null;
   freeGiftProductImage?: string | null;

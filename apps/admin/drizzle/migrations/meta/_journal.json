@@ -176,6 +176,13 @@
       "when": 1778365800000,
       "tag": "0024_qb_free_gift",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "6",
+      "when": 1778367000000,
+      "tag": "0025_qb_free_gift_min_qty",
+      "breakpoints": true
     }
   ]
 }

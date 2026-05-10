@@ -199,6 +199,7 @@ export async function buildStorefrontConfig(
       freeGiftVariantId: q.freeGiftVariantId ?? null,
       freeGiftVariantTitle: q.freeGiftVariantId ? (variantTitles[q.freeGiftVariantId] ?? null) : null,
       freeGiftAvailable: q.freeGiftVariantId ? (variantAvailability[q.freeGiftVariantId] ?? false) : null,
+      freeGiftMinQty: q.freeGiftMinQty ?? 1,
       freeGiftProductId: q.freeGiftProductId ?? null,
       freeGiftProductTitle: q.freeGiftProductId ? (productMap[q.freeGiftProductId]?.title ?? null) : null,
       freeGiftProductImage: q.freeGiftProductId ? (productMap[q.freeGiftProductId]?.image ?? null) : null,

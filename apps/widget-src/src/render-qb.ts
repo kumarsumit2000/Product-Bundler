@@ -174,13 +174,24 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
   };
 
   const renderQbGiftRow = (): string => {
+    const minQty = qb.freeGiftMinQty ?? 1;
+    const selectedTier = qb.tiers[selectedIndex];
+    const unlocked = !!selectedTier && selectedTier.qty >= minQty;
+    const buildLockedNote = () => {
+      const remaining = minQty - (selectedTier?.qty ?? 0);
+      const noun = remaining === 1 ? "qty" : "qty";
+      return `<div class="pumper-row-sub">Pick a tier with ${minQty}+ ${noun} to unlock${remaining > 0 ? ` (${remaining} more)` : ""}</div>`;
+    };
+
     if (qb.freeGiftVariantId && qb.freeGiftAvailable) {
       return `
-        <div class="pumper-bundle-row pumper-bundle-row--gift">
+        <div class="pumper-bundle-row pumper-bundle-row--gift${unlocked ? "" : " pumper-bundle-row--gift-locked"}">
           <div class="pumper-thumb pumper-thumb-emoji">🎁</div>
           <div class="pumper-row-meta">
             <div class="pumper-row-title">${escapeHtml(qb.freeGiftVariantTitle ?? "Free gift")}</div>
-            <div class="pumper-row-sub"><strong class="pumper-row-free">FREE</strong> with this offer</div>
+            ${unlocked
+              ? `<div class="pumper-row-sub"><strong class="pumper-row-free">FREE</strong> with this offer</div>`
+              : buildLockedNote()}
           </div>
         </div>
       `;
@@ -192,7 +203,7 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
       const img = qb.freeGiftProductImage
         ? `<img src="${escapeHtml(qb.freeGiftProductImage)}" alt="" class="pumper-thumb" loading="lazy" />`
         : `<div class="pumper-thumb pumper-thumb-emoji">🎁</div>`;
-      const select = variants.length > 1
+      const select = variants.length > 1 && unlocked
         ? `<select class="pumper-gift-variant" data-pumper-qb-gift-variant>
              ${variants
                .map((v) => `<option value="${escapeHtml(v.variantId)}" ${!v.available ? "disabled" : ""}>${escapeHtml(v.title)}${!v.available ? " (out of stock)" : ""}</option>`)
@@ -200,11 +211,13 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
            </select>`
         : "";
       return `
-        <div class="pumper-bundle-row pumper-bundle-row--gift">
+        <div class="pumper-bundle-row pumper-bundle-row--gift${unlocked ? "" : " pumper-bundle-row--gift-locked"}">
           ${img}
           <div class="pumper-row-meta">
             <div class="pumper-row-title">${escapeHtml(qb.freeGiftProductTitle ?? "Free gift")}</div>
-            <div class="pumper-row-sub"><strong class="pumper-row-free">FREE</strong> with this offer</div>
+            ${unlocked
+              ? `<div class="pumper-row-sub"><strong class="pumper-row-free">FREE</strong> with this offer</div>`
+              : buildLockedNote()}
             ${select}
           </div>
         </div>
@@ -258,16 +271,19 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
           });
         }
 
-        // QB-level free gift (set on the QB itself, applies to any tier).
+        // QB-level free gift — only when the selected tier meets the min qty
+        // threshold ("Buy N or more to unlock the gift").
         const qbGiftTag = `${qb.id}:gift`;
-        if (qb.freeGiftVariantId && qb.freeGiftAvailable) {
+        const qbGiftMinQty = qb.freeGiftMinQty ?? 1;
+        const qbGiftUnlocked = tr.qty >= qbGiftMinQty;
+        if (qbGiftUnlocked && qb.freeGiftVariantId && qb.freeGiftAvailable) {
           lines.push({
             variantId: qb.freeGiftVariantId,
             qty: 1,
             bundleId: qb.id,
             giftBundleId: qbGiftTag,
           });
-        } else if (qb.freeGiftProductId && (qb.freeGiftProductVariants?.length ?? 0) > 0) {
+        } else if (qbGiftUnlocked && qb.freeGiftProductId && (qb.freeGiftProductVariants?.length ?? 0) > 0) {
           const giftVariants = qb.freeGiftProductVariants ?? [];
           const giftSelect = mount.querySelector<HTMLSelectElement>("[data-pumper-qb-gift-variant]");
           const chosenGift = giftSelect?.value
