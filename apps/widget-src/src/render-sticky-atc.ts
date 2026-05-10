@@ -43,16 +43,88 @@ function applyStyles(target: HTMLElement, c: StickyAtcConfig): void {
   target.style.setProperty("--sa-btn-text", c.buttonText);
 }
 
-export function startStickyAtc(c: StickyAtcConfig): void {
-  // Only PDPs have a cart-add form. Bail otherwise.
-  const form = findCartForm();
-  if (!form) return;
-  const trigger = findFormSubmit(form);
-  if (!trigger) return;
-
+/**
+ * Mounts the sticky add-to-cart bar.
+ *
+ * @param widgetEl Optional bundle/QB widget element on the page. When provided
+ *   the sticky bar mirrors the widget's CTA (same label, same click behavior)
+ *   so it stays in sync with the customer's tier selection. Without it the
+ *   bar falls back to driving the page's native cart-add form.
+ */
+export function startStickyAtc(c: StickyAtcConfig, widgetEl?: HTMLElement): void {
   // Already mounted? (e.g. on SPA navigation)
   if (document.querySelector("[data-pumper-sticky]")) return;
 
+  const widgetCta = widgetEl?.querySelector<HTMLButtonElement>("button.pumper-cta") ?? null;
+
+  if (!widgetCta) {
+    // Fallback: drive the native cart-add form. Only PDPs have this; bail otherwise.
+    const form = findCartForm();
+    if (!form) return;
+    const trigger = findFormSubmit(form);
+    if (!trigger) return;
+    mountFallback(c, form, trigger);
+    return;
+  }
+
+  mountMirror(c, widgetCta);
+}
+
+function mountMirror(c: StickyAtcConfig, widgetCta: HTMLButtonElement): void {
+  const wrap = document.createElement("div");
+  wrap.setAttribute("data-pumper-sticky", "1");
+  wrap.className = "pumper-sticky";
+  applyStyles(wrap, c);
+
+  const image = c.showImage ? findProductImage() : null;
+  const title = findProductTitle();
+  const priceText = c.showPrice ? findPriceText() : null;
+
+  const initialLabel = (widgetCta.textContent || c.ctaLabel || "Add to cart").trim();
+
+  wrap.innerHTML = `
+    <div class="pumper-sticky-inner">
+      ${image ? `<img class="pumper-sticky-img" src="${escapeHtml(image)}" alt="" />` : ""}
+      <div class="pumper-sticky-meta">
+        ${title ? `<div class="pumper-sticky-title">${escapeHtml(title)}</div>` : ""}
+        ${priceText ? `<div class="pumper-sticky-price">${escapeHtml(priceText)}</div>` : ""}
+      </div>
+      <button type="button" class="pumper-sticky-cta">${escapeHtml(initialLabel)}</button>
+    </div>
+  `;
+
+  document.body.appendChild(wrap);
+
+  const cta = wrap.querySelector<HTMLButtonElement>(".pumper-sticky-cta");
+  cta?.addEventListener("click", () => {
+    if (typeof widgetCta.click === "function") widgetCta.click();
+  });
+
+  // Keep the sticky label and disabled state in sync with the widget's CTA.
+  const sync = () => {
+    if (!cta) return;
+    cta.textContent = (widgetCta.textContent || c.ctaLabel || "Add to cart").trim();
+    cta.disabled = widgetCta.disabled;
+    cta.style.opacity = widgetCta.disabled ? "0.5" : "";
+    cta.style.cursor = widgetCta.disabled ? "not-allowed" : "";
+  };
+  sync();
+  const obs = new MutationObserver(sync);
+  obs.observe(widgetCta, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["disabled"] });
+
+  // Show only when the widget's CTA is out of viewport.
+  const visObs = new IntersectionObserver((entries) => {
+    const visible = entries[0]?.isIntersecting;
+    wrap.classList.toggle("pumper-sticky--visible", !visible);
+  }, { threshold: 0.1 });
+  visObs.observe(widgetCta);
+}
+
+function mountFallback(
+  c: StickyAtcConfig,
+  form: HTMLFormElement,
+  trigger: HTMLButtonElement | HTMLInputElement,
+): void {
   const wrap = document.createElement("div");
   wrap.setAttribute("data-pumper-sticky", "1");
   wrap.className = "pumper-sticky";
@@ -76,7 +148,6 @@ export function startStickyAtc(c: StickyAtcConfig): void {
 
   document.body.appendChild(wrap);
 
-  // Wire CTA: copy qty into form, submit native form so theme handlers run.
   const qtyInput = wrap.querySelector<HTMLInputElement>(".pumper-sticky-qty");
   const cta = wrap.querySelector<HTMLButtonElement>(".pumper-sticky-cta");
   cta?.addEventListener("click", () => {
@@ -87,7 +158,6 @@ export function startStickyAtc(c: StickyAtcConfig): void {
     if (typeof trigger.click === "function") trigger.click();
   });
 
-  // Show only when the original ATC button is out of viewport.
   const observer = new IntersectionObserver((entries) => {
     const visible = entries[0]?.isIntersecting;
     wrap.classList.toggle("pumper-sticky--visible", !visible);

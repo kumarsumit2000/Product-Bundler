@@ -30,9 +30,9 @@ export function StickyAtcCard({ value, onChange }: Props) {
       <BlockStack gap="300">
         <Text as="h2" variant="headingMd">Sticky add-to-cart bar</Text>
         <Text as="p" tone="subdued">
-          When enabled, a fixed bar appears at the bottom of the product page once the customer
-          scrolls past the original Add to cart button. Only shows on PDPs that match this
-          widget&apos;s visibility rules.
+          When enabled, a fixed bar appears at the bottom of the product page after the customer
+          scrolls past this widget. Its button mirrors this widget&apos;s CTA, so the qty /
+          discount stays in sync with the selected tier.
         </Text>
         <Checkbox
           label="Enable sticky add-to-cart bar for this widget"
@@ -47,18 +47,14 @@ export function StickyAtcCard({ value, onChange }: Props) {
               onChange={(showImage) => set("showImage", showImage)}
             />
             <Checkbox
-              label="Show quantity selector"
-              checked={value.showQty}
-              onChange={(showQty) => set("showQty", showQty)}
-            />
-            <Checkbox
               label="Show price"
               checked={value.showPrice}
               onChange={(showPrice) => set("showPrice", showPrice)}
             />
             <FormLayout>
               <TextField
-                label="Button text"
+                label="Fallback button text"
+                helpText="Used only if the widget's CTA can't be detected on the page."
                 value={value.ctaLabel}
                 onChange={(ctaLabel) => set("ctaLabel", ctaLabel)}
                 autoComplete="off"

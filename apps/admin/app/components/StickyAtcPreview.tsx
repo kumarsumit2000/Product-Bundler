@@ -10,8 +10,9 @@ export function StickyAtcPreview({ value }: Props) {
       <BlockStack gap="200">
         <Text as="h3" variant="headingSm">Sticky add-to-cart preview</Text>
         <Text as="p" tone="subdued" variant="bodySm">
-          This bar appears at the bottom of the product page once a customer scrolls past
-          the original Add to cart button.
+          Appears at the bottom of the product page once a customer scrolls past this
+          widget. The button mirrors this widget&apos;s CTA so it stays in sync with the
+          selected tier (e.g. &quot;Add 3 to cart — Save $45.00&quot;).
         </Text>
         <div
           style={{
@@ -61,23 +62,6 @@ export function StickyAtcPreview({ value }: Props) {
               <div style={{ fontSize: 12, opacity: 0.75 }}>$49.99</div>
             )}
           </div>
-          {value.showQty && (
-            <input
-              type="number"
-              min={1}
-              defaultValue={1}
-              readOnly
-              style={{
-                width: 50,
-                padding: "6px 8px",
-                border: "1px solid #d1d5db",
-                borderRadius: 4,
-                background: "#fff",
-                color: "#111",
-                fontSize: 13,
-              }}
-            />
-          )}
           <button
             type="button"
             disabled

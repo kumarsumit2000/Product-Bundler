@@ -150,6 +150,13 @@ const SHORTCODES: ShortcodeSpec[] = [
   { kind: "ct",     selector: "[data-pumper-countdown]:not([data-pumper-rendered])",   attr: "data-pumper-countdown" },
 ];
 
+function findRenderedWidgetEl(): HTMLElement | null {
+  // Pick the closest widget container to a rendered .pumper-cta button on the page.
+  const cta = document.querySelector<HTMLButtonElement>("button.pumper-cta");
+  if (!cta) return null;
+  return cta.closest<HTMLElement>(".pumper-mount, [data-pumper-bundle], [data-pumper-qb], [data-pumper-mix-match]") ?? cta.parentElement;
+}
+
 const DEFAULT_ADDONS_ORDER = ["countdown", "widget", "progressive"] as const;
 
 function normalizeAddonsOrder(input: string[] | null | undefined): string[] {
@@ -390,6 +397,8 @@ export async function initWidget(): Promise<void> {
   // Auto sticky-ATC (PDP only). Picks the sticky config from any active bundle
   // or QB that targets the current product and has stickyAtc.enabled. The first
   // matching widget wins; QBs take precedence over bundles when both match.
+  // When a matching widget is mounted on the page, the sticky bar mirrors
+  // *that* widget's CTA so qty/discount stays in sync with tier selection.
   if (!window._pumperPreview) {
     const pdpProductId = window._pumperConfig?.productId;
     if (pdpProductId) {
@@ -400,7 +409,10 @@ export async function initWidget(): Promise<void> {
         : matchedBundle?.stickyAtc?.enabled
           ? matchedBundle.stickyAtc
           : null;
-      if (stickyConfig) startStickyAtc(stickyConfig);
+      if (stickyConfig) {
+        const widgetEl = findRenderedWidgetEl();
+        startStickyAtc(stickyConfig, widgetEl ?? undefined);
+      }
     }
   }
 
