@@ -130,6 +130,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     styleOverrides: parsedStyleOverrides,
     textOverrides: parsedTextOverrides,
     freeGiftVariantId: (form.get("freeGiftVariantId") as string) || null,
+    freeGiftProductId: (form.get("freeGiftProductId") as string) || null,
     subscription: parseSubscriptionForm(form.get("subscription")),
   };
 
@@ -265,13 +266,27 @@ export default function BundleNew() {
           linkedCountdownId: values.linkedCountdownId,
           linkedProgressiveGiftId: values.linkedProgressiveGiftId,
           addonsOrder: values.addonsOrder,
-          freeGiftVariantId: values.freeGiftEnabled ? values.freeGiftVariant?.variantId ?? null : null,
-          freeGiftVariantTitle: values.freeGiftEnabled
+          freeGiftVariantId: values.freeGiftEnabled && values.freeGiftMode === "variant"
+            ? values.freeGiftVariant?.variantId ?? null
+            : null,
+          freeGiftVariantTitle: values.freeGiftEnabled && values.freeGiftMode === "variant"
             ? [values.freeGiftVariant?.productTitle, values.freeGiftVariant?.variantTitle]
                 .filter(Boolean)
                 .join(" – ") || null
             : null,
-          freeGiftAvailable: values.freeGiftEnabled && values.freeGiftVariant ? true : null,
+          freeGiftAvailable: values.freeGiftEnabled && values.freeGiftMode === "variant" && values.freeGiftVariant ? true : null,
+          freeGiftProductId: values.freeGiftEnabled && values.freeGiftMode === "product"
+            ? values.freeGiftProduct?.productId ?? null
+            : null,
+          freeGiftProductTitle: values.freeGiftEnabled && values.freeGiftMode === "product"
+            ? values.freeGiftProduct?.title ?? null
+            : null,
+          freeGiftProductImage: values.freeGiftEnabled && values.freeGiftMode === "product"
+            ? values.freeGiftProduct?.image ?? null
+            : null,
+          freeGiftProductVariants: values.freeGiftEnabled && values.freeGiftMode === "product" && values.freeGiftProduct
+            ? [{ variantId: values.freeGiftProduct.variantId ?? "v0", title: values.freeGiftProduct.title ?? "Default", available: true, priceCents: 0 }]
+            : null,
         },
         addons: {
           countdowns: allCountdowns,

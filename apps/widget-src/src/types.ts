@@ -106,6 +106,15 @@ export type BundleConfig = {
   freeGiftVariantId: string | null;
   freeGiftVariantTitle: string | null;
   freeGiftAvailable: boolean | null;
+  freeGiftProductId?: string | null;
+  freeGiftProductTitle?: string | null;
+  freeGiftProductImage?: string | null;
+  freeGiftProductVariants?: Array<{
+    variantId: string;
+    title: string;
+    available: boolean;
+    priceCents: number;
+  }> | null;
   subscription?: SubscriptionConfig | null;
   linkedCountdownId?: string | null;
   linkedProgressiveGiftId?: string | null;

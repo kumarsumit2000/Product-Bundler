@@ -158,6 +158,7 @@ export const bundles = sqliteTable("bundles", {
   headline: text("headline"),
   ctaLabel: text("cta_label"),
   freeGiftVariantId: text("free_gift_variant_id"),
+  freeGiftProductId: text("free_gift_product_id"),
   subscription: text("subscription", { mode: "json" }).$type<Subscription | null>(),
   mode: text("mode", { enum: ["classic", "mix_match"] }).notNull().default("classic"),
   collectionId: text("collection_id"),

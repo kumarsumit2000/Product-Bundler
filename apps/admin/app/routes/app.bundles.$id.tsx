@@ -81,6 +81,7 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
   const productIds = [
     ...bundle.products.map((p) => p.productId),
     ...bundle.triggerProductIds,
+    ...(bundle.freeGiftProductId ? [bundle.freeGiftProductId] : []),
   ];
   const productDetails = await fetchProductDetails(admin, [...new Set(productIds)]);
 
@@ -221,6 +222,7 @@ export async function action({
     styleOverrides: parsedStyleOverrides,
     textOverrides: parsedTextOverrides,
     freeGiftVariantId: (form.get("freeGiftVariantId") as string) || null,
+    freeGiftProductId: (form.get("freeGiftProductId") as string) || null,
     subscription: parseSubscriptionForm(form.get("subscription")),
   };
 
@@ -335,7 +337,12 @@ export default function BundleEdit() {
       "bundle.totalLabel": (bundle.textOverrides as Record<string, string> | null)?.["bundle.totalLabel"] ?? "",
       "bundle.savingsBadge": (bundle.textOverrides as Record<string, string> | null)?.["bundle.savingsBadge"] ?? "",
     },
-    freeGiftEnabled: !!bundle.freeGiftVariantId,
+    freeGiftEnabled: !!(bundle.freeGiftVariantId || bundle.freeGiftProductId),
+    freeGiftMode: (bundle.freeGiftProductId
+      ? "product"
+      : bundle.freeGiftVariantId
+        ? "variant"
+        : "product") as "variant" | "product",
     freeGiftVariant: (() => {
       const id = bundle.freeGiftVariantId;
       const detail = id ? giftVariantDetails[id] : undefined;
@@ -348,6 +355,15 @@ export default function BundleEdit() {
         image: detail.image ?? undefined,
       };
     })(),
+    freeGiftProduct: bundle.freeGiftProductId
+      ? {
+          productId: bundle.freeGiftProductId,
+          variantId: null,
+          qty: 1,
+          title: productDetails[bundle.freeGiftProductId]?.title ?? "",
+          image: productDetails[bundle.freeGiftProductId]?.image ?? undefined,
+        }
+      : null,
     linkedCountdownId: bundle.linkedCountdownId ?? null,
     linkedProgressiveGiftId: bundle.linkedProgressiveGiftId ?? null,
     addonsOrder: (bundle.addonsOrder as AddonsOrderItem[] | null) ?? [...DEFAULT_ADDONS_ORDER],
@@ -400,13 +416,27 @@ export default function BundleEdit() {
           linkedCountdownId: values.linkedCountdownId,
           linkedProgressiveGiftId: values.linkedProgressiveGiftId,
           addonsOrder: values.addonsOrder,
-          freeGiftVariantId: values.freeGiftEnabled ? values.freeGiftVariant?.variantId ?? null : null,
-          freeGiftVariantTitle: values.freeGiftEnabled
+          freeGiftVariantId: values.freeGiftEnabled && values.freeGiftMode === "variant"
+            ? values.freeGiftVariant?.variantId ?? null
+            : null,
+          freeGiftVariantTitle: values.freeGiftEnabled && values.freeGiftMode === "variant"
             ? [values.freeGiftVariant?.productTitle, values.freeGiftVariant?.variantTitle]
                 .filter(Boolean)
                 .join(" – ") || null
             : null,
-          freeGiftAvailable: values.freeGiftEnabled && values.freeGiftVariant ? true : null,
+          freeGiftAvailable: values.freeGiftEnabled && values.freeGiftMode === "variant" && values.freeGiftVariant ? true : null,
+          freeGiftProductId: values.freeGiftEnabled && values.freeGiftMode === "product"
+            ? values.freeGiftProduct?.productId ?? null
+            : null,
+          freeGiftProductTitle: values.freeGiftEnabled && values.freeGiftMode === "product"
+            ? values.freeGiftProduct?.title ?? null
+            : null,
+          freeGiftProductImage: values.freeGiftEnabled && values.freeGiftMode === "product"
+            ? values.freeGiftProduct?.image ?? null
+            : null,
+          freeGiftProductVariants: values.freeGiftEnabled && values.freeGiftMode === "product" && values.freeGiftProduct
+            ? [{ variantId: values.freeGiftProduct.variantId ?? "v0", title: values.freeGiftProduct.title ?? "Default", available: true, priceCents: 0 }]
+            : null,
         },
         addons: {
           countdowns: allCountdowns,

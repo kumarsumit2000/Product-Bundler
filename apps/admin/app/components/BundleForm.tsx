@@ -46,7 +46,9 @@ export type BundleFormValues = StylePanelValues & {
   ctaLabel: string;
   textOverrides: Record<string, string>;
   freeGiftEnabled: boolean;
+  freeGiftMode: "variant" | "product";
   freeGiftVariant: PickedVariant | null;
+  freeGiftProduct: PickedProduct | null;
   linkedCountdownId: string | null;
   linkedProgressiveGiftId: string | null;
   addonsOrder: AddonsOrderItem[];
@@ -82,7 +84,9 @@ const DEFAULTS: BundleFormValues = {
   ctaLabel: "",
   textOverrides: { "bundle.totalLabel": "", "bundle.savingsBadge": "" },
   freeGiftEnabled: false,
+  freeGiftMode: "product",
   freeGiftVariant: null,
+  freeGiftProduct: null,
   linkedCountdownId: null,
   linkedProgressiveGiftId: null,
   addonsOrder: [...DEFAULT_ADDONS_ORDER],
@@ -132,7 +136,12 @@ export function BundleForm({ initialValues, errors, submitLabel, onValuesChange,
       <input
         type="hidden"
         name="freeGiftVariantId"
-        value={values.freeGiftVariant?.variantId ?? ""}
+        value={values.freeGiftEnabled && values.freeGiftMode === "variant" ? values.freeGiftVariant?.variantId ?? "" : ""}
+      />
+      <input
+        type="hidden"
+        name="freeGiftProductId"
+        value={values.freeGiftEnabled && values.freeGiftMode === "product" ? values.freeGiftProduct?.productId ?? "" : ""}
       />
       <input type="hidden" name="subscription" value="null" />
       <input type="hidden" name="linkedCountdownId" value={values.linkedCountdownId ?? ""} />
@@ -247,19 +256,53 @@ export function BundleForm({ initialValues, errors, submitLabel, onValuesChange,
               checked={values.freeGiftEnabled}
               onChange={(enabled) => {
                 update("freeGiftEnabled", enabled);
-                if (!enabled) update("freeGiftVariant", null);
+                if (!enabled) {
+                  update("freeGiftVariant", null);
+                  update("freeGiftProduct", null);
+                }
               }}
             />
             {values.freeGiftEnabled && (
-              <BlockStack gap="200">
+              <BlockStack gap="300">
                 <Text as="p" tone="subdued">
-                  Pick any product variant from your catalog. It&apos;s added free alongside the
-                  bundle items, shown as a row inside the bundle, and discounted 100% at checkout.
+                  The gift renders as a row inside the bundle on the product page and is
+                  discounted 100% at checkout.
                 </Text>
-                <VariantPicker
-                  variant={values.freeGiftVariant}
-                  onChange={(v) => update("freeGiftVariant", v)}
+                <ChoiceList
+                  title="Pick from"
+                  titleHidden
+                  choices={[
+                    {
+                      label: "Any product (customer picks the variant)",
+                      value: "product",
+                      helpText: "Show every product in your catalog. The shopper chooses which variant to claim.",
+                    },
+                    {
+                      label: "A specific variant",
+                      value: "variant",
+                      helpText: "Pin one exact variant — useful for one-size or sample SKUs.",
+                    },
+                  ]}
+                  selected={[values.freeGiftMode]}
+                  onChange={(s) => {
+                    const mode = s[0] as BundleFormValues["freeGiftMode"];
+                    update("freeGiftMode", mode);
+                    if (mode === "product") update("freeGiftVariant", null);
+                    else update("freeGiftProduct", null);
+                  }}
                 />
+                {values.freeGiftMode === "product" ? (
+                  <ProductPicker
+                    products={values.freeGiftProduct ? [values.freeGiftProduct] : []}
+                    onChange={(p) => update("freeGiftProduct", p[0] ?? null)}
+                    showQty={false}
+                  />
+                ) : (
+                  <VariantPicker
+                    variant={values.freeGiftVariant}
+                    onChange={(v) => update("freeGiftVariant", v)}
+                  />
+                )}
               </BlockStack>
             )}
           </BlockStack>

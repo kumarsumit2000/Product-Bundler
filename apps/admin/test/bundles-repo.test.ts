@@ -32,6 +32,7 @@ const NEW_BUNDLE_INPUT = {
   headline: null,
   ctaLabel: null,
   freeGiftVariantId: null,
+  freeGiftProductId: null,
   mode: "classic" as const,
   collectionId: null,
   targetQty: null,

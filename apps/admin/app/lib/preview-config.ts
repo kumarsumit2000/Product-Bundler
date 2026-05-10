@@ -52,6 +52,15 @@ type BundleShape = {
   freeGiftVariantId?: string | null;
   freeGiftVariantTitle?: string | null;
   freeGiftAvailable?: boolean | null;
+  freeGiftProductId?: string | null;
+  freeGiftProductTitle?: string | null;
+  freeGiftProductImage?: string | null;
+  freeGiftProductVariants?: Array<{
+    variantId: string;
+    title: string;
+    available: boolean;
+    priceCents: number;
+  }> | null;
 };
 
 type AddonsShape = {

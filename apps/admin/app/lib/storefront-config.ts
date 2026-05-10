@@ -60,6 +60,9 @@ export async function buildStorefrontConfig(
       if (t.giftProductId) allProductIds.add(t.giftProductId);
     }
   }
+  for (const b of bundles) {
+    if (b.freeGiftProductId) allProductIds.add(b.freeGiftProductId);
+  }
 
   const productMap = await fetchProductDetails(admin, [...allProductIds]);
 
@@ -228,6 +231,17 @@ export async function buildStorefrontConfig(
       freeGiftVariantId: b.freeGiftVariantId ?? null,
       freeGiftVariantTitle: b.freeGiftVariantId ? (variantTitles[b.freeGiftVariantId] ?? null) : null,
       freeGiftAvailable: b.freeGiftVariantId ? (variantAvailability[b.freeGiftVariantId] ?? false) : null,
+      freeGiftProductId: b.freeGiftProductId ?? null,
+      freeGiftProductTitle: b.freeGiftProductId ? (productMap[b.freeGiftProductId]?.title ?? null) : null,
+      freeGiftProductImage: b.freeGiftProductId ? (productMap[b.freeGiftProductId]?.image ?? null) : null,
+      freeGiftProductVariants: b.freeGiftProductId
+        ? (productMap[b.freeGiftProductId]?.variants ?? []).map((v) => ({
+            variantId: v.variantId,
+            title: v.title,
+            available: v.available,
+            priceCents: v.priceCents,
+          }))
+        : null,
       subscription: b.subscription ?? null,
       linkedCountdownId: b.linkedCountdownId ?? null,
       linkedProgressiveGiftId: b.linkedProgressiveGiftId ?? null,

@@ -40,17 +40,47 @@ export function renderBundle(mount: HTMLElement, bundle: BundleConfig, config: W
     `;
   });
 
-  const giftRow = bundle.freeGiftVariantId && bundle.freeGiftAvailable
-    ? `
-      <div class="pumper-bundle-row pumper-bundle-row--gift">
-        <div class="pumper-thumb pumper-thumb-emoji">🎁</div>
-        <div class="pumper-row-meta">
-          <div class="pumper-row-title">${escapeHtml(bundle.freeGiftVariantTitle ?? "Free gift")}</div>
-          <div class="pumper-row-sub"><strong class="pumper-row-free">FREE</strong> with this bundle</div>
+  const giftRow = (() => {
+    // Specific variant mode
+    if (bundle.freeGiftVariantId && bundle.freeGiftAvailable) {
+      return `
+        <div class="pumper-bundle-row pumper-bundle-row--gift">
+          <div class="pumper-thumb pumper-thumb-emoji">🎁</div>
+          <div class="pumper-row-meta">
+            <div class="pumper-row-title">${escapeHtml(bundle.freeGiftVariantTitle ?? "Free gift")}</div>
+            <div class="pumper-row-sub"><strong class="pumper-row-free">FREE</strong> with this bundle</div>
+          </div>
         </div>
-      </div>
-    `
-    : null;
+      `;
+    }
+    // Product mode — customer picks a variant
+    if (bundle.freeGiftProductId && (bundle.freeGiftProductVariants?.length ?? 0) > 0) {
+      const variants = bundle.freeGiftProductVariants ?? [];
+      const hasAvailable = variants.some((v) => v.available);
+      if (!hasAvailable) return null;
+      const img = bundle.freeGiftProductImage
+        ? `<img src="${escapeHtml(bundle.freeGiftProductImage)}" alt="" class="pumper-thumb" loading="lazy" />`
+        : `<div class="pumper-thumb pumper-thumb-emoji">🎁</div>`;
+      const select = variants.length > 1
+        ? `<select class="pumper-gift-variant" data-pumper-gift-variant>
+             ${variants
+               .map((v) => `<option value="${escapeHtml(v.variantId)}" ${!v.available ? "disabled" : ""}>${escapeHtml(v.title)}${!v.available ? " (out of stock)" : ""}</option>`)
+               .join("")}
+           </select>`
+        : "";
+      return `
+        <div class="pumper-bundle-row pumper-bundle-row--gift">
+          ${img}
+          <div class="pumper-row-meta">
+            <div class="pumper-row-title">${escapeHtml(bundle.freeGiftProductTitle ?? "Free gift")}</div>
+            <div class="pumper-row-sub"><strong class="pumper-row-free">FREE</strong> with this bundle</div>
+            ${select}
+          </div>
+        </div>
+      `;
+    }
+    return null;
+  })();
 
   const allRows = giftRow ? [...productRows, giftRow] : productRows;
   const rows = allRows.join('<div class="pumper-plus">+</div>');
@@ -102,8 +132,18 @@ export function renderBundle(mount: HTMLElement, bundle: BundleConfig, config: W
       const lines = bundle.products
         .filter((p) => p.variantId)
         .map((p) => ({ variantId: p.variantId!, qty: p.qty, bundleId: bundle.id }));
+      const giftTag = `${bundle.id}:gift`;
       if (bundle.freeGiftVariantId && bundle.freeGiftAvailable) {
-        lines.push({ variantId: bundle.freeGiftVariantId, qty: 1, bundleId: bundle.id });
+        lines.push({ variantId: bundle.freeGiftVariantId, qty: 1, bundleId: bundle.id, giftBundleId: giftTag });
+      } else if (bundle.freeGiftProductId && (bundle.freeGiftProductVariants?.length ?? 0) > 0) {
+        const variants = bundle.freeGiftProductVariants ?? [];
+        const select = mount.querySelector<HTMLSelectElement>("[data-pumper-gift-variant]");
+        const chosen = select?.value
+          || variants.find((v) => v.available)?.variantId
+          || variants[0]?.variantId;
+        if (chosen) {
+          lines.push({ variantId: chosen, qty: 1, bundleId: bundle.id, giftBundleId: giftTag });
+        }
       }
       const result = await addToCart(bundle.id, lines);
       if (!result.ok) {

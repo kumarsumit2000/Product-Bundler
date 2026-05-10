@@ -12,6 +12,7 @@
 .pumper-thumb-emoji { display: inline-flex; align-items: center; justify-content: center; font-size: 26px; background: #fff7f8; }
 .pumper-bundle-row--gift { border-color: var(--pumper-primary, #7B1E2A); background: #fff7f8; }
 .pumper-row-free { color: var(--pumper-primary, #7B1E2A); font-weight: 700; letter-spacing: .3px; }
+.pumper-gift-variant { margin-top: 4px; padding: 4px 6px; font-size: 12px; border: 1px solid #d1d5db; border-radius: 4px; background: #fff; max-width: 100%; }
 .pumper-row-meta { flex: 1; min-width: 0; }
 .pumper-row-title { font-size: 13px; font-weight: 500; }
 .pumper-row-sub { font-size: 11px; color: #888; }

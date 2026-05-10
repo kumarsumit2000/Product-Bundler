@@ -162,6 +162,13 @@
       "when": 1778363400000,
       "tag": "0022_bundle_visibility",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1778364600000,
+      "tag": "0023_bundle_free_gift_product",
+      "breakpoints": true
     }
   ]
 }
