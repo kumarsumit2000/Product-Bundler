@@ -6,6 +6,8 @@ import { renderQb } from "./render-qb";
 import { renderMixMatch } from "./render-mix-match";
 import { renderNewsletter, renderPopupInline, maybeStartNewsletterPopup } from "./render-newsletter";
 import { renderProgressive } from "./render-progressive";
+import { renderCountdown } from "./render-countdown";
+import { startStickyAtc } from "./render-sticky-atc";
 import { configureAnalytics } from "./analytics";
 import { setLocale } from "./i18n";
 
@@ -137,7 +139,7 @@ export function applyCssVars(
   }
 }
 
-type ShortcodeKind = "bundle" | "qb" | "mix" | "pg";
+type ShortcodeKind = "bundle" | "qb" | "mix" | "pg" | "ct";
 type ShortcodeSpec = { kind: ShortcodeKind; selector: string; attr: string };
 
 const SHORTCODES: ShortcodeSpec[] = [
@@ -145,6 +147,7 @@ const SHORTCODES: ShortcodeSpec[] = [
   { kind: "qb",     selector: "[data-pumper-qb]:not([data-pumper-rendered])",        attr: "data-pumper-qb"        },
   { kind: "mix",    selector: "[data-pumper-mix-match]:not([data-pumper-rendered])", attr: "data-pumper-mix-match" },
   { kind: "pg",     selector: "[data-pumper-progressive]:not([data-pumper-rendered])", attr: "data-pumper-progressive" },
+  { kind: "ct",     selector: "[data-pumper-countdown]:not([data-pumper-rendered])",   attr: "data-pumper-countdown" },
 ];
 
 function renderShortcode(el: HTMLElement, kind: ShortcodeKind, id: string, cfg: WidgetConfig): void {
@@ -172,10 +175,17 @@ function renderShortcode(el: HTMLElement, kind: ShortcodeKind, id: string, cfg: 
     el.dataset.pumperRendered = "1";
     return;
   }
-  // kind === "pg"
-  const pg = (cfg.progressiveGifts ?? []).find((p) => p.id === id);
-  if (!pg) { el.innerHTML = ""; el.style.minHeight = ""; el.dataset.pumperRendered = "1"; return; }
-  renderProgressive(el, pg);
+  if (kind === "pg") {
+    const pg = (cfg.progressiveGifts ?? []).find((p) => p.id === id);
+    if (!pg) { el.innerHTML = ""; el.style.minHeight = ""; el.dataset.pumperRendered = "1"; return; }
+    renderProgressive(el, pg);
+    el.dataset.pumperRendered = "1";
+    return;
+  }
+  // kind === "ct"
+  const ct = (cfg.countdowns ?? []).find((c) => c.id === id);
+  if (!ct) { el.innerHTML = ""; el.dataset.pumperRendered = "1"; return; }
+  renderCountdown(el, ct);
   el.dataset.pumperRendered = "1";
 }
 
@@ -282,6 +292,11 @@ export async function initWidget(): Promise<void> {
   if (cfg.newsletter && cfg.newsletter.popup && !window._pumperPreview) {
     applyCssVars(document.documentElement, cfg, null);
     maybeStartNewsletterPopup(cfg.newsletter);
+  }
+
+  // Auto sticky-ATC (PDP only — startStickyAtc bails if no cart-add form found)
+  if (cfg.stickyAtc && !window._pumperPreview) {
+    startStickyAtc(cfg.stickyAtc);
   }
 
   startObserver(cfg);

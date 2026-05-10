@@ -195,6 +195,45 @@ export const quantityBreaks = sqliteTable("quantity_breaks", {
   productIdx: index("qb_product_idx").on(t.shopId, t.productId),
 }));
 
+// ─── Sticky add-to-cart (per-shop) ─────────────────────────
+export const stickyAtcSettings = sqliteTable("sticky_atc_settings", {
+  shopId: text("shop_id").primaryKey().references(() => shops.id, { onDelete: "cascade" }),
+  enabled: integer("enabled", { mode: "boolean" }).notNull().default(false),
+  showImage: integer("show_image", { mode: "boolean" }).notNull().default(true),
+  showQty: integer("show_qty", { mode: "boolean" }).notNull().default(true),
+  showPrice: integer("show_price", { mode: "boolean" }).notNull().default(true),
+  ctaLabel: text("cta_label").notNull().default("Add to cart"),
+  backgroundColor: text("background_color").notNull().default("#FFFFFF"),
+  textColor: text("text_color").notNull().default("#1A1A1A"),
+  buttonBg: text("button_bg").notNull().default("#1A1A1A"),
+  buttonText: text("button_text").notNull().default("#FFFFFF"),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+});
+
+// ─── Countdown timers ─────────────────────────────────────
+export type CountdownStyleOverrides = Partial<{
+  backgroundColor: string;
+  textColor: string;
+  accentColor: string;
+  borderRadius: number;
+}>;
+
+export const countdownTimers = sqliteTable("countdown_timers", {
+  id: text("id").primaryKey(),
+  shopId: text("shop_id").notNull().references(() => shops.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  status: text("status").notNull().default("draft"),
+  endAt: integer("end_at", { mode: "timestamp" }).notNull(),
+  headline: text("headline").notNull().default("Sale ends in"),
+  expiredHeadline: text("expired_headline").notNull().default("This deal has ended"),
+  layout: text("layout").notNull().default("inline"),
+  styleOverrides: text("style_overrides", { mode: "json" }).$type<CountdownStyleOverrides | null>(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+}, (t) => ({
+  shopIdx: index("ct_shop_idx").on(t.shopId),
+}));
+
 export const newsletterSettings = sqliteTable("newsletter_settings", {
   shopId: text("shop_id").primaryKey().references(() => shops.id, { onDelete: "cascade" }),
   enabled: integer("enabled", { mode: "boolean" }).notNull().default(false),
@@ -314,6 +353,10 @@ export type ProgressiveGift = typeof progressiveGifts.$inferSelect;
 export type NewProgressiveGift = typeof progressiveGifts.$inferInsert;
 export type NewsletterSettings = typeof newsletterSettings.$inferSelect;
 export type NewNewsletterSettings = typeof newsletterSettings.$inferInsert;
+export type StickyAtcSettings = typeof stickyAtcSettings.$inferSelect;
+export type NewStickyAtcSettings = typeof stickyAtcSettings.$inferInsert;
+export type CountdownTimer = typeof countdownTimers.$inferSelect;
+export type NewCountdownTimer = typeof countdownTimers.$inferInsert;
 export type NewQuantityBreak = typeof quantityBreaks.$inferInsert;
 export type ShopSettings = typeof shopSettings.$inferSelect;
 

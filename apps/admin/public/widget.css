@@ -395,3 +395,59 @@
 .pumper-upsell-title { font-size: 13px; font-weight: 600; color: var(--pumper-title-color, inherit); }
 .pumper-upsell-sub { font-size: 11px; color: var(--pumper-subtitle-color, #888); }
 .pumper-upsell-pricing { font-size: 12px; font-weight: 700; color: var(--pumper-primary, #7B1E2A); white-space: nowrap; flex-shrink: 0; }
+
+/* Countdown timer */
+.pumper-ct {
+  font-family: inherit;
+  background: var(--ct-bg, #1a1a1a);
+  color: var(--ct-text, #fff);
+  border-radius: var(--ct-radius, 6px);
+  padding: 10px 14px;
+}
+.pumper-ct--bar { border-radius: 0; padding: 12px 16px; text-align: center; }
+.pumper-ct-inner { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; }
+.pumper-ct-headline { font-size: 13px; font-weight: 600; }
+.pumper-ct-clock { display: inline-flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
+.pumper-ct-unit { display: inline-flex; flex-direction: column; align-items: center; min-width: 28px; }
+.pumper-ct-unit b { font-size: 18px; font-weight: 700; line-height: 1; color: var(--ct-accent, #d9263a); }
+.pumper-ct-unit i { font-size: 9px; font-style: normal; opacity: .8; margin-top: 2px; }
+.pumper-ct-sep { color: var(--ct-accent, #d9263a); font-weight: 700; font-size: 16px; line-height: 1; }
+.pumper-ct-expired { opacity: .85; font-style: italic; }
+
+/* Sticky add to cart */
+.pumper-sticky {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  background: var(--sa-bg, #fff);
+  color: var(--sa-text, #1a1a1a);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 10px 16px;
+  z-index: 9999;
+  transform: translateY(120%);
+  transition: transform .25s ease;
+  font-family: inherit;
+}
+.pumper-sticky--visible { transform: translateY(0); }
+.pumper-sticky-inner {
+  display: flex; align-items: center; gap: 12px;
+  max-width: 900px; margin: 0 auto;
+}
+.pumper-sticky-img { width: 44px; height: 44px; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
+.pumper-sticky-meta { flex: 1; min-width: 0; }
+.pumper-sticky-title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pumper-sticky-price { font-size: 12px; color: var(--sa-text, #555); }
+.pumper-sticky-qty {
+  width: 50px; padding: 6px 8px;
+  border: 1px solid #d1d5db; border-radius: 4px; background: #fff;
+}
+.pumper-sticky-cta {
+  background: var(--sa-btn-bg, #1a1a1a);
+  color: var(--sa-btn-text, #fff);
+  border: 0; padding: 10px 18px; border-radius: 6px;
+  font-weight: 700; font-size: 13px; cursor: pointer; flex-shrink: 0;
+}
+.pumper-sticky-cta:hover { opacity: .9; }
+@media (max-width: 480px) {
+  .pumper-sticky-title { font-size: 12px; }
+  .pumper-sticky-cta { padding: 10px 14px; }
+}

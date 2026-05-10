@@ -279,6 +279,27 @@ export type ProgressiveGiftConfig = {
   thresholds: ProgressiveGiftThreshold[];
 };
 
+export type StickyAtcConfig = {
+  showImage: boolean;
+  showQty: boolean;
+  showPrice: boolean;
+  ctaLabel: string;
+  backgroundColor: string;
+  textColor: string;
+  buttonBg: string;
+  buttonText: string;
+};
+
+export type CountdownConfig = {
+  id: string;
+  name: string;
+  endAt: number;
+  headline: string;
+  expiredHeadline: string;
+  layout: "inline" | "bar";
+  styleOverrides: { backgroundColor?: string; textColor?: string; accentColor?: string; borderRadius?: number } | null;
+};
+
 export type WidgetConfig = {
   shop: string;
   settings: Settings;
@@ -286,6 +307,8 @@ export type WidgetConfig = {
   quantityBreaks: QbConfig[];
   progressiveGifts?: ProgressiveGiftConfig[];
   newsletter?: NewsletterConfig | null;
+  stickyAtc?: StickyAtcConfig | null;
+  countdowns?: CountdownConfig[];
 };
 
 export type CartLine = {
