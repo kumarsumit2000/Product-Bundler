@@ -28,10 +28,9 @@ describe("validateQb", () => {
     expect(r.valid).toBe(false);
   });
 
-  it("rejects missing productId", () => {
+  it("accepts missing productId — visibility settings drive matching now", () => {
     const r = validateQb({ ...VALID, productId: "" });
-    expect(r.valid).toBe(false);
-    if (!r.valid) expect(r.errors.productId).toBeDefined();
+    expect(r.valid).toBe(true);
   });
 
   it("rejects empty tiers", () => {
