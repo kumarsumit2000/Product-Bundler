@@ -406,6 +406,27 @@ export default function QbEdit() {
           linkedCountdownId: values.linkedCountdownId,
           linkedProgressiveGiftId: values.linkedProgressiveGiftId,
           addonsOrder: values.addonsOrder,
+          freeGiftVariantId: values.freeGiftEnabled && values.freeGiftMode === "variant"
+            ? values.freeGiftVariant?.variantId ?? null
+            : null,
+          freeGiftVariantTitle: values.freeGiftEnabled && values.freeGiftMode === "variant"
+            ? [values.freeGiftVariant?.productTitle, values.freeGiftVariant?.variantTitle]
+                .filter(Boolean)
+                .join(" – ") || null
+            : null,
+          freeGiftAvailable: values.freeGiftEnabled && values.freeGiftMode === "variant" && values.freeGiftVariant ? true : null,
+          freeGiftProductId: values.freeGiftEnabled && values.freeGiftMode === "product"
+            ? values.freeGiftProduct?.productId ?? null
+            : null,
+          freeGiftProductTitle: values.freeGiftEnabled && values.freeGiftMode === "product"
+            ? values.freeGiftProduct?.title ?? null
+            : null,
+          freeGiftProductImage: values.freeGiftEnabled && values.freeGiftMode === "product"
+            ? values.freeGiftProduct?.image ?? null
+            : null,
+          freeGiftProductVariants: values.freeGiftEnabled && values.freeGiftMode === "product" && values.freeGiftProduct
+            ? [{ variantId: values.freeGiftProduct.variantId ?? "v0", title: values.freeGiftProduct.title ?? "Default", available: true, priceCents: 0 }]
+            : null,
         },
         addons: {
           countdowns: allCountdowns,
