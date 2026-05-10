@@ -103,6 +103,16 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
 
     const giftCallout = renderGiftCallout(tr, qb.textOverrides);
 
+    // QB-level free gift inline callout — shows inside any tier card whose
+    // qty meets the QB-wide freeGiftMinQty so the customer can see which
+    // tier unlocks the gift before they pick.
+    const qbGiftMinQty = qb.freeGiftMinQty ?? 1;
+    const hasQbGift = !!(qb.freeGiftVariantId || qb.freeGiftProductId);
+    const qbGiftUnlockedHere = hasQbGift && tr.qty >= qbGiftMinQty;
+    const qbGiftCallout = qbGiftUnlockedHere
+      ? `<div class="pumper-qb-tier-gift">🎁 + FREE gift unlocked!</div>`
+      : "";
+
     return `
       <div class="${classes}" data-tier-index="${i}" data-action="select-tier" role="button" tabindex="0">
         ${popularBadge}
@@ -119,6 +129,7 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
         </div>
         ${extrasRow}
         ${giftCallout}
+        ${qbGiftCallout}
       </div>
     `;
   }).join("");

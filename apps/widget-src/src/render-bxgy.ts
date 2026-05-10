@@ -57,6 +57,14 @@ export function renderBxgy(mount: HTMLElement, offer: BxgyOfferConfig, config: W
       : "";
     const savingsBadge = math.savingsCents > 0 ? renderBadge(bar, math, config.settings.currency, config.settings.locale) : "";
     const classes = ["pumper-qb-tier", isSelected ? "pumper-qb-tier--selected" : ""].filter(Boolean).join(" ");
+
+    const giftMin = offer.freeGiftMinBuyQty ?? 1;
+    const hasGift = !!(offer.freeGiftVariantId || offer.freeGiftProductId);
+    const giftUnlockedHere = hasGift && bar.buyQty >= giftMin;
+    const giftCallout = giftUnlockedHere
+      ? `<div class="pumper-qb-tier-gift">🎁 + FREE gift unlocked!</div>`
+      : "";
+
     return `
       <div class="${classes}" data-bxgy-bar-index="${i}" data-action="select-bar" role="button" tabindex="0">
         ${popularBadge}
@@ -71,6 +79,7 @@ export function renderBxgy(mount: HTMLElement, offer: BxgyOfferConfig, config: W
           </div>
           ${savingsBadge}
         </div>
+        ${giftCallout}
       </div>
     `;
   }).join("");
