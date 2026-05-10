@@ -110,13 +110,17 @@ function deriveTitleAndStrike(tr: ProgressiveGiftThreshold, remaining: number): 
   strike: string;
 } {
   const isShipping = tr.kind === "free_shipping";
-  const defaultTitle = isShipping ? "Free shipping" : (tr.productTitle ?? "Free gift");
+  const productTitle = tr.productTitle && tr.productTitle.length > 0 ? tr.productTitle : null;
+  const defaultTitle = isShipping ? "Free shipping" : (productTitle ?? "Free gift");
   const firstPrice = tr.variants[0]?.priceCents;
   const autoStrike = !isShipping && firstPrice ? fmtMoney(firstPrice) : "";
+  const customTitle = tr.title && tr.title.length > 0 ? tr.title : null;
+  const customLockedTitle = tr.lockedTitle && tr.lockedTitle.length > 0 ? tr.lockedTitle : null;
+  const customStrike = tr.labelCrossedOut && tr.labelCrossedOut.length > 0 ? tr.labelCrossedOut : null;
   return {
-    title: tr.title ?? defaultTitle,
-    lockedTitle: tr.lockedTitle ?? `Spend ${fmtMoney(remaining)} to unlock`,
-    strike: tr.labelCrossedOut ?? autoStrike,
+    title: customTitle ?? defaultTitle,
+    lockedTitle: customLockedTitle ?? `Spend ${fmtMoney(remaining)} to unlock`,
+    strike: customStrike ?? autoStrike,
   };
 }
 
@@ -134,8 +138,10 @@ function renderTier(
   const claimed = !isShipping && alreadyClaimed(cart, pg.id, i);
 
   const showBadge = unlocked || pg.showLockedLabels;
-  const lockedLabel = tr.lockedLabel ?? `$${(tr.minSpendCents / 100).toFixed(0)}`;
-  const badgeContent = `${escapeHtml(unlocked ? tr.label : lockedLabel)}${
+  const customLockedLabel = tr.lockedLabel && tr.lockedLabel.length > 0 ? tr.lockedLabel : null;
+  const lockedLabel = customLockedLabel ?? `$${(tr.minSpendCents / 100).toFixed(0)}`;
+  const customLabel = tr.label && tr.label.length > 0 ? tr.label : "FREE";
+  const badgeContent = `${escapeHtml(unlocked ? customLabel : lockedLabel)}${
     strike ? ` <span class="pg-strike">${escapeHtml(strike)}</span>` : ""
   }`;
 
