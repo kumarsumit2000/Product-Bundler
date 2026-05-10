@@ -40,9 +40,12 @@ export function qbTemplate(template: string | null): QbTemplate | null {
         headline: "Pick your deal",
         ctaLabel: "",
         tiers: [
-          { qty: 1, discountType: "percentage", discountValue: 50, label: "Buy 1, get 1 free", isMostPopular: false, bogoMode: "add_same", bogoBonusQty: 1 },
-          { qty: 2, discountType: "percentage", discountValue: 60, label: "Buy 2, get 3 free", isMostPopular: false, bogoMode: "add_same", bogoBonusQty: 3 },
-          { qty: 3, discountType: "percentage", discountValue: 67, label: "Buy 3, get 6 free + FREE gift", isMostPopular: true, bogoMode: "add_same", bogoBonusQty: 6 },
+          // discountValue stays at 0 on BOGO tiers — the bonus quantity IS
+          // the deal. Adding a tier discount on top would double-discount
+          // the paid line.
+          { qty: 1, discountType: "percentage", discountValue: 0, label: "Buy 1, get 1 free", isMostPopular: false, bogoMode: "add_same", bogoBonusQty: 1 },
+          { qty: 2, discountType: "percentage", discountValue: 0, label: "Buy 2, get 3 free", isMostPopular: false, bogoMode: "add_same", bogoBonusQty: 3 },
+          { qty: 3, discountType: "percentage", discountValue: 0, label: "Buy 3, get 6 free + FREE gift", isMostPopular: true, bogoMode: "add_same", bogoBonusQty: 6 },
         ],
       };
     case "qb_diff":
@@ -62,7 +65,9 @@ export function qbTemplate(template: string | null): QbTemplate | null {
         headline: "Buy one, get one free",
         ctaLabel: "",
         tiers: [
-          { qty: 1, discountType: "percentage", discountValue: 50, label: "Buy 1, get 1 free", isMostPopular: true, bogoMode: "add_same", bogoBonusQty: 1 },
+          // BOGO bonus alone does the work — tier discount stays 0 to avoid
+          // double-discounting the paid line.
+          { qty: 1, discountType: "percentage", discountValue: 0, label: "Buy 1, get 1 free", isMostPopular: true, bogoMode: "add_same", bogoBonusQty: 1 },
         ],
       };
     case "qb_volume_4":

@@ -73,8 +73,19 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
 
   const renderRows = () => qb.tiers.map((tr, i) => {
     const unitCents = tierUnitCents(tr, variant.priceCents);
-    const totalCents = unitCents * tr.qty;
-    const baseTotal = variant.priceCents * tr.qty;
+    const paidUnits = tr.qty;
+    // For BOGO add_same/add_different, the bonus quantity ships free —
+    // factor it into the displayed strike + savings so the savings pill
+    // reflects the real value (e.g. "Buy 1, get 1 free → SAVE 50%").
+    // nth_free counts bonusQty as already-included-but-free within tr.qty.
+    const bonusUnits = tr.bogo
+      ? (tr.bogo.mode === "add_same" || tr.bogo.mode === "add_different"
+          ? tr.bogo.bonusQty
+          : 0)
+      : 0;
+    const totalUnitsForDisplay = paidUnits + bonusUnits;
+    const totalCents = unitCents * paidUnits;
+    const baseTotal = variant.priceCents * totalUnitsForDisplay;
     const savings = Math.max(0, baseTotal - totalCents);
     const popularBadge = tr.isMostPopular
       ? `<span class="pumper-qb-popular-badge">${tWith(qb.textOverrides, "qb.mostPopular")}</span>`
@@ -103,17 +114,19 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
 
     const giftCallout = renderGiftCallout(tr, qb.textOverrides);
 
+    const showStrike = savings > 0;
+    const isBogoDeal = bonusUnits > 0;
+    const subLine = isBogoDeal
+      ? `${showStrike ? `<span class="pumper-strike">${formatMoney(baseTotal, config.settings.currency, config.settings.locale)}</span> ` : ""}<strong>${formatMoney(totalCents, config.settings.currency, config.settings.locale)}</strong> for ${totalUnitsForDisplay} items`
+      : `${tr.discountValue > 0 ? `<span class="pumper-strike">${formatMoney(variant.priceCents, config.settings.currency, config.settings.locale)}</span> ` : ""}<strong>${formatMoney(unitCents, config.settings.currency, config.settings.locale)}</strong> each · ${formatMoney(totalCents, config.settings.currency, config.settings.locale)} total`;
+
     return `
       <div class="${classes}" data-tier-index="${i}" data-action="select-tier" role="button" tabindex="0">
         ${popularBadge}
         <div class="pumper-qb-tier-row">
           <div class="pumper-qb-tier-meta">
-            <div class="pumper-qb-tier-title">${escapeHtml(tWith(qb.textOverrides, "qb.tierLabel", { qty: tr.qty }))}${tr.discountValue > 0 ? ` — ${escapeHtml(tr.label)}` : ""}</div>
-            <div class="pumper-qb-tier-sub">
-              ${tr.discountValue > 0
-                ? `<span class="pumper-strike">${formatMoney(variant.priceCents, config.settings.currency, config.settings.locale)}</span> `
-                : ""}<strong>${formatMoney(unitCents, config.settings.currency, config.settings.locale)}</strong> each · ${formatMoney(totalCents, config.settings.currency, config.settings.locale)} total
-            </div>
+            <div class="pumper-qb-tier-title">${escapeHtml(tWith(qb.textOverrides, "qb.tierLabel", { qty: tr.qty }))}${tr.discountValue > 0 || isBogoDeal ? ` — ${escapeHtml(tr.label)}` : ""}</div>
+            <div class="pumper-qb-tier-sub">${subLine}</div>
           </div>
           ${savingsBadge}
         </div>
@@ -126,10 +139,18 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
   const renderCta = () => {
     const tr = qb.tiers[selectedIndex]!;
     const unitCents = tierUnitCents(tr, variant.priceCents);
-    const savings = Math.max(0, (variant.priceCents - unitCents) * tr.qty);
+    const bonusUnits = tr.bogo
+      ? (tr.bogo.mode === "add_same" || tr.bogo.mode === "add_different"
+          ? tr.bogo.bonusQty
+          : 0)
+      : 0;
+    const cartQty = tr.qty + bonusUnits;
+    const baseTotal = variant.priceCents * cartQty;
+    const paidTotal = unitCents * tr.qty;
+    const savings = Math.max(0, baseTotal - paidTotal);
     const label = savings > 0
-      ? (qb.ctaLabel || t("qb.ctaSavings", { qty: tr.qty, savings: formatMoney(savings, config.settings.currency, config.settings.locale) }))
-      : (qb.ctaLabel || t("qb.cta", { qty: tr.qty }));
+      ? (qb.ctaLabel || t("qb.ctaSavings", { qty: cartQty, savings: formatMoney(savings, config.settings.currency, config.settings.locale) }))
+      : (qb.ctaLabel || t("qb.cta", { qty: cartQty }));
     return `<button class="pumper-cta" data-action="add-to-cart" ${tr.available ? "" : "disabled"}>${escapeHtml(label)}</button>`;
   };
 
