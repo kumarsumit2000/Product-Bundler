@@ -405,8 +405,8 @@
   padding: 10px 14px;
 }
 .pumper-ct--bar { border-radius: 0; padding: 12px 16px; text-align: center; }
-.pumper-ct-inner { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; }
-.pumper-ct-headline { font-size: 13px; font-weight: 600; }
+.pumper-ct-inner { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; }
+.pumper-ct-headline { font-size: 13px; font-weight: 600; display: block; }
 .pumper-ct-clock { display: inline-flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
 .pumper-ct-unit { display: inline-flex; flex-direction: column; align-items: center; min-width: 28px; }
 .pumper-ct-unit b { font-size: 18px; font-weight: 700; line-height: 1; color: var(--ct-accent, #d9263a); }

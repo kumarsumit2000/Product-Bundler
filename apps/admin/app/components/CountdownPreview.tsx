@@ -58,10 +58,11 @@ export function CountdownPreview({ values }: Props) {
             <div
               style={{
                 display: "flex",
+                flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: 14,
-                flexWrap: "wrap",
+                gap: 8,
+                textAlign: "center",
               }}
             >
               <span style={{ fontSize: 13, fontWeight: 600 }}>{values.headline || "Sale ends in"}</span>
