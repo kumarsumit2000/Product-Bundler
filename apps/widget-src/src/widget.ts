@@ -150,36 +150,90 @@ const SHORTCODES: ShortcodeSpec[] = [
   { kind: "ct",     selector: "[data-pumper-countdown]:not([data-pumper-rendered])",   attr: "data-pumper-countdown" },
 ];
 
-function renderLinkedAddons(parent: HTMLElement, cfg: WidgetConfig, linkedCountdownId: string | null | undefined, linkedProgressiveGiftId: string | null | undefined): void {
-  // Renders linked countdown + progressive gift in a wrapper above the widget.
-  // Wrapper is created/cleared on each render to keep things idempotent.
-  const slotKey = "data-pumper-addons";
-  parent.querySelectorAll(`[${slotKey}]`).forEach((n) => n.remove());
-  const slot = document.createElement("div");
-  slot.setAttribute(slotKey, "1");
-  slot.style.display = "flex";
-  slot.style.flexDirection = "column";
-  slot.style.gap = "10px";
-  slot.style.marginBottom = "12px";
+const DEFAULT_ADDONS_ORDER = ["countdown", "widget", "progressive"] as const;
 
-  if (linkedCountdownId) {
-    const ct = (cfg.countdowns ?? []).find((c) => c.id === linkedCountdownId);
-    if (ct) {
-      const ctMount = document.createElement("div");
-      slot.appendChild(ctMount);
-      renderCountdown(ctMount, ct);
+function normalizeAddonsOrder(input: string[] | null | undefined): string[] {
+  const valid = new Set(DEFAULT_ADDONS_ORDER);
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const item of input ?? []) {
+    if (typeof item === "string" && valid.has(item as typeof DEFAULT_ADDONS_ORDER[number]) && !seen.has(item)) {
+      out.push(item);
+      seen.add(item);
     }
   }
-  if (linkedProgressiveGiftId) {
-    const pg = (cfg.progressiveGifts ?? []).find((p) => p.id === linkedProgressiveGiftId);
-    if (pg) {
-      const pgMount = document.createElement("div");
-      slot.appendChild(pgMount);
-      renderProgressive(pgMount, pg);
-    }
+  for (const item of DEFAULT_ADDONS_ORDER) {
+    if (!seen.has(item)) out.push(item);
   }
-  if (slot.childElementCount > 0) {
-    parent.parentElement?.insertBefore(slot, parent);
+  return out;
+}
+
+function renderLinkedAddons(
+  parent: HTMLElement,
+  cfg: WidgetConfig,
+  linkedCountdownId: string | null | undefined,
+  linkedProgressiveGiftId: string | null | undefined,
+  addonsOrder?: string[] | null,
+): void {
+  // Clear any previously inserted addon nodes so re-renders are idempotent.
+  const beforeKey = "data-pumper-addons-before";
+  const afterKey = "data-pumper-addons-after";
+  parent.parentElement?.querySelectorAll(`[${beforeKey}], [${afterKey}]`)
+    .forEach((n) => n.remove());
+
+  const ct = linkedCountdownId
+    ? (cfg.countdowns ?? []).find((c) => c.id === linkedCountdownId) ?? null
+    : null;
+  const pg = linkedProgressiveGiftId
+    ? (cfg.progressiveGifts ?? []).find((p) => p.id === linkedProgressiveGiftId) ?? null
+    : null;
+  if (!ct && !pg) return;
+
+  const order = normalizeAddonsOrder(addonsOrder);
+  const widgetIdx = order.indexOf("widget");
+
+  const renderInto = (slot: HTMLElement, key: "countdown" | "progressive") => {
+    if (key === "countdown" && ct) {
+      const m = document.createElement("div");
+      slot.appendChild(m);
+      renderCountdown(m, ct);
+    } else if (key === "progressive" && pg) {
+      const m = document.createElement("div");
+      slot.appendChild(m);
+      renderProgressive(m, pg);
+    }
+  };
+
+  const makeSlot = (datasetKey: string, marginProp: "marginBottom" | "marginTop") => {
+    const s = document.createElement("div");
+    s.setAttribute(datasetKey, "1");
+    s.style.display = "flex";
+    s.style.flexDirection = "column";
+    s.style.gap = "10px";
+    s.style[marginProp] = "12px";
+    return s;
+  };
+
+  const beforeSlot = makeSlot(beforeKey, "marginBottom");
+  for (let i = 0; i < widgetIdx; i++) {
+    const item = order[i];
+    if (item === "countdown" || item === "progressive") renderInto(beforeSlot, item);
+  }
+  if (beforeSlot.childElementCount > 0) {
+    parent.parentElement?.insertBefore(beforeSlot, parent);
+  }
+
+  const afterSlot = makeSlot(afterKey, "marginTop");
+  for (let i = widgetIdx + 1; i < order.length; i++) {
+    const item = order[i];
+    if (item === "countdown" || item === "progressive") renderInto(afterSlot, item);
+  }
+  if (afterSlot.childElementCount > 0) {
+    if (parent.nextSibling) {
+      parent.parentElement?.insertBefore(afterSlot, parent.nextSibling);
+    } else {
+      parent.parentElement?.appendChild(afterSlot);
+    }
   }
 }
 
@@ -189,7 +243,7 @@ function renderShortcode(el: HTMLElement, kind: ShortcodeKind, id: string, cfg: 
     if (!b) { el.innerHTML = ""; el.style.minHeight = ""; el.dataset.pumperRendered = "1"; return; }
     applyCssVars(el, cfg, b.styleOverrides);
     renderBundle(el, b, cfg);
-    renderLinkedAddons(el, cfg, b.linkedCountdownId, b.linkedProgressiveGiftId);
+    renderLinkedAddons(el, cfg, b.linkedCountdownId, b.linkedProgressiveGiftId, b.addonsOrder);
     el.dataset.pumperRendered = "1";
     return;
   }
@@ -198,7 +252,7 @@ function renderShortcode(el: HTMLElement, kind: ShortcodeKind, id: string, cfg: 
     if (!q) { el.innerHTML = ""; el.style.minHeight = ""; el.dataset.pumperRendered = "1"; return; }
     applyCssVars(el, cfg, q.styleOverrides);
     renderQb(el, q, cfg);
-    renderLinkedAddons(el, cfg, q.linkedCountdownId, q.linkedProgressiveGiftId);
+    renderLinkedAddons(el, cfg, q.linkedCountdownId, q.linkedProgressiveGiftId, q.addonsOrder);
     el.dataset.pumperRendered = "1";
     return;
   }
@@ -207,7 +261,7 @@ function renderShortcode(el: HTMLElement, kind: ShortcodeKind, id: string, cfg: 
     if (!m) { el.innerHTML = ""; el.style.minHeight = ""; el.dataset.pumperRendered = "1"; return; }
     applyCssVars(el, cfg, m.styleOverrides);
     renderMixMatch(el, m, cfg);
-    renderLinkedAddons(el, cfg, m.linkedCountdownId, m.linkedProgressiveGiftId);
+    renderLinkedAddons(el, cfg, m.linkedCountdownId, m.linkedProgressiveGiftId, m.addonsOrder);
     el.dataset.pumperRendered = "1";
     return;
   }
@@ -248,19 +302,19 @@ function renderMount(mount: HTMLElement, cfg: WidgetConfig): void {
     if (!b) { mount.innerHTML = ""; mount.style.minHeight = ""; return; }
     applyCssVars(mount, cfg, b.styleOverrides);
     renderBundle(mount, b, cfg);
-    renderLinkedAddons(mount, cfg, b.linkedCountdownId, b.linkedProgressiveGiftId);
+    renderLinkedAddons(mount, cfg, b.linkedCountdownId, b.linkedProgressiveGiftId, b.addonsOrder);
   } else if (type === "qb") {
     const q = matchQb(cfg, productId);
     if (!q) { mount.innerHTML = ""; mount.style.minHeight = ""; return; }
     applyCssVars(mount, cfg, q.styleOverrides);
     renderQb(mount, q, cfg);
-    renderLinkedAddons(mount, cfg, q.linkedCountdownId, q.linkedProgressiveGiftId);
+    renderLinkedAddons(mount, cfg, q.linkedCountdownId, q.linkedProgressiveGiftId, q.addonsOrder);
   } else if (type === "mix_match") {
     const m = matchMixMatch(cfg, productId);
     if (!m) { mount.innerHTML = ""; mount.style.minHeight = ""; return; }
     applyCssVars(mount, cfg, m.styleOverrides);
     renderMixMatch(mount, m, cfg);
-    renderLinkedAddons(mount, cfg, m.linkedCountdownId, m.linkedProgressiveGiftId);
+    renderLinkedAddons(mount, cfg, m.linkedCountdownId, m.linkedProgressiveGiftId, m.addonsOrder);
   }
   mount.dataset.pumperRendered = "1";
 }

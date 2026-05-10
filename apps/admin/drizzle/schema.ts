@@ -162,6 +162,7 @@ export const bundles = sqliteTable("bundles", {
   linkedCountdownId: text("linked_countdown_id"),
   linkedProgressiveGiftId: text("linked_progressive_gift_id"),
   stickyAtc: text("sticky_atc", { mode: "json" }).$type<StickyAtcConfig | null>(),
+  addonsOrder: text("addons_order", { mode: "json" }).$type<string[] | null>(),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 }, (t) => ({
@@ -206,6 +207,7 @@ export const quantityBreaks = sqliteTable("quantity_breaks", {
   linkedCountdownId: text("linked_countdown_id"),
   linkedProgressiveGiftId: text("linked_progressive_gift_id"),
   stickyAtc: text("sticky_atc", { mode: "json" }).$type<StickyAtcConfig | null>(),
+  addonsOrder: text("addons_order", { mode: "json" }).$type<string[] | null>(),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 }, (t) => ({

@@ -38,6 +38,7 @@ const NEW_BUNDLE_INPUT = {
   linkedCountdownId: null,
   linkedProgressiveGiftId: null,
   stickyAtc: null,
+  addonsOrder: null,
 };
 
 describe("bundles repo", () => {

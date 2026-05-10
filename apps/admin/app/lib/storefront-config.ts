@@ -184,6 +184,7 @@ export async function buildStorefrontConfig(
       linkedCountdownId: q.linkedCountdownId ?? null,
       linkedProgressiveGiftId: q.linkedProgressiveGiftId ?? null,
       stickyAtc: q.stickyAtc ?? null,
+      addonsOrder: q.addonsOrder ?? null,
       checkboxUpsellsEnabled: q.checkboxUpsellsEnabled ?? false,
       checkboxUpsells: q.checkboxUpsells ?? [],
     };
@@ -229,6 +230,7 @@ export async function buildStorefrontConfig(
       linkedCountdownId: b.linkedCountdownId ?? null,
       linkedProgressiveGiftId: b.linkedProgressiveGiftId ?? null,
       stickyAtc: b.stickyAtc ?? null,
+      addonsOrder: b.addonsOrder ?? null,
     })),
     quantityBreaks: qbs.map(buildQb),
     progressiveGifts: progressiveGifts.map((pg) => ({

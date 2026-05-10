@@ -48,6 +48,7 @@ type BundleShape = {
   textOverrides: Record<string, string> | null;
   linkedCountdownId?: string | null;
   linkedProgressiveGiftId?: string | null;
+  addonsOrder?: string[] | null;
 };
 
 type AddonsShape = {
@@ -101,6 +102,7 @@ type QbShape = {
   }>;
   linkedCountdownId?: string | null;
   linkedProgressiveGiftId?: string | null;
+  addonsOrder?: string[] | null;
 };
 
 type MockProduct = { productId: string; title: string; priceCents: number };

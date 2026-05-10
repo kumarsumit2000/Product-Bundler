@@ -13,6 +13,7 @@ import * as pgRepo from "~/lib/progressive-gifts/repo";
 import { validateQb } from "~/lib/quantity-breaks/validate";
 import { parseSubscriptionForm } from "~/lib/parse-subscription";
 import { parseStickyAtc } from "~/lib/parse-sticky-atc";
+import { parseAddonsOrder } from "~/lib/parse-addons-order";
 import { syncShopConfig } from "~/lib/metafield-sync";
 import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { QbForm, type QbFormValues } from "~/components/QbForm";
@@ -147,6 +148,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const linkedCountdownId = ((form.get("linkedCountdownId") as string) || "").trim() || null;
   const linkedProgressiveGiftId = ((form.get("linkedProgressiveGiftId") as string) || "").trim() || null;
   const stickyAtc = parseStickyAtc(form.get("stickyAtc") as string | null);
+  const addonsOrder = parseAddonsOrder(form.get("addonsOrder") as string | null);
   const normalizedVisibility = ["all", "all_except", "specific", "collections"].includes(visibility)
     ? (visibility as "all" | "all_except" | "specific" | "collections")
     : "specific";
@@ -189,6 +191,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     linkedCountdownId,
     linkedProgressiveGiftId,
     stickyAtc,
+    addonsOrder,
   });
 
   try {
@@ -286,6 +289,7 @@ export default function QbNew() {
           })),
           linkedCountdownId: values.linkedCountdownId,
           linkedProgressiveGiftId: values.linkedProgressiveGiftId,
+          addonsOrder: values.addonsOrder,
         },
         addons: {
           countdowns: allCountdowns,
@@ -302,8 +306,8 @@ export default function QbNew() {
         url: "/app/quantity-breaks",
       }}
     >
-      <Layout>
-        <Layout.Section variant="oneHalf">
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+        <div>
           <QbForm
             submitLabel="Save quantity break"
             errors={errors}
@@ -311,16 +315,14 @@ export default function QbNew() {
             countdownOptions={countdownOptions}
             progressiveGiftOptions={progressiveGiftOptions}
           />
-        </Layout.Section>
-        <Layout.Section variant="oneHalf">
-          <div style={{ position: "sticky", top: 16, display: "flex", flexDirection: "column", gap: 16 }}>
-            {previewConfig && (
-              <PreviewPane type="qb" id="new" config={previewConfig} />
-            )}
-            <EmbedCodeCard plan={plan} />
-          </div>
-        </Layout.Section>
-      </Layout>
+        </div>
+        <div style={{ position: "sticky", top: 16, display: "flex", flexDirection: "column", gap: 16 }}>
+          {previewConfig && (
+            <PreviewPane type="qb" id="new" config={previewConfig} />
+          )}
+          <EmbedCodeCard plan={plan} />
+        </div>
+      </div>
     </Page>
   );
 }

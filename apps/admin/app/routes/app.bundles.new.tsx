@@ -13,6 +13,7 @@ import * as pgRepo from "~/lib/progressive-gifts/repo";
 import { validateBundle } from "~/lib/bundles/validate";
 import { parseSubscriptionForm } from "~/lib/parse-subscription";
 import { parseStickyAtc } from "~/lib/parse-sticky-atc";
+import { parseAddonsOrder } from "~/lib/parse-addons-order";
 import { syncShopConfig } from "~/lib/metafield-sync";
 import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { BundleForm, type BundleFormValues } from "~/components/BundleForm";
@@ -162,6 +163,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const linkedCountdownId = ((form.get("linkedCountdownId") as string) || "").trim() || null;
   const linkedProgressiveGiftId = ((form.get("linkedProgressiveGiftId") as string) || "").trim() || null;
   const stickyAtc = parseStickyAtc(form.get("stickyAtc") as string | null);
+  const addonsOrder = parseAddonsOrder(form.get("addonsOrder") as string | null);
   const created = await bundleRepo.create(db, session.shop, {
     ...input,
     status: input.status as "draft" | "active" | "paused",
@@ -173,6 +175,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     linkedCountdownId,
     linkedProgressiveGiftId,
     stickyAtc,
+    addonsOrder,
   });
 
   try {
@@ -275,6 +278,7 @@ export default function BundleNew() {
           textOverrides: buildTextOverrides(values.textOverrides),
           linkedCountdownId: values.linkedCountdownId,
           linkedProgressiveGiftId: values.linkedProgressiveGiftId,
+          addonsOrder: values.addonsOrder,
         },
         addons: {
           countdowns: allCountdowns,
@@ -288,8 +292,8 @@ export default function BundleNew() {
       title="Create bundle"
       backAction={{ content: "Bundles", url: "/app/bundles" }}
     >
-      <Layout>
-        <Layout.Section variant="oneHalf">
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+        <div>
           <BundleForm
             submitLabel="Save bundle"
             errors={errors}
@@ -297,20 +301,18 @@ export default function BundleNew() {
             countdownOptions={countdownOptions}
             progressiveGiftOptions={progressiveGiftOptions}
           />
-        </Layout.Section>
-        <Layout.Section variant="oneHalf">
-          <div style={{ position: "sticky", top: 16, display: "flex", flexDirection: "column", gap: 16 }}>
-            {previewConfig && (
-              <PreviewPane
-                type={values?.mode === "mix_match" ? "mix_match" : "bundle"}
-                id="new"
-                config={previewConfig}
-              />
-            )}
-            <EmbedCodeCard plan={plan} />
-          </div>
-        </Layout.Section>
-      </Layout>
+        </div>
+        <div style={{ position: "sticky", top: 16, display: "flex", flexDirection: "column", gap: 16 }}>
+          {previewConfig && (
+            <PreviewPane
+              type={values?.mode === "mix_match" ? "mix_match" : "bundle"}
+              id="new"
+              config={previewConfig}
+            />
+          )}
+          <EmbedCodeCard plan={plan} />
+        </div>
+      </div>
     </Page>
   );
 }

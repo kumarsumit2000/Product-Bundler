@@ -11,7 +11,9 @@ import * as pgRepo from "~/lib/progressive-gifts/repo";
 import { validateBundle } from "~/lib/bundles/validate";
 import { parseSubscriptionForm } from "~/lib/parse-subscription";
 import { parseStickyAtc } from "~/lib/parse-sticky-atc";
+import { parseAddonsOrder } from "~/lib/parse-addons-order";
 import { STICKY_ATC_DEFAULTS } from "~/components/StickyAtcCard";
+import { DEFAULT_ADDONS_ORDER, type AddonsOrderItem } from "~/components/WidgetAddonsCard";
 import { syncShopConfig } from "~/lib/metafield-sync";
 import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { BundleForm, type BundleFormValues } from "~/components/BundleForm";
@@ -247,6 +249,7 @@ export async function action({
   const linkedCountdownId = ((form.get("linkedCountdownId") as string) || "").trim() || null;
   const linkedProgressiveGiftId = ((form.get("linkedProgressiveGiftId") as string) || "").trim() || null;
   const stickyAtc = parseStickyAtc(form.get("stickyAtc") as string | null);
+  const addonsOrder = parseAddonsOrder(form.get("addonsOrder") as string | null);
 
   await bundleRepo.update(db, session.shop, params.id!, {
     ...input,
@@ -259,6 +262,7 @@ export async function action({
     linkedCountdownId,
     linkedProgressiveGiftId,
     stickyAtc,
+    addonsOrder,
   });
 
   try {
@@ -356,6 +360,7 @@ export default function BundleEdit() {
     })(),
     linkedCountdownId: bundle.linkedCountdownId ?? null,
     linkedProgressiveGiftId: bundle.linkedProgressiveGiftId ?? null,
+    addonsOrder: (bundle.addonsOrder as AddonsOrderItem[] | null) ?? [...DEFAULT_ADDONS_ORDER],
     stickyAtc: bundle.stickyAtc
       ? { ...STICKY_ATC_DEFAULTS, ...bundle.stickyAtc, enabled: true }
       : { ...STICKY_ATC_DEFAULTS },
@@ -404,6 +409,7 @@ export default function BundleEdit() {
           textOverrides: buildTextOverrides(values.textOverrides),
           linkedCountdownId: values.linkedCountdownId,
           linkedProgressiveGiftId: values.linkedProgressiveGiftId,
+          addonsOrder: values.addonsOrder,
         },
         addons: {
           countdowns: allCountdowns,
@@ -417,8 +423,8 @@ export default function BundleEdit() {
       title={bundle.name}
       backAction={{ content: "Bundles", url: "/app/bundles" }}
     >
-      <Layout>
-        <Layout.Section variant="oneHalf">
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+        <div>
           <BundleForm
             submitLabel="Save changes"
             errors={errors}
@@ -427,20 +433,18 @@ export default function BundleEdit() {
             countdownOptions={countdownOptions}
             progressiveGiftOptions={progressiveGiftOptions}
           />
-        </Layout.Section>
-        <Layout.Section variant="oneHalf">
-          <div style={{ position: "sticky", top: 16, display: "flex", flexDirection: "column", gap: 16 }}>
-            {previewConfig && (
-              <PreviewPane
-                type={values?.mode === "mix_match" ? "mix_match" : "bundle"}
-                id={bundle.id}
-                config={previewConfig}
-              />
-            )}
-            <EmbedCodeCard plan={plan} snippet={snippet} />
-          </div>
-        </Layout.Section>
-      </Layout>
+        </div>
+        <div style={{ position: "sticky", top: 16, display: "flex", flexDirection: "column", gap: 16 }}>
+          {previewConfig && (
+            <PreviewPane
+              type={values?.mode === "mix_match" ? "mix_match" : "bundle"}
+              id={bundle.id}
+              config={previewConfig}
+            />
+          )}
+          <EmbedCodeCard plan={plan} snippet={snippet} />
+        </div>
+      </div>
     </Page>
   );
 }

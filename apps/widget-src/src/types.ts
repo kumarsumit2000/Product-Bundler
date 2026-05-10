@@ -108,6 +108,7 @@ export type BundleConfig = {
   linkedCountdownId?: string | null;
   linkedProgressiveGiftId?: string | null;
   stickyAtc?: StickyAtcConfig | null;
+  addonsOrder?: string[] | null;
 };
 
 export type QbVariant = {
@@ -178,6 +179,7 @@ export type QbConfig = {
   linkedCountdownId?: string | null;
   linkedProgressiveGiftId?: string | null;
   stickyAtc?: StickyAtcConfig | null;
+  addonsOrder?: string[] | null;
 };
 
 export type Settings = {

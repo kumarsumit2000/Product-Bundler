@@ -16,7 +16,7 @@ import { ProductPicker, type PickedProduct } from "./ProductPicker";
 import { DiscountValueInput } from "./DiscountValueInput";
 import { CollectionPicker, type PickedCollection } from "./CollectionPicker";
 import { StylePanel, type StylePanelValues } from "./StylePanel";
-import { WidgetAddonsCard } from "./WidgetAddonsCard";
+import { WidgetAddonsCard, DEFAULT_ADDONS_ORDER, type AddonsOrderItem } from "./WidgetAddonsCard";
 import { StickyAtcCard, STICKY_ATC_DEFAULTS } from "./StickyAtcCard";
 import { VariantPicker, type PickedVariant } from "./VariantPicker";
 import { EMPTY_STYLE_FORM, buildStyleOverrides } from "~/lib/preview-overrides";
@@ -45,6 +45,7 @@ export type BundleFormValues = StylePanelValues & {
   freeGiftVariant: PickedVariant | null;
   linkedCountdownId: string | null;
   linkedProgressiveGiftId: string | null;
+  addonsOrder: AddonsOrderItem[];
   stickyAtc: StickyAtcConfig;
 };
 
@@ -78,6 +79,7 @@ const DEFAULTS: BundleFormValues = {
   freeGiftVariant: null,
   linkedCountdownId: null,
   linkedProgressiveGiftId: null,
+  addonsOrder: [...DEFAULT_ADDONS_ORDER],
   stickyAtc: STICKY_ATC_DEFAULTS,
 };
 
@@ -123,6 +125,7 @@ export function BundleForm({ initialValues, errors, submitLabel, onValuesChange,
       <input type="hidden" name="subscription" value="null" />
       <input type="hidden" name="linkedCountdownId" value={values.linkedCountdownId ?? ""} />
       <input type="hidden" name="linkedProgressiveGiftId" value={values.linkedProgressiveGiftId ?? ""} />
+      <input type="hidden" name="addonsOrder" value={JSON.stringify(values.addonsOrder)} />
       <input type="hidden" name="stickyAtc" value={JSON.stringify(values.stickyAtc)} />
 
       <BlockStack gap="500">
@@ -312,6 +315,8 @@ export function BundleForm({ initialValues, errors, submitLabel, onValuesChange,
           progressiveGifts={progressiveGiftOptions}
           linkedCountdownId={values.linkedCountdownId}
           linkedProgressiveGiftId={values.linkedProgressiveGiftId}
+          addonsOrder={values.addonsOrder}
+          widgetLabel="Bundle widget"
           onChange={(patch) => setValues((s) => ({ ...s, ...patch }))}
         />
 

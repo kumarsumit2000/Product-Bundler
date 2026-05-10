@@ -16,7 +16,7 @@ import { ProductPicker, type PickedProduct } from "./ProductPicker";
 import { type PickedCollection } from "./CollectionPicker";
 import { MultiCollectionPicker } from "./MultiCollectionPicker";
 import { QbUpsellsBuilder, EMPTY_UPSELL, type UpsellFormValue } from "./QbUpsellsBuilder";
-import { WidgetAddonsCard } from "./WidgetAddonsCard";
+import { WidgetAddonsCard, DEFAULT_ADDONS_ORDER, type AddonsOrderItem } from "./WidgetAddonsCard";
 import { StickyAtcCard, STICKY_ATC_DEFAULTS } from "./StickyAtcCard";
 import { QbTierBuilder, type TierFormValue } from "./QbTierBuilder";
 import type { StickyAtcConfig } from "../../drizzle/schema";
@@ -43,6 +43,7 @@ export type QbFormValues = StylePanelValues & {
   checkboxUpsells: UpsellFormValue[];
   linkedCountdownId: string | null;
   linkedProgressiveGiftId: string | null;
+  addonsOrder: AddonsOrderItem[];
   stickyAtc: StickyAtcConfig;
 };
 
@@ -79,6 +80,7 @@ const DEFAULTS: QbFormValues = {
   checkboxUpsells: [],
   linkedCountdownId: null,
   linkedProgressiveGiftId: null,
+  addonsOrder: [...DEFAULT_ADDONS_ORDER],
   stickyAtc: STICKY_ATC_DEFAULTS,
 };
 
@@ -116,6 +118,7 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange, cou
       />
       <input type="hidden" name="linkedCountdownId" value={values.linkedCountdownId ?? ""} />
       <input type="hidden" name="linkedProgressiveGiftId" value={values.linkedProgressiveGiftId ?? ""} />
+      <input type="hidden" name="addonsOrder" value={JSON.stringify(values.addonsOrder)} />
       <input type="hidden" name="stickyAtc" value={JSON.stringify(values.stickyAtc)} />
       <input type="hidden" name="checkboxUpsellsEnabled" value={values.checkboxUpsellsEnabled ? "on" : ""} />
       <input
@@ -251,6 +254,8 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange, cou
           progressiveGifts={progressiveGiftOptions}
           linkedCountdownId={values.linkedCountdownId}
           linkedProgressiveGiftId={values.linkedProgressiveGiftId}
+          addonsOrder={values.addonsOrder}
+          widgetLabel="Quantity break widget"
           onChange={(patch) => setValues((s) => ({ ...s, ...patch }))}
         />
 

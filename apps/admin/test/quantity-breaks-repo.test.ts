@@ -38,6 +38,7 @@ const NEW_QB_INPUT = {
   linkedCountdownId: null,
   linkedProgressiveGiftId: null,
   stickyAtc: null,
+  addonsOrder: null,
 };
 
 describe("quantity-breaks repo", () => {
