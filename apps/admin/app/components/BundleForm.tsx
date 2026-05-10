@@ -15,7 +15,8 @@ import { useEffect, useState } from "react";
 import { ProductPicker, type PickedProduct } from "./ProductPicker";
 import { DiscountValueInput } from "./DiscountValueInput";
 import { CollectionPicker, type PickedCollection } from "./CollectionPicker";
-import { StylePanel, type StylePanelValues } from "./StylePanel";
+import { type StylePanelValues } from "./StylePanel";
+import { SimpleBundleStylePanel } from "./SimpleBundleStylePanel";
 import { WidgetAddonsCard, DEFAULT_ADDONS_ORDER, type AddonsOrderItem } from "./WidgetAddonsCard";
 import { StickyAtcCard, STICKY_ATC_DEFAULTS } from "./StickyAtcCard";
 import { VariantPicker, type PickedVariant } from "./VariantPicker";
@@ -325,7 +326,7 @@ export function BundleForm({ initialValues, errors, submitLabel, onValuesChange,
           onChange={(stickyAtc) => update("stickyAtc", stickyAtc)}
         />
 
-        <StylePanel values={values} onChange={(next) => setValues((s) => ({ ...s, ...next }))} />
+        <SimpleBundleStylePanel values={values} onChange={(next) => setValues((s) => ({ ...s, ...next }))} />
 
         <Card>
           <BlockStack gap="400">
