@@ -1,0 +1,22 @@
+api_version = "2026-04"
+
+[[extensions]]
+name = "t:name"
+handle = "shipping-discount-function"
+type = "function"
+uid = "a01583f6-0918-7826-0b4f-a0f4fc88d6cbce9f5b9f"
+description = "t:description"
+
+  [[extensions.targeting]]
+  target = "purchase.shipping-discount.run"
+  input_query = "src/run.graphql"
+  export = "run"
+
+  [extensions.build]
+  command = "cargo build --target=wasm32-unknown-unknown --release"
+  path = "target/wasm32-unknown-unknown/release/shipping-discount-function.wasm"
+  watch = [ "src/**/*.rs" ]
+
+  [extensions.ui.paths]
+  create = "/"
+  details = "/"

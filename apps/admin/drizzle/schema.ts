@@ -12,6 +12,7 @@ export const shops = sqliteTable("shops", {
   shopifyDiscountId: text("shopify_discount_id"),
   shopifyDiscountIdCombinable: text("shopify_discount_id_combinable"),
   shopifyDiscountIdNonCombinable: text("shopify_discount_id_non_combinable"),
+  shopifyShippingDiscountId: text("shopify_shipping_discount_id"),
   shopifyShopGid: text("shopify_shop_gid"),
   currency: text("currency").notNull().default("USD"),
   primaryLocale: text("primary_locale").notNull().default("en"),

@@ -1,0 +1,19 @@
+query Input {
+  cart {
+    cost {
+      subtotalAmount {
+        amount
+      }
+    }
+    deliveryGroups {
+      deliveryOptions {
+        handle
+      }
+    }
+  }
+  shop {
+    metafield(namespace: "pumper", key: "config") {
+      value
+    }
+  }
+}

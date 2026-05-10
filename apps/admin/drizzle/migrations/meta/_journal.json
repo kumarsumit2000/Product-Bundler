@@ -148,6 +148,13 @@
       "when": 1778361000000,
       "tag": "0020_addons_order",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1778362200000,
+      "tag": "0021_shipping_discount_id",
+      "breakpoints": true
     }
   ]
 }

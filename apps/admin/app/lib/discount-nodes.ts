@@ -13,25 +13,44 @@ export async function ensureDiscountNodes(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   db: any,
   shopId: string,
-): Promise<{ combinable: string; nonCombinable: string }> {
+): Promise<{ combinable: string; nonCombinable: string; shipping: string | null }> {
   const row = (
     await db.select().from(schema.shops).where(eq(schema.shops.id, shopId)).limit(1)
   )[0];
 
   let combinableId = row?.shopifyDiscountIdCombinable ?? null;
   let nonCombinableId = row?.shopifyDiscountIdNonCombinable ?? null;
+  let shippingId = row?.shopifyShippingDiscountId ?? null;
 
-  if (combinableId && nonCombinableId) {
-    return { combinable: combinableId, nonCombinable: nonCombinableId };
+  const fns = !combinableId || !nonCombinableId || !shippingId
+    ? await fetchAppFunctions(admin)
+    : null;
+
+  if (!combinableId || !nonCombinableId) {
+    const productFn = fns?.find((n) => n.apiType === "product_discounts" || n.apiType === "discount");
+    if (!productFn) {
+      const available = (fns ?? []).map((n) => `${n.title} (${n.apiType})`).join(", ");
+      throw new Error(
+        `Discount Function not found. Available functions: [${available}]. Run \`shopify app deploy\` first.`,
+      );
+    }
+    if (!combinableId) {
+      combinableId = await createDiscountNode(admin, productFn.id, "combinable", true);
+    }
+    if (!nonCombinableId) {
+      nonCombinableId = await createDiscountNode(admin, productFn.id, "non_combinable", false);
+    }
   }
 
-  const functionId = await getOrFetchFunctionId(admin);
-
-  if (!combinableId) {
-    combinableId = await createDiscountNode(admin, functionId, "combinable", true);
-  }
-  if (!nonCombinableId) {
-    nonCombinableId = await createDiscountNode(admin, functionId, "non_combinable", false);
+  if (!shippingId) {
+    const shippingFn = fns?.find((n) => n.apiType === "shipping_discounts");
+    if (shippingFn) {
+      try {
+        shippingId = await createShippingDiscountNode(admin, shippingFn.id);
+      } catch (err) {
+        console.error("[ensureDiscountNodes] shipping discount registration failed (non-fatal):", err);
+      }
+    }
   }
 
   await db
@@ -39,35 +58,65 @@ export async function ensureDiscountNodes(
     .set({
       shopifyDiscountIdCombinable: combinableId,
       shopifyDiscountIdNonCombinable: nonCombinableId,
+      shopifyShippingDiscountId: shippingId,
     })
     .where(eq(schema.shops.id, shopId));
 
-  return { combinable: combinableId, nonCombinable: nonCombinableId };
+  return { combinable: combinableId!, nonCombinable: nonCombinableId!, shipping: shippingId };
 }
 
-async function getOrFetchFunctionId(admin: AdminGraphqlClient): Promise<string> {
-  // Query our app's installed Functions. The discount Function is the only one we ship,
-  // so we pick the first product_discounts-typed node returned. Filtering by title is
-  // unreliable because the title field uses the localized name from the locale file
-  // rather than the handle.
+async function fetchAppFunctions(admin: AdminGraphqlClient): Promise<{ id: string; apiType: string; title: string }[]> {
   const res = await admin.graphql(
     `query { shopifyFunctions(first: 25) { nodes { id apiType title } } }`,
   );
   const data = (await res.json()) as {
     data: { shopifyFunctions: { nodes: { id: string; apiType: string; title: string }[] } };
   };
-  const fn = data.data.shopifyFunctions.nodes.find(
-    (n) => n.apiType === "product_discounts" || n.apiType === "discount",
+  return data.data.shopifyFunctions.nodes;
+}
+
+async function createShippingDiscountNode(
+  admin: AdminGraphqlClient,
+  functionId: string,
+): Promise<string> {
+  const res = await admin.graphql(
+    `mutation Create($d: DiscountAutomaticAppInput!) {
+      discountAutomaticAppCreate(automaticAppDiscount: $d) {
+        automaticAppDiscount { discountId }
+        userErrors { field message }
+      }
+    }`,
+    {
+      variables: {
+        d: {
+          title: "Bundler — free shipping",
+          functionId,
+          startsAt: new Date().toISOString(),
+          combinesWith: {
+            productDiscounts: true,
+            orderDiscounts: true,
+            shippingDiscounts: true,
+          },
+        },
+      },
+    },
   );
-  if (!fn) {
-    const available = data.data.shopifyFunctions.nodes
-      .map((n) => `${n.title} (${n.apiType})`)
-      .join(", ");
-    throw new Error(
-      `Discount Function not found. Available functions: [${available}]. Run \`shopify app deploy\` first.`,
-    );
+  const data = (await res.json()) as {
+    data: {
+      discountAutomaticAppCreate: {
+        automaticAppDiscount: { discountId: string } | null;
+        userErrors: { field: string[]; message: string }[];
+      };
+    };
+  };
+  const result = data.data.discountAutomaticAppCreate;
+  if (result.userErrors.length > 0) {
+    throw new Error(`shipping discountAutomaticAppCreate failed: ${JSON.stringify(result.userErrors)}`);
   }
-  return fn.id;
+  if (!result.automaticAppDiscount) {
+    throw new Error("shipping discountAutomaticAppCreate returned null discount");
+  }
+  return result.automaticAppDiscount.discountId;
 }
 
 async function createDiscountNode(

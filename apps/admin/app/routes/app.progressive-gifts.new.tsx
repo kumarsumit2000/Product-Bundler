@@ -10,6 +10,8 @@ import { validateProgressiveGift } from "~/lib/progressive-gifts/validate";
 import { ProgressiveGiftForm, type ProgressiveGiftFormValues } from "~/components/ProgressiveGiftForm";
 import { ProgressiveGiftPreview } from "~/components/ProgressiveGiftPreview";
 import { EmbedCodeCard } from "~/components/EmbedCodeCard";
+import { syncShopConfig } from "~/lib/metafield-sync";
+import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import type { ProgressiveThreshold } from "../../drizzle/schema";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
@@ -20,7 +22,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 
 export async function action({ request, context }: ActionFunctionArgs) {
   const ctx = context as AppLoadContext;
-  const { session } = await authenticate.admin(request, ctx);
+  const { session, admin } = await authenticate.admin(request, ctx);
   const form = await request.formData();
   const thresholdsRaw = (form.get("thresholds") as string) || "[]";
   const thresholds: ProgressiveThreshold[] = JSON.parse(thresholdsRaw);
@@ -57,6 +59,16 @@ export async function action({ request, context }: ActionFunctionArgs) {
     showLockedLabels: form.get("showLockedLabels") === "on",
     styleOverrides: styleOverrides as never,
   });
+  try {
+    await ensureDiscountNodes(admin, db, session.shop);
+  } catch (err) {
+    console.error("[progressive-gifts.new action] ensureDiscountNodes failed (non-fatal):", err);
+  }
+  try {
+    await syncShopConfig(db, admin, session.shop);
+  } catch (err) {
+    console.error("[progressive-gifts.new action] syncShopConfig failed (non-fatal):", err);
+  }
   await ctx.cloudflare.env.SHOP_SETTINGS_CACHE.delete(`config:${session.shop}`);
   return redirect(`/app/progressive-gifts/${created.id}?saved=${encodeURIComponent(input.name)}`);
 }

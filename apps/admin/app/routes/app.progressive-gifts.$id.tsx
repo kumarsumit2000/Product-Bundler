@@ -11,6 +11,8 @@ import { ProgressiveGiftForm, type ProgressiveGiftFormValues, progressiveStyleFr
 import { ProgressiveGiftPreview } from "~/components/ProgressiveGiftPreview";
 import { EmbedCodeCard } from "~/components/EmbedCodeCard";
 import { fetchVariantDetails, fetchProductDetails } from "~/lib/shopify-product-fetch";
+import { syncShopConfig } from "~/lib/metafield-sync";
+import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { useSavedToast } from "~/lib/toast";
 import type { ProgressiveThreshold } from "../../drizzle/schema";
 
@@ -41,7 +43,7 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
 
 export async function action({ request, params, context }: ActionFunctionArgs) {
   const ctx = context as AppLoadContext;
-  const { session } = await authenticate.admin(request, ctx);
+  const { session, admin } = await authenticate.admin(request, ctx);
   const form = await request.formData();
   const thresholdsRaw = (form.get("thresholds") as string) || "[]";
   const thresholds: ProgressiveThreshold[] = JSON.parse(thresholdsRaw);
@@ -78,6 +80,16 @@ export async function action({ request, params, context }: ActionFunctionArgs) {
     showLockedLabels: form.get("showLockedLabels") === "on",
     styleOverrides: styleOverrides as never,
   });
+  try {
+    await ensureDiscountNodes(admin, db, session.shop);
+  } catch (err) {
+    console.error("[progressive-gifts.$id action] ensureDiscountNodes failed (non-fatal):", err);
+  }
+  try {
+    await syncShopConfig(db, admin, session.shop);
+  } catch (err) {
+    console.error("[progressive-gifts.$id action] syncShopConfig failed (non-fatal):", err);
+  }
   await ctx.cloudflare.env.SHOP_SETTINGS_CACHE.delete(`config:${session.shop}`);
   return redirect(`/app/progressive-gifts/${params.id!}?saved=${encodeURIComponent(input.name)}`);
 }
