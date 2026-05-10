@@ -461,10 +461,8 @@ export default function ChooseDiscountType() {
         style={{
           // CSS variable consumed by every preview to tint accent colors
           ["--pumper-theme" as string]: theme,
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          alignItems: "start",
-          gap: 16,
+          columnCount: 3,
+          columnGap: 16,
         }}
       >
         {CARDS.map((card) => {
@@ -491,6 +489,9 @@ export default function ChooseDiscountType() {
                 display: "flex",
                 flexDirection: "column",
                 gap: 16,
+                breakInside: "avoid",
+                marginBottom: 16,
+                width: "100%",
               }}
               aria-pressed={isSelected}
             >
