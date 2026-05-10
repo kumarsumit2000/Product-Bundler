@@ -18,6 +18,7 @@ import { syncShopConfig } from "~/lib/metafield-sync";
 import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { BundleForm, type BundleFormValues } from "~/components/BundleForm";
 import { PreviewPane } from "~/components/PreviewPane";
+import { StickyAtcPreview } from "~/components/StickyAtcPreview";
 import { buildPreviewBundleConfig, defaultMockProduct, defaultPreviewSettings } from "~/lib/preview-config";
 import { buildStyleOverrides, buildTextOverrides } from "~/lib/preview-overrides";
 import type { PickedProduct } from "~/components/ProductPicker";
@@ -310,6 +311,7 @@ export default function BundleNew() {
               config={previewConfig}
             />
           )}
+          {values?.stickyAtc.enabled && <StickyAtcPreview value={values.stickyAtc} />}
           <EmbedCodeCard plan={plan} />
         </div>
       </div>

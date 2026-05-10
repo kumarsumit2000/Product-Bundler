@@ -18,6 +18,7 @@ import { syncShopConfig } from "~/lib/metafield-sync";
 import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { BundleForm, type BundleFormValues } from "~/components/BundleForm";
 import { PreviewPane } from "~/components/PreviewPane";
+import { StickyAtcPreview } from "~/components/StickyAtcPreview";
 import { EmbedCodeCard } from "~/components/EmbedCodeCard";
 import { getUsage } from "~/lib/billing/usage";
 import { useSavedToast } from "~/lib/toast";
@@ -442,6 +443,7 @@ export default function BundleEdit() {
               config={previewConfig}
             />
           )}
+          {values?.stickyAtc.enabled && <StickyAtcPreview value={values.stickyAtc} />}
           <EmbedCodeCard plan={plan} snippet={snippet} />
         </div>
       </div>

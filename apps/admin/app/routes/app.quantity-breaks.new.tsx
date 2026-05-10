@@ -18,6 +18,7 @@ import { syncShopConfig } from "~/lib/metafield-sync";
 import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { QbForm, type QbFormValues } from "~/components/QbForm";
 import { PreviewPane } from "~/components/PreviewPane";
+import { StickyAtcPreview } from "~/components/StickyAtcPreview";
 import { buildPreviewQbConfig, defaultPreviewSettings } from "~/lib/preview-config";
 import { buildStyleOverrides, buildTextOverrides } from "~/lib/preview-overrides";
 import type { TierFormValue } from "~/components/QbTierBuilder";
@@ -320,6 +321,7 @@ export default function QbNew() {
           {previewConfig && (
             <PreviewPane type="qb" id="new" config={previewConfig} />
           )}
+          {values?.stickyAtc.enabled && <StickyAtcPreview value={values.stickyAtc} />}
           <EmbedCodeCard plan={plan} />
         </div>
       </div>
