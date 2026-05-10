@@ -77,10 +77,15 @@ export function CountdownPreview({ values }: Props) {
                 }}
               >
                 {d > 0 && (
-                  <Unit value={pad(d)} unit="d" accent={accent} />
+                  <>
+                    <Unit value={pad(d)} unit="d" accent={accent} />
+                    <Sep accent={accent} />
+                  </>
                 )}
                 <Unit value={pad(h)} unit="h" accent={accent} />
+                <Sep accent={accent} />
                 <Unit value={pad(m)} unit="m" accent={accent} />
+                <Sep accent={accent} />
                 <Unit value={pad(s)} unit="s" accent={accent} />
               </span>
             </div>
@@ -103,4 +108,8 @@ function Unit({ value, unit, accent }: { value: string; unit: string; accent: st
       <i style={{ fontSize: 11, fontStyle: "normal", opacity: 0.8, fontWeight: 600 }}>{unit}</i>
     </span>
   );
+}
+
+function Sep({ accent }: { accent: string }) {
+  return <span style={{ color: accent, fontWeight: 700, fontSize: 18, lineHeight: 1 }}>:</span>;
 }

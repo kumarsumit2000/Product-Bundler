@@ -417,6 +417,7 @@
 .pumper-ct-unit { display: inline-flex; align-items: baseline; gap: 2px; }
 .pumper-ct-unit b { font-size: 18px; font-weight: 700; line-height: 1; color: var(--ct-accent, #d9263a); }
 .pumper-ct-unit i { font-size: 11px; font-style: normal; opacity: .8; font-weight: 600; }
+.pumper-ct-sep { color: var(--ct-accent, #d9263a); font-weight: 700; font-size: 18px; line-height: 1; }
 .pumper-ct-expired { opacity: .85; font-style: italic; }
 
 /* Sticky add to cart */

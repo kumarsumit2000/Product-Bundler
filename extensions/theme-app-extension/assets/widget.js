@@ -134,9 +134,11 @@ var Pumper=(function(exports){'use strict';function U(e,t){for(let n of e.bundle
       <div class="pumper-ct-inner">
         <span class="pumper-ct-headline">${Se(t.headline)}</span>
         <span class="pumper-ct-clock">
-          ${a?`<span class="pumper-ct-unit"><b>${G(s)}</b><i>d</i></span>`:""}
+          ${a?`<span class="pumper-ct-unit"><b>${G(s)}</b><i>d</i></span><span class="pumper-ct-sep">:</span>`:""}
           <span class="pumper-ct-unit"><b>${G(o)}</b><i>h</i></span>
+          <span class="pumper-ct-sep">:</span>
           <span class="pumper-ct-unit"><b>${G(d)}</b><i>m</i></span>
+          <span class="pumper-ct-sep">:</span>
           <span class="pumper-ct-unit"><b>${G(c)}</b><i>s</i></span>
         </span>
       </div>

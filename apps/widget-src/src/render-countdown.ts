@@ -53,9 +53,11 @@ export function renderCountdown(mount: HTMLElement, c: CountdownConfig): void {
       <div class="pumper-ct-inner">
         <span class="pumper-ct-headline">${escapeHtml(c.headline)}</span>
         <span class="pumper-ct-clock">
-          ${showDays ? `<span class="pumper-ct-unit"><b>${pad(d)}</b><i>d</i></span>` : ""}
+          ${showDays ? `<span class="pumper-ct-unit"><b>${pad(d)}</b><i>d</i></span><span class="pumper-ct-sep">:</span>` : ""}
           <span class="pumper-ct-unit"><b>${pad(h)}</b><i>h</i></span>
+          <span class="pumper-ct-sep">:</span>
           <span class="pumper-ct-unit"><b>${pad(m)}</b><i>m</i></span>
+          <span class="pumper-ct-sep">:</span>
           <span class="pumper-ct-unit"><b>${pad(s)}</b><i>s</i></span>
         </span>
       </div>
