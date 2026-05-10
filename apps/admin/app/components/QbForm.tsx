@@ -80,7 +80,11 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange }: P
 
   return (
     <Form method="post">
-      <input type="hidden" name="productId" value={values.product[0]?.productId ?? ""} />
+      <input
+        type="hidden"
+        name="productId"
+        value={values.visibilityProducts[0]?.productId ?? values.product[0]?.productId ?? ""}
+      />
       <input type="hidden" name="visibility" value={values.visibility} />
       <input
         type="hidden"
@@ -141,33 +145,28 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange }: P
 
         <Card>
           <BlockStack gap="400">
-            <Text as="h2" variant="headingMd">1. Product</Text>
+            <Text as="h2" variant="headingMd">Name</Text>
             <TextField
               label="Name"
+              labelHidden
               name="name"
               value={values.name}
               onChange={(v) => update("name", v)}
               error={errors?.name}
               autoComplete="off"
               maxLength={100}
+              placeholder="Internal name (e.g. Holiday QB)"
             />
-            <ProductPicker
-              products={values.product}
-              onChange={(p) => update("product", p)}
-              multiple={false}
-              showQty={false}
-            />
-            {errors?.productId && <Banner tone="critical">{errors.productId}</Banner>}
           </BlockStack>
         </Card>
 
         <Card>
           <BlockStack gap="400">
-            <Text as="h2" variant="headingMd">2. Tiers</Text>
+            <Text as="h2" variant="headingMd">Tiers</Text>
             <QbTierBuilder
               tiers={values.tiers}
               onChange={(t) => update("tiers", t)}
-              restrictToProductId={values.product[0]?.productId ?? null}
+              restrictToProductId={values.visibilityProducts[0]?.productId ?? values.product[0]?.productId ?? null}
             />
             {errors?.tiers && <Banner tone="critical">{errors.tiers}</Banner>}
           </BlockStack>

@@ -34,9 +34,9 @@ export function validateQb(input: QbInput): ValidationResult {
     errors.name = "Name must be 100 characters or less";
   }
 
-  if (!input.productId || !input.productId.trim()) {
-    errors.productId = "Product is required";
-  }
+  // productId is no longer required — visibility settings drive product
+  // matching. We still persist whatever was set (auto-derived from
+  // visibilityProductIds[0] when present) for backward compat.
 
   if (!Array.isArray(input.tiers) || input.tiers.length === 0) {
     errors.tiers = "At least one tier is required";
