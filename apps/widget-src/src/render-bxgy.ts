@@ -1,8 +1,15 @@
 import type { BxgyOfferConfig, BxgyBarConfig, WidgetConfig } from "./types";
 import { addToCart, type CartLineInput } from "./add-to-cart";
+import { createPurchaseOptions } from "./render-purchase-options";
+import type { PurchaseOptions, PurchaseSelection } from "./render-purchase-options";
 import { emit } from "./analytics";
 import { formatMoney } from "./format";
 import { t, tWith } from "./i18n";
+
+const INERT_PURCHASE_OPTIONS: PurchaseOptions = {
+  active: false,
+  getSelection: () => ({ mode: "onetime", sellingPlanId: null }),
+};
 
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
@@ -70,6 +77,57 @@ export function renderBxgy(mount: HTMLElement, offer: BxgyOfferConfig, config: W
   let selectedIndex = popularIndex >= 0 ? popularIndex : 0;
 
   const heading = offer.headline || "Pick your deal";
+
+  // Subscribe & Save purchase options. The whole mount is rewritten on every
+  // bar click (renderAll), so the controller is re-created after each render
+  // into a dedicated slot inside the card. We persist the user's One-time vs
+  // Subscribe choice (and chosen plan) across those re-creations via a closure
+  // so switching bars doesn't reset it. `purchaseOptions` is the live handle
+  // the add-to-cart click reads. When subscription is disabled it stays inert.
+  const subEnabled = offer.subscription?.enabled === true;
+  let purchaseOptions: PurchaseOptions = INERT_PURCHASE_OPTIONS;
+  let savedSelection: PurchaseSelection = { mode: "onetime", sellingPlanId: null };
+
+  const mountPurchaseOptions = () => {
+    if (!subEnabled || !offer.subscription) {
+      purchaseOptions = INERT_PURCHASE_OPTIONS;
+      return;
+    }
+    const slot = mount.querySelector<HTMLElement>(".pumper-bxgy-po");
+    if (!slot) {
+      purchaseOptions = INERT_PURCHASE_OPTIONS;
+      return;
+    }
+    const pumper = typeof window !== "undefined" ? window._pumperConfig : undefined;
+    const subGroups = pumper?.sellingPlanGroups ?? [];
+    const subAllocations =
+      pumper?.productVariants?.find((v) => v.variantId === variant.variantId)?.sellingPlanAllocations ?? [];
+
+    purchaseOptions = createPurchaseOptions(slot, offer.subscription, {
+      groups: subGroups,
+      allocations: subAllocations,
+      oneTimePriceCents: variant.priceCents,
+      currency: config.settings.currency,
+      locale: config.settings.locale,
+    });
+
+    // Restore the previously chosen mode/plan after a re-create so the user's
+    // selection survives bar switches. createPurchaseOptions has no initial-
+    // state arg, so we replay the choice by clicking the relevant row.
+    if (purchaseOptions.active && savedSelection.mode === "subscribe") {
+      slot.querySelector<HTMLElement>('[data-po-mode="subscribe"]')?.click();
+      if (savedSelection.sellingPlanId) {
+        const planSel = slot.querySelector<HTMLSelectElement>(".pumper-po-plan");
+        if (planSel && planSel.value !== savedSelection.sellingPlanId) {
+          const hasPlan = Array.from(planSel.options).some((o) => o.value === savedSelection.sellingPlanId);
+          if (hasPlan) {
+            planSel.value = savedSelection.sellingPlanId;
+            planSel.dispatchEvent(new Event("change"));
+          }
+        }
+      }
+    }
+  };
 
   const renderBars = () => offer.bars.map((bar, i) => {
     const math = computeBarMath(bar, variant.priceCents);
@@ -209,9 +267,11 @@ export function renderBxgy(mount: HTMLElement, offer: BxgyOfferConfig, config: W
         <div class="pumper-qb-tiers">${renderBars()}</div>
         ${renderGiftRow()}
         ${renderUpsells()}
+        ${subEnabled ? `<div class="pumper-bxgy-po"></div>` : ""}
         ${renderCta()}
       </section>
     `;
+    mountPurchaseOptions();
     bindHandlers();
   };
 
@@ -220,6 +280,8 @@ export function renderBxgy(mount: HTMLElement, offer: BxgyOfferConfig, config: W
       row.addEventListener("click", () => {
         const idx = parseInt(row.dataset.bxgyBarIndex!, 10);
         selectedIndex = idx;
+        // Persist the purchase-options choice across the re-render below.
+        savedSelection = purchaseOptions.getSelection();
         emit("widget_click", { widgetType: "qb", widgetId: offer.id, productId: offer.productId });
         renderAll();
       });
@@ -232,6 +294,7 @@ export function renderBxgy(mount: HTMLElement, offer: BxgyOfferConfig, config: W
         const bar = offer.bars[selectedIndex]!;
         cta.disabled = true;
 
+        const poSel = purchaseOptions.getSelection();
         const lines: CartLineInput[] = [];
         // Buy block: separate line so the merchant sees it as the paid item.
         // Bound to a unique giftBundleId only when buy block has its own
@@ -245,6 +308,7 @@ export function renderBxgy(mount: HTMLElement, offer: BxgyOfferConfig, config: W
           variantId: variant.variantId,
           qty: bar.buyQty,
           bundleId: offer.id,
+          sellingPlanId: poSel.sellingPlanId ?? undefined,
         });
         // Get block: 100% off via gift_attr. Different giftBundleId value
         // keeps it as a separate Shopify line item from the buy line, so the
@@ -255,6 +319,7 @@ export function renderBxgy(mount: HTMLElement, offer: BxgyOfferConfig, config: W
             qty: bar.getQty,
             bundleId: offer.id,
             giftBundleId: `${offer.id}:${bar.id}:get`,
+            sellingPlanId: poSel.sellingPlanId ?? undefined,
           });
         }
 
