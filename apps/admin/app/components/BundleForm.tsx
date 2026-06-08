@@ -20,9 +20,11 @@ import { type StylePanelValues } from "./StylePanel";
 import { SimpleBundleStylePanel } from "./SimpleBundleStylePanel";
 import { WidgetAddonsCard, DEFAULT_ADDONS_ORDER, type AddonsOrderItem } from "./WidgetAddonsCard";
 import { StickyAtcCard, STICKY_ATC_DEFAULTS } from "./StickyAtcCard";
+import { SubscriptionPanel } from "./SubscriptionPanel";
+import { EMPTY_SUBSCRIPTION } from "~/lib/parse-subscription";
 import { VariantPicker, type PickedVariant } from "./VariantPicker";
 import { EMPTY_STYLE_FORM, buildStyleOverrides } from "~/lib/preview-overrides";
-import type { StickyAtcConfig } from "../../drizzle/schema";
+import type { StickyAtcConfig, SubscriptionConfig } from "../../drizzle/schema";
 
 type DiscountType = "percentage" | "flat" | "fixed_total";
 type Status = "draft" | "active" | "paused";
@@ -61,6 +63,7 @@ export type BundleFormValues = StylePanelValues & {
   linkedProgressiveGiftId: string | null;
   addonsOrder: AddonsOrderItem[];
   stickyAtc: StickyAtcConfig;
+  subscription: SubscriptionConfig;
 };
 
 type AddonOption = { id: string; name: string };
@@ -106,6 +109,7 @@ const DEFAULTS: BundleFormValues = {
   linkedProgressiveGiftId: null,
   addonsOrder: [...DEFAULT_ADDONS_ORDER],
   stickyAtc: STICKY_ATC_DEFAULTS,
+  subscription: EMPTY_SUBSCRIPTION,
 };
 
 export function BundleForm({ initialValues, errors, submitLabel, onValuesChange, progressiveGiftOptions = [] }: Props) {
@@ -163,6 +167,7 @@ export function BundleForm({ initialValues, errors, submitLabel, onValuesChange,
       <input type="hidden" name="linkedProgressiveGiftId" value={values.linkedProgressiveGiftId ?? ""} />
       <input type="hidden" name="addonsOrder" value={JSON.stringify(values.addonsOrder)} />
       <input type="hidden" name="stickyAtc" value={JSON.stringify(values.stickyAtc)} />
+      <input type="hidden" name="subscription" value={JSON.stringify(values.subscription)} />
 
       <BlockStack gap="500">
         {hasErrors && (
@@ -464,6 +469,11 @@ export function BundleForm({ initialValues, errors, submitLabel, onValuesChange,
         <StickyAtcCard
           value={values.stickyAtc}
           onChange={(stickyAtc) => update("stickyAtc", stickyAtc)}
+        />
+
+        <SubscriptionPanel
+          value={values.subscription}
+          onChange={(v) => update("subscription", v)}
         />
 
         <SimpleBundleStylePanel values={values} onChange={(next) => setValues((s) => ({ ...s, ...next }))} />

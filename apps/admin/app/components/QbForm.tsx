@@ -19,8 +19,10 @@ import { MultiCollectionPicker } from "./MultiCollectionPicker";
 import { QbUpsellsBuilder, EMPTY_UPSELL, type UpsellFormValue } from "./QbUpsellsBuilder";
 import { WidgetAddonsCard, DEFAULT_ADDONS_ORDER, type AddonsOrderItem } from "./WidgetAddonsCard";
 import { StickyAtcCard, STICKY_ATC_DEFAULTS } from "./StickyAtcCard";
+import { SubscriptionPanel } from "./SubscriptionPanel";
+import { EMPTY_SUBSCRIPTION } from "~/lib/parse-subscription";
 import { QbTierBuilder, type TierFormValue } from "./QbTierBuilder";
-import type { StickyAtcConfig } from "../../drizzle/schema";
+import type { StickyAtcConfig, SubscriptionConfig } from "../../drizzle/schema";
 import { type StylePanelValues } from "./StylePanel";
 import { SimpleQbStylePanel } from "./SimpleQbStylePanel";
 import { EMPTY_STYLE_FORM, buildStyleOverrides } from "~/lib/preview-overrides";
@@ -53,6 +55,7 @@ export type QbFormValues = StylePanelValues & {
   linkedProgressiveGiftId: string | null;
   addonsOrder: AddonsOrderItem[];
   stickyAtc: StickyAtcConfig;
+  subscription: SubscriptionConfig;
   freeGiftEnabled: boolean;
   freeGiftMode: "variant" | "product";
   freeGiftVariant: PickedVariant | null;
@@ -99,6 +102,7 @@ const DEFAULTS: QbFormValues = {
   linkedProgressiveGiftId: null,
   addonsOrder: [...DEFAULT_ADDONS_ORDER],
   stickyAtc: STICKY_ATC_DEFAULTS,
+  subscription: EMPTY_SUBSCRIPTION,
   freeGiftEnabled: false,
   freeGiftMode: "product",
   freeGiftVariant: null,
@@ -141,6 +145,7 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange, pro
       <input type="hidden" name="linkedProgressiveGiftId" value={values.linkedProgressiveGiftId ?? ""} />
       <input type="hidden" name="addonsOrder" value={JSON.stringify(values.addonsOrder)} />
       <input type="hidden" name="stickyAtc" value={JSON.stringify(values.stickyAtc)} />
+      <input type="hidden" name="subscription" value={JSON.stringify(values.subscription)} />
       <input
         type="hidden"
         name="freeGiftVariantId"
@@ -418,6 +423,11 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange, pro
         <StickyAtcCard
           value={values.stickyAtc}
           onChange={(stickyAtc) => update("stickyAtc", stickyAtc)}
+        />
+
+        <SubscriptionPanel
+          value={values.subscription}
+          onChange={(v) => update("subscription", v)}
         />
 
         <Card>
