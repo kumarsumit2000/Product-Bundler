@@ -13,6 +13,7 @@ import { syncShopConfig } from "~/lib/metafield-sync";
 import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { parseStickyAtc } from "~/lib/parse-sticky-atc";
 import { parseAddonsOrder } from "~/lib/parse-addons-order";
+import { parseSubscriptionForm } from "~/lib/parse-subscription";
 import { BxgyForm, BXGY_FORM_ID, type BxgyFormValues } from "~/components/BxgyForm";
 import { submitFormById } from "~/lib/submit-form-by-id";
 import { PreviewPane } from "~/components/PreviewPane";
@@ -130,7 +131,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     visibilityProductIds,
     visibilityCollectionIds,
     styleOverrides: parsedStyleOverrides,
-    subscription: null,
+    subscription: parseSubscriptionForm(form.get("subscription")),
     textOverrides: parsedTextOverrides,
     linkedProgressiveGiftId,
     linkedCountdownId: null,

@@ -13,6 +13,7 @@ import { syncShopConfig } from "~/lib/metafield-sync";
 import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { parseStickyAtc } from "~/lib/parse-sticky-atc";
 import { parseAddonsOrder } from "~/lib/parse-addons-order";
+import { parseSubscriptionForm, EMPTY_SUBSCRIPTION } from "~/lib/parse-subscription";
 import { BxgyForm, BXGY_FORM_ID, type BxgyFormValues } from "~/components/BxgyForm";
 import { submitFormById } from "~/lib/submit-form-by-id";
 import { PreviewPane } from "~/components/PreviewPane";
@@ -130,6 +131,7 @@ export async function action({ request, params, context }: ActionFunctionArgs) {
     visibilityCollectionIds,
     styleOverrides: parsedStyleOverrides,
     textOverrides: parsedTextOverrides,
+    subscription: parseSubscriptionForm(form.get("subscription")),
     linkedProgressiveGiftId,
     stickyAtc,
     addonsOrder,
@@ -215,6 +217,7 @@ export default function BxgyEdit() {
       "bxgy.freeGiftCallout": (offer.textOverrides as Record<string, string> | null)?.["bxgy.freeGiftCallout"] ?? "",
       "bxgy.freeGiftCallout.hidden": (offer.textOverrides as Record<string, string> | null)?.["bxgy.freeGiftCallout.hidden"] ?? "",
     },
+    subscription: offer.subscription ?? EMPTY_SUBSCRIPTION,
   };
 
   const previewConfig = values

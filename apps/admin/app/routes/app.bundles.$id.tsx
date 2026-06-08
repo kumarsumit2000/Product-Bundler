@@ -12,6 +12,7 @@ import { enrichProgressiveGiftsForPreview } from "~/lib/preview-pg-enrich";
 import { validateBundle } from "~/lib/bundles/validate";
 import { parseStickyAtc } from "~/lib/parse-sticky-atc";
 import { parseAddonsOrder } from "~/lib/parse-addons-order";
+import { parseSubscriptionForm, EMPTY_SUBSCRIPTION } from "~/lib/parse-subscription";
 import { STICKY_ATC_DEFAULTS } from "~/components/StickyAtcCard";
 import { DEFAULT_ADDONS_ORDER, type AddonsOrderItem } from "~/components/WidgetAddonsCard";
 import { syncShopConfig } from "~/lib/metafield-sync";
@@ -239,6 +240,7 @@ export async function action({
     linkedProgressiveGiftId,
     stickyAtc,
     addonsOrder,
+    subscription: parseSubscriptionForm(form.get("subscription")),
   });
 
   try {
@@ -366,6 +368,7 @@ export default function BundleEdit() {
     stickyAtc: bundle.stickyAtc
       ? { ...STICKY_ATC_DEFAULTS, ...bundle.stickyAtc, enabled: true }
       : { ...STICKY_ATC_DEFAULTS },
+    subscription: bundle.subscription ?? EMPTY_SUBSCRIPTION,
   };
 
   const previewConfig = values

@@ -12,6 +12,7 @@ import { enrichProgressiveGiftsForPreview } from "~/lib/preview-pg-enrich";
 import { validateQb } from "~/lib/quantity-breaks/validate";
 import { parseStickyAtc } from "~/lib/parse-sticky-atc";
 import { parseAddonsOrder } from "~/lib/parse-addons-order";
+import { parseSubscriptionForm, EMPTY_SUBSCRIPTION } from "~/lib/parse-subscription";
 import { STICKY_ATC_DEFAULTS } from "~/components/StickyAtcCard";
 import { DEFAULT_ADDONS_ORDER, type AddonsOrderItem } from "~/components/WidgetAddonsCard";
 import { syncShopConfig } from "~/lib/metafield-sync";
@@ -208,6 +209,7 @@ export async function action({
     freeGiftVariantId,
     freeGiftProductId,
     freeGiftMinQty,
+    subscription: parseSubscriptionForm(form.get("subscription")),
   });
 
   try {
@@ -354,6 +356,7 @@ export default function QbEdit() {
       subtitle: u.subtitle,
       selectedByDefault: u.selectedByDefault,
     })),
+    subscription: qb.subscription ?? EMPTY_SUBSCRIPTION,
   };
 
   const previewConfig = values

@@ -14,6 +14,7 @@ import { enrichProgressiveGiftsForPreview } from "~/lib/preview-pg-enrich";
 import { validateBundle } from "~/lib/bundles/validate";
 import { parseStickyAtc } from "~/lib/parse-sticky-atc";
 import { parseAddonsOrder } from "~/lib/parse-addons-order";
+import { parseSubscriptionForm } from "~/lib/parse-subscription";
 import { syncShopConfig } from "~/lib/metafield-sync";
 import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { BundleForm, BUNDLE_FORM_ID, type BundleFormValues } from "~/components/BundleForm";
@@ -160,7 +161,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     linkedCountdownId: null,
     stickyAtc,
     addonsOrder,
-    subscription: null,
+    subscription: parseSubscriptionForm(form.get("subscription")),
   });
 
   try {

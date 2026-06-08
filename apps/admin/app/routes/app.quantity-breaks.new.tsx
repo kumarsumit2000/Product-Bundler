@@ -14,6 +14,7 @@ import { enrichProgressiveGiftsForPreview } from "~/lib/preview-pg-enrich";
 import { validateQb } from "~/lib/quantity-breaks/validate";
 import { parseStickyAtc } from "~/lib/parse-sticky-atc";
 import { parseAddonsOrder } from "~/lib/parse-addons-order";
+import { parseSubscriptionForm } from "~/lib/parse-subscription";
 import { syncShopConfig } from "~/lib/metafield-sync";
 import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { QbForm, QB_FORM_ID, type QbFormValues } from "~/components/QbForm";
@@ -162,7 +163,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     textOverrides: input.textOverrides,
     headline: input.headline,
     ctaLabel: input.ctaLabel,
-    subscription: null,
+    subscription: parseSubscriptionForm(form.get("subscription")),
     visibility: normalizedVisibility,
     visibilityProductIds,
     visibilityCollectionIds,
