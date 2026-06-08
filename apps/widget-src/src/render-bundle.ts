@@ -3,6 +3,8 @@ import { addToCart, type CartLineInput } from "./add-to-cart";
 import { emit } from "./analytics";
 import { computeBundleTotals, formatMoney } from "./format";
 import { t, tWith } from "./i18n";
+import { createPurchaseOptions } from "./render-purchase-options";
+import type { PurchaseOptions } from "./render-purchase-options";
 
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
@@ -18,6 +20,7 @@ export function renderBundle(mount: HTMLElement, bundle: BundleConfig, config: W
   }
 
   const anyOOS = bundle.products.some((p) => !p.available);
+  const subEnabled = bundle.subscription?.enabled === true;
   const totals = computeBundleTotals(bundle, bundle.discountType, bundle.discountValue);
   const heading = bundle.headline || config.settings.bundleHeadline || t("bundle.heading");
 
@@ -127,9 +130,29 @@ export function renderBundle(mount: HTMLElement, bundle: BundleConfig, config: W
       ${giftBadge}
       ${giftCallout}
       ${totalLine}
+      ${subEnabled ? '<div class="pumper-bundle-po"></div>' : ""}
       <button class="pumper-cta" data-action="add-to-cart" ${anyOOS ? "disabled" : ""}>${escapeHtml(ctaLabel)}</button>
     </section>
   `;
+
+  let purchaseOptions: PurchaseOptions = { active: false, getSelection: () => ({ mode: "onetime", sellingPlanId: null }) };
+  if (subEnabled && bundle.subscription) {
+    const slot = mount.querySelector<HTMLElement>(".pumper-bundle-po");
+    if (slot) {
+      const firstComp = bundle.products.find((p) => p.variantId);
+      const pumper = typeof window !== "undefined" ? window._pumperConfig : undefined;
+      const allocations = firstComp
+        ? (pumper?.productVariants?.find((v) => v.variantId === firstComp.variantId)?.sellingPlanAllocations ?? [])
+        : [];
+      purchaseOptions = createPurchaseOptions(slot, bundle.subscription, {
+        groups: pumper?.sellingPlanGroups ?? [],
+        allocations,
+        oneTimePriceCents: firstComp?.priceCents ?? 0,
+        currency: config.settings.currency,
+        locale: config.settings.locale,
+      });
+    }
+  }
 
   emit("widget_impression", { widgetType: "bundle", widgetId: bundle.id, productId: bundle.products[0]?.productId ?? "" });
 
@@ -138,9 +161,19 @@ export function renderBundle(mount: HTMLElement, bundle: BundleConfig, config: W
     cta.addEventListener("click", async () => {
       cta.disabled = true;
       emit("widget_click", { widgetType: "bundle", widgetId: bundle.id, productId: bundle.products[0]?.productId ?? "" });
+      const poSel = purchaseOptions.getSelection();
+      const pumper = typeof window !== "undefined" ? window._pumperConfig : undefined;
+      const hasAlloc = (variantId: string, planId: string) =>
+        (pumper?.productVariants?.find((v) => v.variantId === variantId)?.sellingPlanAllocations ?? [])
+          .some((a) => a.planId === planId);
       const lines: CartLineInput[] = bundle.products
         .filter((p) => p.variantId)
-        .map((p) => ({ variantId: p.variantId!, qty: p.qty, bundleId: bundle.id }));
+        .map((p) => ({
+          variantId: p.variantId!,
+          qty: p.qty,
+          bundleId: bundle.id,
+          sellingPlanId: poSel.sellingPlanId && hasAlloc(p.variantId!, poSel.sellingPlanId) ? poSel.sellingPlanId : undefined,
+        }));
       const giftTag = `${bundle.id}:gift`;
       if (bundle.freeGiftVariantId && bundle.freeGiftAvailable) {
         lines.push({ variantId: bundle.freeGiftVariantId, qty: 1, bundleId: bundle.id, giftBundleId: giftTag });

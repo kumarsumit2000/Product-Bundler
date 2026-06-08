@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { renderBundle } from "./render-bundle";
 import type { BundleConfig, WidgetConfig } from "./types";
 
@@ -93,5 +93,77 @@ describe("renderBundle", () => {
     const bundle: BundleConfig = { ...BUNDLE, discountValue: 20, textOverrides: null };
     renderBundle(el, bundle, CONFIG);
     expect(el.innerHTML).toContain("Save"); // default i18n is "Save {savings}"
+  });
+
+  describe("subscribe & save purchase options", () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+      vi.unstubAllGlobals();
+      delete (window as any)._pumperConfig;
+    });
+
+    function parseItemsFromFormData(body: FormData) {
+      const items: Record<string, { id: string; quantity: number; sellingPlan?: string; properties: Record<string, string> }> = {};
+      for (const [key, value] of (body as unknown as { entries(): Iterable<[string, FormDataEntryValue]> }).entries()) {
+        const m = key.match(/^items\[(\d+)\]\[(\w+)\](?:\[(\w+)\])?$/);
+        if (!m) continue;
+        const idx = m[1]!, field = m[2]!, sub = m[3];
+        if (!items[idx]) items[idx] = { id: "", quantity: 0, properties: {} };
+        const item = items[idx]!;
+        if (field === "id") item.id = String(value);
+        else if (field === "quantity") item.quantity = Number(value);
+        else if (field === "selling_plan") item.sellingPlan = String(value);
+        else if (field === "properties" && sub) item.properties[sub] = String(value);
+      }
+      return Object.keys(items).sort((a, b) => Number(a) - Number(b)).map((k) => items[k]!);
+    }
+
+    const SUB_BUNDLE: BundleConfig = {
+      ...BUNDLE,
+      subscription: {
+        enabled: true, heading: "Purchase Options", title: "Subscribe & Save",
+        subtitle: "Cancel anytime", details: "x", widgetStyle: "modern",
+        showDiscountLabel: true, hideThirdPartyWidget: false,
+      },
+    };
+
+    function setPumperConfig() {
+      (window as any)._pumperConfig = {
+        shop: "s.myshopify.com", locale: "en", currency: "USD", apiBase: "/api",
+        sellingPlanGroups: [{ id: "g", name: "Sub", plans: [{ id: "gid://shopify/SellingPlan/7", name: "Monthly" }] }],
+        productVariants: [
+          {
+            variantId: "v1", title: "x", available: true, priceCents: 72995,
+            sellingPlanAllocations: [{ planId: "gid://shopify/SellingPlan/7", priceCents: 65695 }],
+          },
+          // Second component has NO allocations — must stay one-time.
+          { variantId: "v2", title: "y", available: true, priceCents: 62995 },
+        ],
+      };
+    }
+
+    function mockFetch() {
+      const f = vi.fn().mockResolvedValue(new Response("{}", { status: 200, headers: { "Content-Type": "application/json" } }));
+      vi.stubGlobal("fetch", f);
+      Object.defineProperty(window, "location", { value: { href: "" }, writable: true });
+      return f;
+    }
+
+    it("sets selling_plan only on components with a matching allocation", async () => {
+      setPumperConfig();
+      const f = mockFetch();
+      renderBundle(mount, SUB_BUNDLE, CONFIG);
+
+      (mount.querySelector('[data-po-mode="subscribe"]') as HTMLElement).click();
+      (mount.querySelector("[data-action=add-to-cart]") as HTMLElement).click();
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(f).toHaveBeenCalledOnce();
+      const init = f.mock.calls[0]![1] as RequestInit;
+      const items = parseItemsFromFormData(init.body as FormData);
+      expect(items[0]!.sellingPlan).toBe("7");
+      expect(items[1]!.sellingPlan).toBeUndefined();
+    });
   });
 });
