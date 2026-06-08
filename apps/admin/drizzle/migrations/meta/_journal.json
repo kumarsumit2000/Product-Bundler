@@ -197,6 +197,139 @@
       "when": 1778369400000,
       "tag": "0027_bxgy_checkbox_upsells",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "6",
+      "when": 1778370600000,
+      "tag": "0028_bind_to_current_product",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "6",
+      "when": 1778371800000,
+      "tag": "0029_bundle_bind_to_current_collection",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "6",
+      "when": 1778373000000,
+      "tag": "0030_newsletter_reward_audience",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "6",
+      "when": 1778374200000,
+      "tag": "0031_newsletter_campaigns",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "6",
+      "when": 1778375400000,
+      "tag": "0032_sort_order",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "6",
+      "when": 1778376600000,
+      "tag": "0033_widget_scheduling",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "6",
+      "when": 1778377800000,
+      "tag": "0034_cart_upsells",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "6",
+      "when": 1778379000000,
+      "tag": "0035_post_purchase_offers",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "6",
+      "when": 1778380200000,
+      "tag": "0036_email_integrations",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "6",
+      "when": 1778381400000,
+      "tag": "0037_bundle_daily_counts",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "6",
+      "when": 1778382600000,
+      "tag": "0038_oauth_email_integrations",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "6",
+      "when": 1778383800000,
+      "tag": "0039_rollback_to_api_keys",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "6",
+      "when": 1778385000000,
+      "tag": "0040_email_integrations_add_omnisend",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "6",
+      "when": 1778386200000,
+      "tag": "0041_email_integrations_more_esps",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "6",
+      "when": 1778387400000,
+      "tag": "0042_email_integrations_verified",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "6",
+      "when": 1778388600000,
+      "tag": "0043_signup_forms",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "6",
+      "when": 1778389800000,
+      "tag": "0044_migrate_campaigns_to_forms",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "6",
+      "when": 1778391000000,
+      "tag": "0045_signup_forms_blocks",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "6",
+      "when": 1778392200000,
+      "tag": "0046_drop_subscription",
+      "breakpoints": true
     }
   ]
 }

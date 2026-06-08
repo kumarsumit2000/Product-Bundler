@@ -3,9 +3,12 @@ import { eq } from "drizzle-orm";
 import { unauthenticated, type AppLoadContext } from "~/shopify.server";
 import { getDb, schema } from "~/db.server";
 import { buildStorefrontConfig } from "~/lib/storefront-config";
+import { checkRateLimit } from "~/lib/rate-limit";
 
 const CACHE_TTL_SECONDS = 60;
-const NEGATIVE_CACHE_TTL_SECONDS = 30;
+// Cloudflare KV's minimum expirationTtl is 60s; using anything lower throws
+// "Invalid expiration_ttl" and surfaces as a 500 to the storefront.
+const NEGATIVE_CACHE_TTL_SECONDS = 60;
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -26,6 +29,17 @@ export async function loader({ params, request, context }: LoaderFunctionArgs) {
     return new Response(JSON.stringify({ error: "Invalid shop" }), {
       status: 400,
       headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+    });
+  }
+
+  // Per-shop rate limit (BFS hard constraint). KV-bucketed counter — the
+  // widget loads this endpoint at most once per page load, so 1000/min/shop
+  // is many orders of magnitude above legitimate traffic.
+  const rl = await checkRateLimit(env.SHOP_SETTINGS_CACHE, shop);
+  if (!rl.allowed) {
+    return new Response(JSON.stringify({ error: "Too many requests" }), {
+      status: 429,
+      headers: { ...CORS_HEADERS, "Content-Type": "application/json", "Retry-After": "60" },
     });
   }
 
@@ -67,7 +81,12 @@ export async function loader({ params, request, context }: LoaderFunctionArgs) {
   const json = JSON.stringify(payload);
 
   const isEmpty =
-    payload.bundles.length === 0 && payload.quantityBreaks.length === 0;
+    payload.bundles.length === 0 &&
+    payload.quantityBreaks.length === 0 &&
+    (payload.bxgyOffers?.length ?? 0) === 0 &&
+    (payload.progressiveGifts?.length ?? 0) === 0 &&
+    (payload.countdowns?.length ?? 0) === 0 &&
+    !payload.newsletter;
   const ttl = isEmpty ? NEGATIVE_CACHE_TTL_SECONDS : CACHE_TTL_SECONDS;
 
   await env.SHOP_SETTINGS_CACHE.put(cacheKey, json, {

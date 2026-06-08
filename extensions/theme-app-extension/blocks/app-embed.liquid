@@ -4,10 +4,52 @@
     shop: "{{ shop.permanent_domain }}",
     locale: "{{ request.locale.iso_code }}",
     currency: "{{ cart.currency.iso_code }}",
-    apiBase: "{{ block.settings.api_base | default: 'https://bundler.deepseatools.in/api/storefront' }}",
+    apiBase: "https://bundler.deepseatools.in/api/storefront",
+    {% if customer %}
+    customerId: "{{ customer.id }}",
+    {% endif %}
     {% if template contains 'product' and product %}
     productId: "gid://shopify/Product/{{ product.id }}",
-    productCollectionIds: [{% for c in product.collections %}"gid://shopify/Collection/{{ c.id }}"{% unless forloop.last %},{% endunless %}{% endfor %}]
+    productTitle: {{ product.title | json }},
+    productImage: {{ product.featured_image | image_url: width: 200 | json }},
+    productCollectionIds: [{% for c in product.collections %}"gid://shopify/Collection/{{ c.id }}"{% unless forloop.last %},{% endunless %}{% endfor %}],
+    productVariants: [
+      {% for v in product.variants %}
+      {
+        variantId: "gid://shopify/ProductVariant/{{ v.id }}",
+        title: {{ v.title | json }},
+        priceCents: {{ v.price }},
+        available: {{ v.available | json }}
+      }{% unless forloop.last %},{% endunless %}
+      {% endfor %}
+    ],
+    {% comment %}
+      Products from the current product's primary (first non-frontpage) collection.
+      Powers mix-and-match bundles configured to follow the current product's
+      collection. Capped at 12 to keep markup weight reasonable.
+    {% endcomment %}
+    {% assign current_collection = nil %}
+    {% for c in product.collections %}
+      {% unless c.handle == 'frontpage' or c.handle == 'all' %}
+        {% assign current_collection = c %}
+        {% break %}
+      {% endunless %}
+    {% endfor %}
+    {% if current_collection %}
+    currentCollectionId: "gid://shopify/Collection/{{ current_collection.id }}",
+    currentCollectionProducts: [
+      {% for p in current_collection.products limit: 12 %}
+      {
+        productId: "gid://shopify/Product/{{ p.id }}",
+        variantId: "gid://shopify/ProductVariant/{{ p.selected_or_first_available_variant.id }}",
+        title: {{ p.title | json }},
+        image: {{ p.featured_image | image_url: width: 200 | json }},
+        available: {{ p.available | json }},
+        priceCents: {{ p.price }}
+      }{% unless forloop.last %},{% endunless %}
+      {% endfor %}
+    ]
+    {% endif %}
     {% endif %}
   };
 </script>
@@ -17,9 +59,6 @@
 {% schema %}
 {
   "name": "Bundler",
-  "target": "head",
-  "settings": [
-    { "type": "text", "id": "api_base", "label": "API base (advanced)", "default": "https://bundler.deepseatools.in/api/storefront" }
-  ]
+  "target": "head"
 }
 {% endschema %}

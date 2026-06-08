@@ -9,6 +9,16 @@ function escapeHtml(s: string): string {
 }
 
 export function renderMixMatch(mount: HTMLElement, bundle: BundleConfig, config: WidgetConfig): void {
+  // When the bundle is set to follow the current PDP's collection, swap in
+  // the products pushed by app-embed.liquid for the active product page.
+  // Powers universal "Pick any 3 from this product's collection" templates
+  // without binding to a single hardcoded collection.
+  if (bundle.bindToCurrentCollection) {
+    const cp = window._pumperConfig?.currentCollectionProducts;
+    if (cp && cp.length > 0) {
+      bundle = { ...bundle, collectionProducts: cp };
+    }
+  }
   const target = bundle.targetQty ?? 3;
   const items = (bundle.collectionProducts ?? []).filter((p) => p.available);
   const totalAvailable = items.length;

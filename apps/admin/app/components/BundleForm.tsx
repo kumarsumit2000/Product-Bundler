@@ -26,6 +26,11 @@ import type { StickyAtcConfig } from "../../drizzle/schema";
 
 type DiscountType = "percentage" | "flat" | "fixed_total";
 type Status = "draft" | "active" | "paused";
+// DOM id the route uses to wire a Polaris Page primaryAction "Save"
+// button to this form. The route imports the constant so the value
+// stays in sync if it ever changes.
+export const BUNDLE_FORM_ID = "bundle-form";
+
 export type BundleVisibility = "same_as_members" | "all" | "all_except" | "specific" | "collections";
 type Mode = "classic" | "mix_match";
 
@@ -34,10 +39,14 @@ export type BundleFormValues = StylePanelValues & {
   mode: Mode;
   products: PickedProduct[];
   collection: PickedCollection | null;
+  bindToCurrentCollection: boolean;
   targetQty: string;
   discountType: DiscountType;
   discountValue: string;
   combinable: boolean;
+  sortOrder: string;
+  activeStartAt: string;
+  activeEndAt: string;
   visibility: BundleVisibility;
   triggerProducts: PickedProduct[];
   visibilityCollections: PickedCollection[];
@@ -49,7 +58,6 @@ export type BundleFormValues = StylePanelValues & {
   freeGiftMode: "variant" | "product";
   freeGiftVariant: PickedVariant | null;
   freeGiftProduct: PickedProduct | null;
-  linkedCountdownId: string | null;
   linkedProgressiveGiftId: string | null;
   addonsOrder: AddonsOrderItem[];
   stickyAtc: StickyAtcConfig;
@@ -62,7 +70,6 @@ type Props = {
   errors?: Record<string, string>;
   submitLabel: string;
   onValuesChange?: (v: BundleFormValues) => void;
-  countdownOptions?: AddonOption[];
   progressiveGiftOptions?: AddonOption[];
 };
 
@@ -72,28 +79,36 @@ const DEFAULTS: BundleFormValues = {
   mode: "classic",
   products: [],
   collection: null,
+  bindToCurrentCollection: false,
   targetQty: "3",
   discountType: "percentage",
   discountValue: "10",
   combinable: false,
+  sortOrder: "0",
+  activeStartAt: "",
+  activeEndAt: "",
   visibility: "same_as_members",
   triggerProducts: [],
   visibilityCollections: [],
   status: "draft",
   headline: "",
   ctaLabel: "",
-  textOverrides: { "bundle.totalLabel": "", "bundle.savingsBadge": "" },
+  textOverrides: {
+    "bundle.totalLabel": "",
+    "bundle.savingsBadge": "",
+    "bundle.freeGiftCallout": "",
+    "bundle.freeGiftCallout.hidden": "",
+  },
   freeGiftEnabled: false,
   freeGiftMode: "product",
   freeGiftVariant: null,
   freeGiftProduct: null,
-  linkedCountdownId: null,
   linkedProgressiveGiftId: null,
   addonsOrder: [...DEFAULT_ADDONS_ORDER],
   stickyAtc: STICKY_ATC_DEFAULTS,
 };
 
-export function BundleForm({ initialValues, errors, submitLabel, onValuesChange, countdownOptions = [], progressiveGiftOptions = [] }: Props) {
+export function BundleForm({ initialValues, errors, submitLabel, onValuesChange, progressiveGiftOptions = [] }: Props) {
   const [values, setValues] = useState<BundleFormValues>({ ...DEFAULTS, ...initialValues });
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
@@ -109,7 +124,7 @@ export function BundleForm({ initialValues, errors, submitLabel, onValuesChange,
   const hasErrors = errors && Object.keys(errors).length > 0;
 
   return (
-    <Form method="post">
+    <Form method="post" id={BUNDLE_FORM_ID}>
       <input type="hidden" name="products" value={JSON.stringify(values.products)} />
       <input type="hidden" name="triggerProducts" value={JSON.stringify(values.triggerProducts)} />
       <input type="hidden" name="visibility" value={values.visibility} />
@@ -121,6 +136,8 @@ export function BundleForm({ initialValues, errors, submitLabel, onValuesChange,
       <input type="hidden" name="mode" value={values.mode} />
       <input type="hidden" name="collectionId" value={values.collection?.collectionId ?? ""} />
       <input type="hidden" name="targetQty" value={values.targetQty} />
+      <input type="hidden" name="bindToCurrentCollection" value={values.bindToCurrentCollection ? "on" : ""} />
+      <input type="hidden" name="freeGiftEnabled" value={values.freeGiftEnabled ? "on" : ""} />
       <input
         type="hidden"
         name="styleOverrides"
@@ -143,8 +160,6 @@ export function BundleForm({ initialValues, errors, submitLabel, onValuesChange,
         name="freeGiftProductId"
         value={values.freeGiftEnabled && values.freeGiftMode === "product" ? values.freeGiftProduct?.productId ?? "" : ""}
       />
-      <input type="hidden" name="subscription" value="null" />
-      <input type="hidden" name="linkedCountdownId" value={values.linkedCountdownId ?? ""} />
       <input type="hidden" name="linkedProgressiveGiftId" value={values.linkedProgressiveGiftId ?? ""} />
       <input type="hidden" name="addonsOrder" value={JSON.stringify(values.addonsOrder)} />
       <input type="hidden" name="stickyAtc" value={JSON.stringify(values.stickyAtc)} />
@@ -197,11 +212,39 @@ export function BundleForm({ initialValues, errors, submitLabel, onValuesChange,
               </>
             ) : (
               <>
-                <CollectionPicker
-                  collection={values.collection}
-                  onChange={(c) => update("collection", c)}
+                <ChoiceList
+                  title="Items come from"
+                  titleHidden
+                  choices={[
+                    {
+                      label: "A specific collection",
+                      value: "specific",
+                      helpText: "Customers pick from the products in the collection you choose below.",
+                    },
+                    {
+                      label: "The current product's collection",
+                      value: "current",
+                      helpText: "Universal template — on each PDP, customers pick from products in that product's own collection.",
+                    },
+                  ]}
+                  selected={[values.bindToCurrentCollection ? "current" : "specific"]}
+                  onChange={(s) => update("bindToCurrentCollection", s[0] === "current")}
                 />
-                {errors?.collectionId && <Banner tone="critical">{errors.collectionId}</Banner>}
+                {!values.bindToCurrentCollection && (
+                  <>
+                    <CollectionPicker
+                      collection={values.collection}
+                      onChange={(c) => update("collection", c)}
+                    />
+                    {errors?.collectionId && <Banner tone="critical">{errors.collectionId}</Banner>}
+                  </>
+                )}
+                {values.bindToCurrentCollection && (
+                  <Banner tone="info">
+                    On each product page, the bundle shows the first 12 products from that
+                    product's primary collection. Customers pick {values.targetQty || "N"} to bundle.
+                  </Banner>
+                )}
                 <TextField
                   label="Customer must pick this many items"
                   type="number"
@@ -230,8 +273,8 @@ export function BundleForm({ initialValues, errors, submitLabel, onValuesChange,
               ]}
               selected={[values.discountType]}
               onChange={(s) => update("discountType", s[0] as DiscountType)}
-              name="discountType"
             />
+            <input type="hidden" name="discountType" value={values.discountType} />
             <DiscountValueInput
               type={values.discountType}
               value={values.discountValue}
@@ -243,14 +286,18 @@ export function BundleForm({ initialValues, errors, submitLabel, onValuesChange,
               label="Combinable with other discounts"
               checked={values.combinable}
               onChange={(c) => update("combinable", c)}
-              name="combinable"
             />
+            <input type="hidden" name="combinable" value={values.combinable ? "on" : ""} />
+            <input type="hidden" name="sortOrder" value={values.sortOrder} />
+            <input type="hidden" name="activeStartAt" value={values.activeStartAt} />
+            <input type="hidden" name="activeEndAt" value={values.activeEndAt} />
           </BlockStack>
         </Card>
 
         <Card>
           <BlockStack gap="400">
             <Text as="h2" variant="headingMd">Free gift</Text>
+            {errors?.freeGift && <Banner tone="critical">{errors.freeGift}</Banner>}
             <Checkbox
               label="Include a free gift with this bundle"
               checked={values.freeGiftEnabled}
@@ -360,7 +407,31 @@ export function BundleForm({ initialValues, errors, submitLabel, onValuesChange,
               ]}
               selected={[values.status]}
               onChange={(s) => update("status", s[0] as Status)}
-              name="status"
+            />
+            <input type="hidden" name="status" value={values.status} />
+            <TextField
+              label="Sort order"
+              type="number"
+              value={values.sortOrder}
+              onChange={(v) => update("sortOrder", v)}
+              autoComplete="off"
+              helpText="Lower numbers show first when multiple bundles target the same product page."
+            />
+            <TextField
+              label="Active from (optional)"
+              type="datetime-local"
+              value={values.activeStartAt}
+              onChange={(v) => update("activeStartAt", v)}
+              autoComplete="off"
+              helpText="Bundle stays hidden before this. Leave blank for immediate."
+            />
+            <TextField
+              label="Active until (optional)"
+              type="datetime-local"
+              value={values.activeEndAt}
+              onChange={(v) => update("activeEndAt", v)}
+              autoComplete="off"
+              helpText="Bundle hides automatically after this. Leave blank for no expiry."
             />
             <TextField
               label="Headline (optional)"
@@ -384,11 +455,8 @@ export function BundleForm({ initialValues, errors, submitLabel, onValuesChange,
         </Card>
 
         <WidgetAddonsCard
-          countdowns={countdownOptions}
           progressiveGifts={progressiveGiftOptions}
-          linkedCountdownId={values.linkedCountdownId}
           linkedProgressiveGiftId={values.linkedProgressiveGiftId}
-          addonsOrder={values.addonsOrder}
           widgetLabel="Bundle widget"
           onChange={(patch) => setValues((s) => ({ ...s, ...patch }))}
         />
@@ -420,6 +488,27 @@ export function BundleForm({ initialValues, errors, submitLabel, onValuesChange,
               helpText="Available variables: {savings}"
               autoComplete="off"
               maxLength={120}
+            />
+            <Checkbox
+              label="Show free gift callout"
+              checked={values.textOverrides["bundle.freeGiftCallout.hidden"] !== "1"}
+              onChange={(checked) =>
+                update("textOverrides", {
+                  ...values.textOverrides,
+                  "bundle.freeGiftCallout.hidden": checked ? "" : "1",
+                })
+              }
+              helpText="Hide this if you don't want any callout shown when a free gift is included."
+            />
+            <TextField
+              label="Free gift callout"
+              value={values.textOverrides["bundle.freeGiftCallout"] ?? ""}
+              onChange={(v) => update("textOverrides", { ...values.textOverrides, "bundle.freeGiftCallout": v })}
+              placeholder="Unlock Free Gift 🎁"
+              helpText="Shown above the bundle total when a free gift is configured."
+              autoComplete="off"
+              maxLength={120}
+              disabled={values.textOverrides["bundle.freeGiftCallout.hidden"] === "1"}
             />
             {(errors?.styleOverrides || errors?.textOverrides) && (
               <Banner tone="critical">{errors?.styleOverrides || errors?.textOverrides}</Banner>

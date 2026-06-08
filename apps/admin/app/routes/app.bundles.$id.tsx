@@ -1,23 +1,23 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/cloudflare";
 import { json, redirect } from "@remix-run/cloudflare";
-import { useActionData, useLoaderData, useFetcher } from "@remix-run/react";
+import { useActionData, useLoaderData, useFetcher, useNavigation } from "@remix-run/react";
 import { useState, useEffect } from "react";
 import { Page, Layout } from "@shopify/polaris";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
 import { getDb } from "~/db.server";
 import * as bundleRepo from "~/lib/bundles/repo";
-import * as countdownRepo from "~/lib/countdowns/repo";
+import { parseDateLocal, toDatetimeLocal } from "~/lib/parse-date-local";
 import * as pgRepo from "~/lib/progressive-gifts/repo";
 import { enrichProgressiveGiftsForPreview } from "~/lib/preview-pg-enrich";
 import { validateBundle } from "~/lib/bundles/validate";
-import { parseSubscriptionForm } from "~/lib/parse-subscription";
 import { parseStickyAtc } from "~/lib/parse-sticky-atc";
 import { parseAddonsOrder } from "~/lib/parse-addons-order";
 import { STICKY_ATC_DEFAULTS } from "~/components/StickyAtcCard";
 import { DEFAULT_ADDONS_ORDER, type AddonsOrderItem } from "~/components/WidgetAddonsCard";
 import { syncShopConfig } from "~/lib/metafield-sync";
 import { ensureDiscountNodes } from "~/lib/discount-nodes";
-import { BundleForm, type BundleFormValues } from "~/components/BundleForm";
+import { BundleForm, BUNDLE_FORM_ID, type BundleFormValues } from "~/components/BundleForm";
+import { submitFormById } from "~/lib/submit-form-by-id";
 import { PreviewPane } from "~/components/PreviewPane";
 import { StickyAtcPreview } from "~/components/StickyAtcPreview";
 import { EmbedCodeCard } from "~/components/EmbedCodeCard";
@@ -120,27 +120,14 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
       })
     : {};
 
-  const [usage, countdowns, pgs] = await Promise.all([
+  const [usage, pgs] = await Promise.all([
     getUsage(db, session.shop),
-    countdownRepo.listByShop(db, session.shop),
-    pgRepo.listByShop(db, session.shop),
+        pgRepo.listByShop(db, session.shop),
   ]);
   return json({
     bundle, productDetails, collectionDetails, collectionTopProducts, giftVariantDetails,
     plan: usage.plan,
-    countdownOptions: countdowns.map((c) => ({ id: c.id, name: c.name })),
     progressiveGiftOptions: pgs.map((p) => ({ id: p.id, name: p.name })),
-    allCountdowns: countdowns
-      .filter((c) => c.status === "active")
-      .map((c) => ({
-        id: c.id,
-        name: c.name,
-        endAt: new Date(c.endAt).getTime(),
-        headline: c.headline,
-        expiredHeadline: c.expiredHeadline,
-        layout: c.layout as "inline" | "bar",
-        styleOverrides: (c.styleOverrides ?? null) as Record<string, unknown> | null,
-      })),
     allProgressiveGifts: await enrichProgressiveGiftsForPreview(admin, pgs),
   });
 }
@@ -210,10 +197,14 @@ export async function action({
       qty: p.qty,
     })),
     collectionId: mode === "mix_match" ? collectionId : null,
+    bindToCurrentCollection: mode === "mix_match" && form.get("bindToCurrentCollection") === "on",
     targetQty: mode === "mix_match" ? targetQty : null,
     discountType: (form.get("discountType") as string) || "percentage",
     discountValue: parseFloat((form.get("discountValue") as string) || "0"),
     combinable: form.get("combinable") === "on",
+    sortOrder: Math.max(0, parseInt((form.get("sortOrder") as string) || "0", 10) || 0),
+    activeStartAt: parseDateLocal(form.get("activeStartAt") as string),
+    activeEndAt: parseDateLocal(form.get("activeEndAt") as string),
     triggerProductIds,
     visibility,
     visibilityCollectionIds,
@@ -221,9 +212,9 @@ export async function action({
     ctaLabel: (form.get("ctaLabel") as string) || null,
     styleOverrides: parsedStyleOverrides,
     textOverrides: parsedTextOverrides,
+    freeGiftEnabled: form.get("freeGiftEnabled") === "on",
     freeGiftVariantId: (form.get("freeGiftVariantId") as string) || null,
     freeGiftProductId: (form.get("freeGiftProductId") as string) || null,
-    subscription: parseSubscriptionForm(form.get("subscription")),
   };
 
   const v = validateBundle(input);
@@ -233,7 +224,6 @@ export async function action({
 
   const db = getDb(ctx.cloudflare.env.DB);
 
-  const linkedCountdownId = ((form.get("linkedCountdownId") as string) || "").trim() || null;
   const linkedProgressiveGiftId = ((form.get("linkedProgressiveGiftId") as string) || "").trim() || null;
   const stickyAtc = parseStickyAtc(form.get("stickyAtc") as string | null);
   const addonsOrder = parseAddonsOrder(form.get("addonsOrder") as string | null);
@@ -246,7 +236,6 @@ export async function action({
       | "flat"
       | "fixed_total",
     mode: input.mode,
-    linkedCountdownId,
     linkedProgressiveGiftId,
     stickyAtc,
     addonsOrder,
@@ -270,9 +259,11 @@ export async function action({
 }
 
 export default function BundleEdit() {
-  const { bundle, productDetails, collectionDetails, collectionTopProducts, giftVariantDetails, plan, countdownOptions, progressiveGiftOptions, allCountdowns, allProgressiveGifts } = useLoaderData<typeof loader>();
+  const { bundle, productDetails, collectionDetails, collectionTopProducts, giftVariantDetails, plan, progressiveGiftOptions, allProgressiveGifts } = useLoaderData<typeof loader>();
   useSavedToast();
   const actionData = useActionData<typeof action>();
+  const navigation = useNavigation();
+  const isSubmitting = navigation.state === "submitting";
   const snippet = bundle.mode === "mix_match"
     ? `<div data-pumper-mix-match="${bundle.id}"></div>`
     : `<div data-pumper-bundle="${bundle.id}"></div>`;
@@ -312,6 +303,10 @@ export default function BundleEdit() {
       title: collectionDetails.title,
       image: collectionDetails.image ?? undefined,
     } : null,
+    bindToCurrentCollection: bundle.bindToCurrentCollection ?? false,
+    sortOrder: String(bundle.sortOrder ?? 0),
+    activeStartAt: toDatetimeLocal(bundle.activeStartAt as Date | null),
+    activeEndAt: toDatetimeLocal(bundle.activeEndAt as Date | null),
     targetQty: bundle.targetQty ? String(bundle.targetQty) : "3",
     discountType: bundle.discountType as BundleFormValues["discountType"],
     discountValue: String(bundle.discountValue),
@@ -336,6 +331,8 @@ export default function BundleEdit() {
     textOverrides: {
       "bundle.totalLabel": (bundle.textOverrides as Record<string, string> | null)?.["bundle.totalLabel"] ?? "",
       "bundle.savingsBadge": (bundle.textOverrides as Record<string, string> | null)?.["bundle.savingsBadge"] ?? "",
+      "bundle.freeGiftCallout": (bundle.textOverrides as Record<string, string> | null)?.["bundle.freeGiftCallout"] ?? "",
+      "bundle.freeGiftCallout.hidden": (bundle.textOverrides as Record<string, string> | null)?.["bundle.freeGiftCallout.hidden"] ?? "",
     },
     freeGiftEnabled: !!(bundle.freeGiftVariantId || bundle.freeGiftProductId),
     freeGiftMode: (bundle.freeGiftProductId
@@ -364,7 +361,6 @@ export default function BundleEdit() {
           image: productDetails[bundle.freeGiftProductId]?.image ?? undefined,
         }
       : null,
-    linkedCountdownId: bundle.linkedCountdownId ?? null,
     linkedProgressiveGiftId: bundle.linkedProgressiveGiftId ?? null,
     addonsOrder: (bundle.addonsOrder as AddonsOrderItem[] | null) ?? [...DEFAULT_ADDONS_ORDER],
     stickyAtc: bundle.stickyAtc
@@ -413,7 +409,6 @@ export default function BundleEdit() {
           ctaLabel: values.ctaLabel || null,
           styleOverrides: buildStyleOverrides(values),
           textOverrides: buildTextOverrides(values.textOverrides),
-          linkedCountdownId: values.linkedCountdownId,
           linkedProgressiveGiftId: values.linkedProgressiveGiftId,
           addonsOrder: values.addonsOrder,
           freeGiftVariantId: values.freeGiftEnabled && values.freeGiftMode === "variant"
@@ -439,7 +434,6 @@ export default function BundleEdit() {
             : null,
         },
         addons: {
-          countdowns: allCountdowns,
           progressiveGifts: allProgressiveGifts,
         },
       })
@@ -449,6 +443,11 @@ export default function BundleEdit() {
     <Page
       title={bundle.name}
       backAction={{ content: "Bundles", url: "/app/bundles" }}
+      primaryAction={{
+        content: "Save changes",
+        onAction: () => submitFormById(BUNDLE_FORM_ID),
+        loading: isSubmitting,
+      }}
     >
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
         <div>
@@ -457,7 +456,6 @@ export default function BundleEdit() {
             errors={errors}
             initialValues={initial}
             onValuesChange={setValues}
-            countdownOptions={countdownOptions}
             progressiveGiftOptions={progressiveGiftOptions}
           />
         </div>

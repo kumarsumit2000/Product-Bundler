@@ -4,7 +4,7 @@ application_url = "https://bundler.deepseatools.in"
 embedded = true
 
 [access_scopes]
-scopes = "write_products,write_orders,write_discounts,read_themes,write_metaobjects,read_inventory,read_locales,read_markets"
+scopes = "write_products,read_orders,write_orders,read_discounts,write_discounts,read_themes,write_metaobjects,read_inventory,read_locales,read_markets,write_customers"
 
 [auth]
 redirect_urls = [

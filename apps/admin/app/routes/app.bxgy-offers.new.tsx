@@ -1,65 +1,45 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/cloudflare";
 import { json, redirect } from "@remix-run/cloudflare";
-import { useActionData, useLoaderData } from "@remix-run/react";
+import { useActionData, useLoaderData, useNavigation } from "@remix-run/react";
 import { useState } from "react";
 import { Page } from "@shopify/polaris";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
 import { getDb } from "~/db.server";
 import * as bxgyRepo from "~/lib/bxgy-offers/repo";
-import * as countdownRepo from "~/lib/countdowns/repo";
+import { parseDateLocal } from "~/lib/parse-date-local";
 import * as pgRepo from "~/lib/progressive-gifts/repo";
 import { enrichProgressiveGiftsForPreview } from "~/lib/preview-pg-enrich";
 import { syncShopConfig } from "~/lib/metafield-sync";
 import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { parseStickyAtc } from "~/lib/parse-sticky-atc";
 import { parseAddonsOrder } from "~/lib/parse-addons-order";
-import { BxgyForm, type BxgyFormValues } from "~/components/BxgyForm";
+import { BxgyForm, BXGY_FORM_ID, type BxgyFormValues } from "~/components/BxgyForm";
+import { submitFormById } from "~/lib/submit-form-by-id";
 import { PreviewPane } from "~/components/PreviewPane";
 import { buildPreviewBxgyConfig, defaultMockProduct, defaultPreviewSettings } from "~/lib/preview-config";
-import { buildStyleOverrides } from "~/lib/preview-overrides";
+import { buildStyleOverrides, buildTextOverrides } from "~/lib/preview-overrides";
+import { bxgyTemplate } from "~/lib/template-presets";
 import type { BxgyBarValue } from "~/components/BxgyBarBuilder";
-import type { StyleOverrides } from "../../drizzle/schema";
+import type { StyleOverrides, TextOverrides } from "../../drizzle/schema";
+
+const ALLOWED_BXGY_TEXT_KEYS = new Set(["bxgy.freeGiftCallout", "bxgy.freeGiftCallout.hidden"]);
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
   const { session, admin } = await authenticate.admin(request, ctx);
   const db = getDb(ctx.cloudflare.env.DB);
-  const [countdowns, pgs] = await Promise.all([
-    countdownRepo.listByShop(db, session.shop),
-    pgRepo.listByShop(db, session.shop),
+  const [pgs] = await Promise.all([
+        pgRepo.listByShop(db, session.shop),
   ]);
   const allProgressiveGifts = await enrichProgressiveGiftsForPreview(admin, pgs);
   const url = new URL(request.url);
   const template = url.searchParams.get("template");
   const theme = url.searchParams.get("theme");
-  const preset = template === "bxgy" || template === "bxgy_classic"
-    ? {
-        name: "Buy X, get Y",
-        headline: "Pick your deal",
-        ctaLabel: "",
-        bars: [
-          { id: "bar-1", buyQty: 1, buyDiscountPercent: 0, getQty: 1, getDiscountPercent: 100, title: "Buy 1, get 1 free", subtitle: "", badgeStyle: "save_percent" as const, badgeText: "SAVE {{saved_percentage}}", label: "", isMostPopular: false },
-          { id: "bar-2", buyQty: 2, buyDiscountPercent: 0, getQty: 3, getDiscountPercent: 100, title: "Buy 2, get 3 free", subtitle: "", badgeStyle: "save_percent" as const, badgeText: "SAVE {{saved_percentage}}", label: "", isMostPopular: false },
-          { id: "bar-3", buyQty: 3, buyDiscountPercent: 0, getQty: 6, getDiscountPercent: 100, title: "Buy 3, get 6 free", subtitle: "", badgeStyle: "save_percent" as const, badgeText: "SAVE {{saved_percentage}}", label: "", isMostPopular: true },
-        ],
-      }
-    : null;
+  const preset = bxgyTemplate(template);
   return json({
     preset,
     theme,
-    countdownOptions: countdowns.map((c) => ({ id: c.id, name: c.name })),
     progressiveGiftOptions: pgs.map((p) => ({ id: p.id, name: p.name })),
-    allCountdowns: countdowns
-      .filter((c) => c.status === "active")
-      .map((c) => ({
-        id: c.id,
-        name: c.name,
-        endAt: new Date(c.endAt).getTime(),
-        headline: c.headline,
-        expiredHeadline: c.expiredHeadline,
-        layout: c.layout as "inline" | "bar",
-        styleOverrides: (c.styleOverrides ?? null) as Record<string, unknown> | null,
-      })),
     allProgressiveGifts,
   });
 }
@@ -72,7 +52,10 @@ export async function action({ request, context }: ActionFunctionArgs) {
   if (!name) return json({ errors: { name: "Name is required" } }, { status: 400 });
 
   const productId = ((form.get("productId") as string) || "").trim();
-  if (!productId) return json({ errors: { productId: "Pick a product" } }, { status: 400 });
+  const bindToCurrentProduct = form.get("bindToCurrentProduct") === "on";
+  if (!productId && !bindToCurrentProduct) {
+    return json({ errors: { productId: "Pick a product" } }, { status: 400 });
+  }
 
   let bars: BxgyBarValue[] = [];
   try { bars = JSON.parse((form.get("bars") as string) || "[]"); } catch { bars = []; }
@@ -95,7 +78,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
   // For "specific" visibility, scope to the picked product.
   const visibilityProductIds = visibility === "specific" ? [productId] : visibilityProductIdsRaw;
 
-  const linkedCountdownId = ((form.get("linkedCountdownId") as string) || "").trim() || null;
   const linkedProgressiveGiftId = ((form.get("linkedProgressiveGiftId") as string) || "").trim() || null;
   const stickyAtc = parseStickyAtc(form.get("stickyAtc") as string | null);
   const addonsOrder = parseAddonsOrder(form.get("addonsOrder") as string | null);
@@ -119,6 +101,18 @@ export async function action({ request, context }: ActionFunctionArgs) {
     parsedStyleOverrides = Object.keys(filtered).length > 0 ? (filtered as StyleOverrides) : null;
   } catch { parsedStyleOverrides = null; }
 
+  const textOverridesRaw = (form.get("textOverrides") as string) || "{}";
+  let parsedTextOverrides: TextOverrides | null = null;
+  try {
+    const to = JSON.parse(textOverridesRaw) as Record<string, unknown>;
+    const filtered: Record<string, string> = {};
+    for (const [k, v] of Object.entries(to)) {
+      if (!ALLOWED_BXGY_TEXT_KEYS.has(k)) continue;
+      if (typeof v === "string" && v.length > 0 && v.length <= 120) filtered[k] = v;
+    }
+    parsedTextOverrides = Object.keys(filtered).length > 0 ? (filtered as TextOverrides) : null;
+  } catch { parsedTextOverrides = null; }
+
   const db = getDb(ctx.cloudflare.env.DB);
   const created = await bxgyRepo.create(db, session.shop, {
     name,
@@ -128,13 +122,17 @@ export async function action({ request, context }: ActionFunctionArgs) {
     ctaLabel: ((form.get("ctaLabel") as string) || "") || null,
     bars,
     combinable: form.get("combinable") === "on",
+    bindToCurrentProduct,
+    sortOrder: Math.max(0, parseInt((form.get("sortOrder") as string) || "0", 10) || 0),
+    activeStartAt: parseDateLocal(form.get("activeStartAt") as string),
+    activeEndAt: parseDateLocal(form.get("activeEndAt") as string),
     visibility,
     visibilityProductIds,
     visibilityCollectionIds,
     styleOverrides: parsedStyleOverrides,
-    textOverrides: null,
-    linkedCountdownId,
+    textOverrides: parsedTextOverrides,
     linkedProgressiveGiftId,
+    linkedCountdownId: null,
     stickyAtc,
     addonsOrder,
     freeGiftVariantId,
@@ -152,8 +150,10 @@ export async function action({ request, context }: ActionFunctionArgs) {
 }
 
 export default function BxgyNew() {
-  const { preset, countdownOptions, progressiveGiftOptions, allCountdowns, allProgressiveGifts } = useLoaderData<typeof loader>();
+  const { preset, progressiveGiftOptions, allProgressiveGifts } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
+  const navigation = useNavigation();
+  const isSubmitting = navigation.state === "submitting";
   const errors = actionData && "errors" in actionData ? actionData.errors : undefined;
   const [values, setValues] = useState<BxgyFormValues | null>(null);
 
@@ -185,7 +185,7 @@ export default function BxgyNew() {
           headline: values.headline || null,
           ctaLabel: values.ctaLabel || null,
           styleOverrides: buildStyleOverrides(values),
-          linkedCountdownId: values.linkedCountdownId,
+          textOverrides: buildTextOverrides(values.textOverrides),
           linkedProgressiveGiftId: values.linkedProgressiveGiftId,
           addonsOrder: values.addonsOrder,
           freeGiftVariantId: values.freeGiftEnabled && values.freeGiftMode === "variant"
@@ -227,14 +227,13 @@ export default function BxgyNew() {
           })),
         },
         addons: {
-          countdowns: allCountdowns,
           progressiveGifts: allProgressiveGifts,
         },
       })
     : null;
 
   return (
-    <Page title="Create BXGY offer" backAction={{ content: "Buy X, get Y", url: "/app/bxgy-offers" }}>
+    <Page title="Create BXGY offer" backAction={{ content: "Buy X, get Y", url: "/app/bxgy-offers" }} primaryAction={{ content: "Save BXGY offer", onAction: () => submitFormById(BXGY_FORM_ID), loading: isSubmitting }}>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
         <div>
           <BxgyForm
@@ -242,7 +241,6 @@ export default function BxgyNew() {
             errors={errors}
             initialValues={initialValues}
             onValuesChange={setValues}
-            countdownOptions={countdownOptions}
             progressiveGiftOptions={progressiveGiftOptions}
           />
         </div>

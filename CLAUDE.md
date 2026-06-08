@@ -954,6 +954,78 @@ These are the failure modes I'm most worried about. Treat them as hard constrain
 
 ---
 
+## 18.5 Email integrations (8 ESPs) — setup
+
+Newsletter subscribers can be forwarded to any of 8 ESPs automatically:
+**Klaviyo, Mailchimp, Omnisend, Brevo, ActiveCampaign, ConvertKit / Kit,
+HubSpot, SendGrid Marketing**. The admin page at `/app/email-integrations`
+takes API keys (no OAuth — that path was tried and rolled back because
+Shopify Admin's outer chrome 404s on the post-OAuth bounce-back regardless
+of which redirect strategy we used).
+
+### Merchant setup (per shop)
+
+**Klaviyo**
+1. Klaviyo → **Settings → API Keys → Create Private API Key**.
+2. Grant **Full Access** to all three of: **Profiles**, **Lists**, and **Subscriptions**.
+   (Subscriptions is required because we set marketing consent — without it
+   Klaviyo returns 403 `permission_denied`.)
+3. Paste the key into Bundler's **Email integrations** page.
+4. Paste the destination list ID (find it in Klaviyo → Lists → list URL ends with the ID).
+
+**Mailchimp**
+1. Mailchimp → **Account → Extras → API Keys → Create A Key**.
+2. Note the suffix at the end of the key (e.g. `us19`) — that's your server prefix.
+3. Find the **Audience ID** at **Audience → Settings → Audience name and defaults**
+   — it's a 10-character alphanumeric string (e.g. `a1b2c3d4e5`) shown on the
+   right side of that page. **Do NOT use the numeric ID from the URL** —
+   that's the web UI's path ID, not the API audience ID.
+4. Paste the API key, server prefix, and audience ID into Bundler's **Email integrations** page.
+
+**Omnisend**
+1. Omnisend → **Store settings → Integrations & API → API keys → Create API key**.
+2. Set the "Contacts" scope to read+write.
+3. Paste the key into Bundler's **Email integrations** page.
+
+**Brevo**
+1. Brevo → **Profile → SMTP & API → API keys → Generate a new API key**.
+2. Find your list's numeric ID at **Contacts → Lists** (URL ends with the ID).
+3. Paste the API key and list ID into Bundler.
+
+**ActiveCampaign**
+1. ActiveCampaign → **Settings → Developer → API Access**. Copy both the API URL
+   (e.g. `https://your-account.api-us1.com`) and the Key.
+2. Find your list's numeric ID at **Lists** (URL ends with the ID).
+3. Paste all three into Bundler.
+
+**ConvertKit / Kit**
+1. ConvertKit → **Account → Settings → Advanced → API → API Key**.
+2. Find your form's numeric ID under **Grow → Landing Pages & Forms** (URL contains it).
+3. Paste the API key and form ID into Bundler.
+
+**HubSpot**
+1. HubSpot → **Settings → Integrations → Private Apps → Create a private app**.
+2. Grant the `crm.objects.contacts.write` scope.
+3. Copy the access token (starts with `pat-na1-...`) and paste into Bundler.
+   No list ID needed — manage list membership via HubSpot workflows on the
+   `lifecyclestage = subscriber` property we set on each new contact.
+
+**SendGrid Marketing**
+1. SendGrid → **Settings → API Keys → Create API Key**. Grant **Marketing → Read/Write**.
+2. Find your list's UUID at **Marketing → Contacts → All Lists** (URL contains it).
+3. Paste the API key and list UUID into Bundler.
+
+### Runtime model
+
+- API keys are encrypted with `DATABASE_ENCRYPTION_KEY` (AES-GCM via
+  `apps/admin/app/crypto.server.ts`) before persisting.
+- The admin form never displays a saved key — it shows a placeholder
+  `(saved — leave blank to keep)` instead.
+- On every newsletter signup, [push.ts](apps/admin/app/lib/email-integrations/push.ts)
+  fans out in parallel; failures are logged but never block the signup.
+
+---
+
 ## 19. Reference Docs to Read First
 
 Before writing any code, Claude Code should read:

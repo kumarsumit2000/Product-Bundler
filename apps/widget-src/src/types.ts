@@ -79,18 +79,13 @@ export type StyleOverrides = Partial<{
 
 export type TextOverrides = Record<string, string>;
 
-export type SubscriptionConfig = {
-  enabled: boolean;
-  discountPercent: number;
-  interval: "weekly" | "biweekly" | "monthly" | "quarterly";
-};
-
 export type BundleConfig = {
   id: string;
   name: string;
   mode: "classic" | "mix_match";
   products: ProductRef[];
   collectionId: string | null;
+  bindToCurrentCollection?: boolean;
   targetQty: number | null;
   collectionProducts: CollectionProduct[] | null;
   discountType: DiscountType;
@@ -115,7 +110,6 @@ export type BundleConfig = {
     available: boolean;
     priceCents: number;
   }> | null;
-  subscription?: SubscriptionConfig | null;
   linkedCountdownId?: string | null;
   linkedProgressiveGiftId?: string | null;
   stickyAtc?: StickyAtcConfig | null;
@@ -175,13 +169,13 @@ export type QbConfig = {
   productTitle: string;
   productImage: string | null;
   productVariants: QbVariant[];
+  bindToCurrentProduct?: boolean;
   tiers: QbTier[];
   combinable: boolean;
   styleOverrides: StyleOverrides | null;
   textOverrides: TextOverrides | null;
   headline: string | null;
   ctaLabel: string | null;
-  subscription?: SubscriptionConfig | null;
   visibility?: "all" | "all_except" | "specific" | "collections";
   visibilityProductIds?: string[];
   visibilityCollectionIds?: string[];
@@ -217,46 +211,6 @@ export type Settings = {
   showCompareAtPrice: boolean;
   currency: string;
   locale: string;
-};
-
-export type NewsletterPopup = {
-  trigger: "delay" | "exit_intent" | "scroll";
-  delaySeconds: number;
-  scrollPercent: number;
-  frequencyDays: number;
-  excludedPaths: string[];
-  imageUrl?: string | null;
-  imagePosition?: "none" | "top" | "bottom" | "left" | "right";
-};
-
-export type NewsletterStyleOverrides = Partial<{
-  backgroundColor: string;
-  headingColor: string;
-  textColor: string;
-  buttonBg: string;
-  buttonText: string;
-  borderColor: string;
-  borderRadius: number;
-  inlinePadding: number;
-  popupPadding: number;
-  inlinePaddingX: number;
-  inlinePaddingY: number;
-  popupPaddingX: number;
-  popupPaddingY: number;
-  textAlign: "left" | "center" | "right";
-  inlineMaxWidth: number;
-  popupMaxWidth: number;
-}>;
-
-export type NewsletterConfig = {
-  headline: string;
-  subtitle: string;
-  placeholder: string;
-  ctaLabel: string;
-  successMessage: string;
-  tags: string;
-  popup?: NewsletterPopup | null;
-  styleOverrides?: NewsletterStyleOverrides | null;
 };
 
 export type ProgressiveGiftStyleOverrides = Partial<{
@@ -323,23 +277,6 @@ export type StickyAtcConfig = {
   buttonText: string;
 };
 
-export type CountdownConfig = {
-  id: string;
-  name: string;
-  endAt: number;
-  headline: string;
-  expiredHeadline: string;
-  layout: "inline" | "bar";
-  styleOverrides: {
-    backgroundColor?: string;
-    textColor?: string;
-    accentColor?: string;
-    borderColor?: string;
-    borderRadius?: number;
-    textAlign?: "left" | "center" | "right";
-  } | null;
-};
-
 export type BxgyBarConfig = {
   id: string;
   buyQty: number;
@@ -361,11 +298,13 @@ export type BxgyOfferConfig = {
   productTitle: string;
   productImage: string | null;
   productVariants: QbVariant[];
+  bindToCurrentProduct?: boolean;
   bars: BxgyBarConfig[];
   combinable: boolean;
   headline: string | null;
   ctaLabel: string | null;
   styleOverrides?: StyleOverrides | null;
+  textOverrides?: TextOverrides | null;
   visibility?: "all" | "all_except" | "specific" | "collections";
   visibilityProductIds?: string[];
   visibilityCollectionIds?: string[];
@@ -397,8 +336,6 @@ export type WidgetConfig = {
   quantityBreaks: QbConfig[];
   bxgyOffers?: BxgyOfferConfig[];
   progressiveGifts?: ProgressiveGiftConfig[];
-  newsletter?: NewsletterConfig | null;
-  countdowns?: CountdownConfig[];
 };
 
 export type CartLine = {
@@ -416,7 +353,13 @@ declare global {
       currency: string;
       apiBase: string;
       productId?: string;
+      productTitle?: string;
+      productImage?: string | null;
       productCollectionIds?: string[];
+      productVariants?: QbVariant[];
+      currentCollectionId?: string;
+      currentCollectionProducts?: CollectionProduct[];
+      customerId?: string;
     };
     _pumperPreview?: boolean;
     _pumperPreviewConfig?: WidgetConfig;

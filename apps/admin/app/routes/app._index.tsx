@@ -1,200 +1,595 @@
 import type { LoaderFunctionArgs } from "@remix-run/cloudflare";
 import { json } from "@remix-run/cloudflare";
-import { useLoaderData, useSearchParams } from "@remix-run/react";
-import { useEffect, useState } from "react";
-import { Page, BlockStack, Grid, InlineStack, SkeletonBodyText } from "@shopify/polaris";
-import { PolarisVizProvider } from "@shopify/polaris-viz";
-import "@shopify/polaris-viz/build/esm/styles.css";
-import { eq } from "drizzle-orm";
+import { useLoaderData, useNavigate } from "@remix-run/react";
+import { Page, BlockStack, Text, Button, Banner } from "@shopify/polaris";
+import { useState } from "react";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
-import { getDb, schema } from "~/db.server";
-import {
-  getKpis,
-  getActivitySeries,
-  getConversionsAndSales,
-  getTopBundles,
-  getQbTierBreakdown,
-  getBundleListForFilter,
-} from "~/lib/analytics/dashboard-query";
-import { getUsage } from "~/lib/billing/usage";
-import { KpiCard } from "~/components/dashboard/KpiCard";
-import { ActivityChart } from "~/components/dashboard/ActivityChart";
-import { ConversionsSalesPair } from "~/components/dashboard/ConversionsSalesPair";
-import { TopBundlesTable } from "~/components/dashboard/TopBundlesTable";
-import { QbTierBreakdownTable } from "~/components/dashboard/QbTierBreakdownTable";
-import { DateRangePicker, type DateRangeValue } from "~/components/dashboard/DateRangePicker";
-import { UsageBanner } from "~/components/UsageBanner";
-
-function dateNDaysAgo(n: number): string {
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() - n);
-  return d.toISOString().slice(0, 10);
-}
-
-function todayUtc(): string {
-  return new Date().toISOString().slice(0, 10);
-}
+import { AppEmbedStatusBanner } from "~/components/AppEmbedStatusBanner";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
   const { session } = await authenticate.admin(request, ctx);
-
-  const db = getDb(ctx.cloudflare.env.DB);
-  await db
-    .insert(schema.shops)
-    .values({
-      id: session.shop,
-      scopes: session.scope ?? "",
-      installedAt: new Date(),
-    })
-    .onConflictDoUpdate({
-      target: schema.shops.id,
-      set: { scopes: session.scope ?? "", uninstalledAt: null },
-    });
-
-  const url = new URL(request.url);
-  const rangeParam = (url.searchParams.get("range") ?? "7d") as DateRangeValue;
-  const days = rangeParam === "30d" ? 30 : rangeParam === "90d" ? 90 : 7;
-  const range = { startDate: dateNDaysAgo(days - 1), endDate: todayUtc() };
-
-  const bundlesParam = url.searchParams.get("bundles") ?? "";
-  const selectedBundleIds = bundlesParam ? bundlesParam.split(",").filter(Boolean) : [];
-
-  const shopRow = (await db.select().from(schema.shops).where(eq(schema.shops.id, session.shop)).limit(1))[0];
-  const currency = shopRow?.currency ?? "USD";
-  const locale = shopRow?.primaryLocale ?? "en";
-
-  type KpisResult = Awaited<ReturnType<typeof getKpis>>;
-  type ActivityResult = Awaited<ReturnType<typeof getActivitySeries>>;
-  type ConvSalesResult = Awaited<ReturnType<typeof getConversionsAndSales>>;
-  type TopBundlesResult = Awaited<ReturnType<typeof getTopBundles>>;
-  type QbTierResult = Awaited<ReturnType<typeof getQbTierBreakdown>>;
-  type BundleListResult = Awaited<ReturnType<typeof getBundleListForFilter>>;
-
-  const kpiFallback: KpisResult = { totalRevenueCents: 0, totalOrders: 0, bundleOrders: 0, revenueSeries: [], ordersSeries: [] };
-  type UsageResult = Awaited<ReturnType<typeof getUsage>>;
-  const usageFallback: UsageResult = {
-    plan: "free",
-    monthlyOrderCount: 0,
-    lifetimeOrderCount: 0,
-    orderCap: 50,
-    isLifetimeCap: true,
-    percentUsed: 0,
-    overOnce: false,
-    resetAt: null,
-  };
-  const [kpis, activity, convSales, topBundles, qbTier, bundleList, usage] = await Promise.all([
-    getKpis(db, session.shop, range).catch((): KpisResult => kpiFallback),
-    getActivitySeries(db, session.shop, range, selectedBundleIds.length > 0 ? selectedBundleIds : undefined).catch((): ActivityResult => []),
-    getConversionsAndSales(db, session.shop, range).catch((): ConvSalesResult => ({ conversions: [], sales: [] })),
-    getTopBundles(db, session.shop, range).catch((): TopBundlesResult => []),
-    getQbTierBreakdown(db, session.shop, range).catch((): QbTierResult => []),
-    getBundleListForFilter(db, session.shop).catch((): BundleListResult => []),
-    getUsage(db, session.shop).catch((err): UsageResult => {
-      console.error("[dashboard] getUsage failed:", err);
-      return usageFallback;
-    }),
-  ]);
-
-  return json({
-    shop: session.shop, currency, locale, rangeParam, selectedBundleIds,
-    kpis, activity, convSales, topBundles, qbTier, bundleList, usage,
-  });
+  return json({ shopDomain: session.shop });
 }
 
-function formatMoney(cents: number, currency: string, locale: string) {
-  try {
-    return new Intl.NumberFormat(locale, { style: "currency", currency }).format(cents / 100);
-  } catch {
-    return `${(cents / 100).toFixed(2)} ${currency}`;
-  }
+type CardKey =
+  | "qb_same"
+  | "qb_diff"
+  | "bundle"
+  | "progressive"
+  | "qb_volume_4"
+  | "qb_free_gift"
+  | "qb_tiered_5"
+  | "qb_b2b_bulk"
+  | "bogo_simple"
+  | "mix_match"
+  | "mix_match_5"
+  | "bundle_2"
+  | "bundle_3_for_x"
+  | "spend_unlock"
+  | "free_shipping_bar"
+  | "bxgy"
+  | "bxgy_b2g1"
+  | "bxgy_50_second";
+type CardSpec = {
+  key: CardKey;
+  title: string;
+  href: string | null;
+  comingSoon?: boolean;
+  preview: () => JSX.Element;
+};
+
+const SAMPLE_PRODUCT = "The Multi-location Snowboard";
+
+// ----- Reusable preview primitives ---------------------------------------
+const r = {
+  card: (selected: boolean): React.CSSProperties => ({
+    border: `2px solid ${selected ? "var(--pumper-theme, #d9263a)" : "#fbe4e7"}`,
+    background: "#fff7f8",
+    borderRadius: 10,
+    padding: 12,
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    fontSize: 13,
+    color: "#1a1a1a",
+    position: "relative",
+  }),
+  radio: (selected: boolean): React.CSSProperties => ({
+    width: 16, height: 16, borderRadius: 999,
+    border: `2px solid ${selected ? "var(--pumper-theme, #d9263a)" : "#cbd5e1"}`,
+    background: selected ? "radial-gradient(var(--pumper-theme, #d9263a) 5px, #fff 5px)" : "#fff",
+    flexShrink: 0,
+  }),
+  badge: (): React.CSSProperties => ({
+    background: "var(--pumper-theme, #d9263a)",
+    color: "#fff",
+    fontSize: 9,
+    padding: "1px 6px",
+    borderRadius: 3,
+    fontWeight: 700,
+    letterSpacing: ".5px",
+  }),
+  saveTag: (): React.CSSProperties => ({
+    background: "#fce4e7",
+    color: "var(--pumper-theme, #d9263a)",
+    fontSize: 10,
+    padding: "1px 6px",
+    borderRadius: 3,
+    fontWeight: 600,
+  }),
+  strike: { textDecoration: "line-through", color: "#a3a3a3", marginLeft: 4, fontSize: 11 } as React.CSSProperties,
+  freeGiftBanner: {
+    background: "var(--pumper-theme, #d9263a)",
+    color: "#fff",
+    padding: "6px 10px",
+    borderRadius: 6,
+    fontSize: 11,
+    fontWeight: 600,
+    textAlign: "center",
+  } as React.CSSProperties,
+  thumb: {
+    width: 36, height: 36, borderRadius: 4, background: "#cbd5e1",
+  } as React.CSSProperties,
+  popularPill: {
+    position: "absolute", top: -10, right: 8,
+    background: "var(--pumper-theme, #d9263a)", color: "#fff",
+    fontSize: 9, padding: "2px 6px", borderRadius: 999, fontWeight: 700,
+    letterSpacing: ".5px",
+  } as React.CSSProperties,
+};
+
+// ----- Per-type previews --------------------------------------------------
+
+type RowProps = {
+  selected?: boolean;
+  popular?: string;
+  title: string;
+  sub?: string;
+  save?: string;
+  price?: string;
+  strike?: string;
+};
+
+function Row({ selected = false, popular, title, sub, save, price, strike }: RowProps) {
+  return (
+    <div style={{ ...r.card(selected), alignItems: "flex-start" }}>
+      {popular && <span style={r.popularPill}>★ {popular}</span>}
+      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
+        <span style={{ fontWeight: 600 }}>{title}</span>
+        {sub && <span style={{ color: "#888", fontSize: 11 }}>{sub}</span>}
+        {(save || price) && (
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            {save && <span style={r.saveTag()}>{save}</span>}
+            {price && (
+              <span style={{ fontWeight: 700, marginLeft: "auto", whiteSpace: "nowrap" }}>
+                {price}
+                {strike && <span style={r.strike}>{strike}</span>}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
-export default function Dashboard() {
-  const { currency, locale, rangeParam, selectedBundleIds, kpis, activity, convSales, topBundles, qbTier, bundleList, usage } = useLoaderData<typeof loader>();
-  const [searchParams, setSearchParams] = useSearchParams();
-  // Polaris-Viz reads `window` at module load — SSR would throw ReferenceError.
-  // Render skeleton on the server, swap to live charts once mounted on the client.
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
+function PreviewQbSame() {
+  return (
+    <BlockStack gap="200">
+      <Row title="Single" sub="Standard price" price="$729.95" />
+      <Row selected popular="Most Popular" title="Duo" sub="You save 15%" save="SAVE $218.98" price="$1,240.92" strike="$1,459.90" />
+    </BlockStack>
+  );
+}
 
-  const setRange = (range: DateRangeValue) => {
-    const next = new URLSearchParams(searchParams);
-    next.set("range", range);
-    setSearchParams(next);
-  };
+function PreviewBxgy() {
+  return (
+    <BlockStack gap="200">
+      <Row title="Buy 1, get 1 free" save="SAVE 50%" price="$729.95" strike="$1,459.90" />
+      <Row title="Buy 2, get 3 free" save="SAVE 60%" price="$1,459.90" strike="$3,649.75" />
+      <div style={{ ...r.card(true), flexDirection: "column", alignItems: "stretch", gap: 6 }}>
+        <Row selected title="Buy 3, get 6 free" save="SAVE 67%" price="$2,189.85" strike="$6,569.55" />
+        <div style={r.freeGiftBanner}>+ FREE special gift!</div>
+      </div>
+    </BlockStack>
+  );
+}
 
-  const setBundles = (ids: string[]) => {
-    const next = new URLSearchParams(searchParams);
-    if (ids.length === 0) next.delete("bundles");
-    else next.set("bundles", ids.join(","));
-    setSearchParams(next);
-  };
+function PreviewQbDifferent() {
+  return (
+    <BlockStack gap="200">
+      <div style={r.card(true)}>
+        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
+          <span style={{ fontWeight: 600 }}>1 pack</span>
+          <span style={{ color: "#888", fontSize: 11 }}>Standard price</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ ...r.thumb, width: 18, height: 24, background: "#86efac" }} />
+            <span style={{ fontSize: 11, color: "#374151" }}>{SAMPLE_PRODUCT}</span>
+          </div>
+        </div>
+        <span style={{ fontWeight: 700, whiteSpace: "nowrap" }}>$729.95</span>
+      </div>
+      <Row popular="MOST POPULAR" title="2 pack" sub="You save $218.98" price="$1,240.92" strike="$1,459.90" />
+    </BlockStack>
+  );
+}
 
-  const aov = kpis.totalOrders > 0 ? kpis.totalRevenueCents / kpis.totalOrders : 0;
+function PreviewBundle() {
+  return (
+    <BlockStack gap="200">
+      <Row title={SAMPLE_PRODUCT} sub="Standard price" price="$729.95" />
+      <div style={{ ...r.card(true), flexDirection: "column", alignItems: "stretch", gap: 8 }}>
+        <Row selected title="Complete the bundle" sub="Save $271.98!" price="$1,087.92" strike="$1,359.90" />
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: 8, background: "#fff", borderRadius: 6 }}>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+            <span style={{ ...r.thumb, width: 28, height: 36, background: "#86efac" }} />
+            <span style={{ fontSize: 9, fontWeight: 600, textAlign: "center" }}>{SAMPLE_PRODUCT}</span>
+            <span style={{ fontSize: 10, fontWeight: 700 }}>$583.96 <span style={r.strike}>$729.95</span></span>
+          </div>
+          <span style={{ color: "var(--pumper-theme, #d9263a)", fontSize: 16, fontWeight: 700 }}>+</span>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+            <span style={{ ...r.thumb, width: 28, height: 36, background: "#fbcfe8" }} />
+            <span style={{ fontSize: 9, fontWeight: 600, textAlign: "center" }}>The Multi-managed Snowboard</span>
+            <span style={{ fontSize: 10, fontWeight: 700 }}>$503.96 <span style={r.strike}>$629.95</span></span>
+          </div>
+        </div>
+      </div>
+    </BlockStack>
+  );
+}
 
-  if (!mounted) {
-    return (
-      <Page title="Dashboard">
-        <BlockStack gap="500">
-          <SkeletonBodyText lines={6} />
-        </BlockStack>
-      </Page>
-    );
+
+function PreviewProgressive() {
+  return (
+    <BlockStack gap="200">
+      <Row title="1 pack" price="$729.95" />
+      <Row title="2 pack" save="SAVE 15%" price="$1,240.92" strike="$1,459.90" />
+      <Row selected title="3 pack" save="SAVE 15%" price="$1,861.38" strike="$2,189.85" />
+      <Text as="h4" variant="headingSm" alignment="center">🎁 Unlock Free gifts with your order</Text>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+        {[
+          { tag: "FREE", title: "Free shipping", strike: "" },
+          { tag: "FREE $629.95", title: "The Multi-managed Snowboard", strike: "$629.95" },
+          { tag: "FREE $5.99", title: "Socks", strike: "$5.99" },
+        ].map((g) => (
+          <div key={g.title} style={{ border: "2px solid #fbe4e7", borderRadius: 8, padding: 6, fontSize: 9, textAlign: "center" }}>
+            <div style={{ background: "var(--pumper-theme, #d9263a)", color: "#fff", padding: "1px 4px", borderRadius: 3, fontSize: 8, fontWeight: 700, marginBottom: 4 }}>
+              {g.tag}
+            </div>
+            <span style={{ ...r.thumb, width: "100%", height: 36, display: "block", margin: "0 auto" }} />
+            <div style={{ marginTop: 4, fontWeight: 600 }}>{g.title}</div>
+          </div>
+        ))}
+      </div>
+    </BlockStack>
+  );
+}
+
+function PreviewBogoSimple() {
+  return (
+    <BlockStack gap="200">
+      <Row selected popular="Most Popular" title="Buy 1, get 1 free" save="SAVE 50%" price="$729.95" strike="$1,459.90" />
+      <Text as="p" tone="subdued" alignment="center" variant="bodySm">
+        Single-tier BOGO — simplest urgency offer.
+      </Text>
+    </BlockStack>
+  );
+}
+
+function PreviewQbVolume4() {
+  return (
+    <BlockStack gap="200">
+      <Row title="Single" price="$729.95" />
+      <Row title="2 pack" save="SAVE 10%" price="$1,313.91" strike="$1,459.90" />
+      <Row selected popular="Most Popular" title="4 pack" save="SAVE 20%" price="$2,335.84" strike="$2,919.80" />
+      <Row title="8 pack" save="SAVE 30%" price="$4,087.72" strike="$5,839.60" />
+    </BlockStack>
+  );
+}
+
+function PreviewQbFreeGift() {
+  return (
+    <BlockStack gap="200">
+      <Row title="Standard" price="$729.95" />
+      <Row title="2 pack" save="SAVE 10%" price="$1,313.91" />
+      <div style={{ ...r.card(true), flexDirection: "column", alignItems: "stretch", gap: 6 }}>
+        <Row selected popular="Most Popular" title="3 pack — Save 20%" save="SAVE 20%" price="$1,751.88" strike="$2,189.85" />
+        <div style={r.freeGiftBanner}>🎁 + FREE gift unlocked!</div>
+      </div>
+    </BlockStack>
+  );
+}
+
+function PreviewMixMatch() {
+  return (
+    <BlockStack gap="200">
+      <div style={{ ...r.card(true), flexDirection: "column", alignItems: "stretch", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontWeight: 600, fontSize: 13 }}>Pick any 3 — save 25%</span>
+          <span style={{ fontSize: 11, color: "var(--pumper-theme, #d9263a)", fontWeight: 600 }}>3 / 3</span>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
+          {["#86efac", "#fbcfe8", "#bfdbfe"].map((bg, i) => (
+            <div key={i} style={{ background: "#fff", border: `2px solid ${i === 0 ? "var(--pumper-theme, #d9263a)" : "#fbe4e7"}`, borderRadius: 6, padding: 6, textAlign: "center", fontSize: 9 }}>
+              <span style={{ ...r.thumb, width: "100%", height: 32, background: bg, display: "block", borderRadius: 3 }} />
+              <div style={{ marginTop: 4, fontWeight: 600 }}>Item {i + 1}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </BlockStack>
+  );
+}
+
+function PreviewFreeShippingBar() {
+  return (
+    <BlockStack gap="200">
+      <div style={{
+        background: "#fff7f8",
+        border: "2px solid #fbe4e7",
+        borderRadius: 10,
+        padding: 12,
+        textAlign: "center",
+      }}>
+        <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6 }}>🚚 Free shipping over $50</div>
+        <div style={{ fontSize: 11, color: "#666", marginBottom: 8 }}>Spend $25 more to unlock</div>
+        <div style={{ height: 6, background: "#fce4e7", borderRadius: 999 }}>
+          <div style={{ width: "50%", height: "100%", background: "var(--pumper-theme, #d9263a)", borderRadius: 999 }} />
+        </div>
+      </div>
+    </BlockStack>
+  );
+}
+
+
+function PreviewQbTiered5() {
+  return (
+    <BlockStack gap="200">
+      <Row title="2 pack" save="SAVE 5%" price="$1,386.91" strike="$1,459.90" />
+      <Row title="3 pack" save="SAVE 10%" price="$1,970.86" strike="$2,189.85" />
+      <Row selected popular="Most Popular" title="5 pack" save="SAVE 15%" price="$3,101.79" strike="$3,649.75" />
+      <Row title="8 pack" save="SAVE 20%" price="$4,671.68" strike="$5,839.60" />
+      <Row title="12 pack" save="SAVE 25%" price="$6,569.55" strike="$8,759.40" />
+    </BlockStack>
+  );
+}
+
+function PreviewQbB2bBulk() {
+  return (
+    <BlockStack gap="200">
+      <Row title="10+ units" save="SAVE 10%" price="$6,569.55" strike="$7,299.50" />
+      <Row selected popular="Most Popular" title="25+ units" save="SAVE 15%" price="$15,511.94" strike="$18,248.75" />
+      <Row title="50+ units" save="SAVE 20%" price="$29,198.00" strike="$36,497.50" />
+      <Text as="p" tone="subdued" alignment="center" variant="bodySm">
+        Built for wholesale / B2B accounts.
+      </Text>
+    </BlockStack>
+  );
+}
+
+function PreviewBundle2() {
+  return (
+    <BlockStack gap="200">
+      <Row title="Single" sub="Standard price" price="$729.95" />
+      <div style={{ ...r.card(true), flexDirection: "column", alignItems: "stretch", gap: 8 }}>
+        <Row selected title="Frequently bought together" sub="Save $135.99 (10%)" price="$1,223.91" strike="$1,359.90" />
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: 8, background: "#fff", borderRadius: 6 }}>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+            <span style={{ ...r.thumb, width: 28, height: 36, background: "#86efac" }} />
+            <span style={{ fontSize: 9, fontWeight: 600, textAlign: "center" }}>{SAMPLE_PRODUCT}</span>
+          </div>
+          <span style={{ color: "var(--pumper-theme, #d9263a)", fontSize: 16, fontWeight: 700 }}>+</span>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+            <span style={{ ...r.thumb, width: 28, height: 36, background: "#fbcfe8" }} />
+            <span style={{ fontSize: 9, fontWeight: 600, textAlign: "center" }}>The Multi-managed Snowboard</span>
+          </div>
+        </div>
+      </div>
+    </BlockStack>
+  );
+}
+
+function PreviewBundle3ForX() {
+  return (
+    <BlockStack gap="200">
+      <div style={{ ...r.card(true), flexDirection: "column", alignItems: "stretch", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontWeight: 600, fontSize: 13 }}>Get any 3 for $59</span>
+          <span style={{ fontSize: 11, color: "var(--pumper-theme, #d9263a)", fontWeight: 600 }}>Flat price</span>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
+          {["#86efac", "#fbcfe8", "#bfdbfe"].map((bg, i) => (
+            <div key={i} style={{ background: "#fff", border: "2px solid #fbe4e7", borderRadius: 6, padding: 6, textAlign: "center", fontSize: 9 }}>
+              <span style={{ ...r.thumb, width: "100%", height: 32, background: bg, display: "block", borderRadius: 3 }} />
+              <div style={{ marginTop: 4, fontWeight: 600 }}>Item {i + 1}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ textAlign: "center", fontWeight: 700, fontSize: 13 }}>
+          Total: $59 <span style={r.strike}>$89.97</span>
+        </div>
+      </div>
+    </BlockStack>
+  );
+}
+
+function PreviewMixMatch5() {
+  return (
+    <BlockStack gap="200">
+      <div style={{ ...r.card(true), flexDirection: "column", alignItems: "stretch", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontWeight: 600, fontSize: 13 }}>Pick any 5 — save 30%</span>
+          <span style={{ fontSize: 11, color: "var(--pumper-theme, #d9263a)", fontWeight: 600 }}>5 / 5</span>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 4 }}>
+          {["#86efac", "#fbcfe8", "#bfdbfe", "#fcd34d", "#a5b4fc"].map((bg, i) => (
+            <div key={i} style={{ background: "#fff", border: `2px solid ${i === 0 ? "var(--pumper-theme, #d9263a)" : "#fbe4e7"}`, borderRadius: 6, padding: 4, textAlign: "center" }}>
+              <span style={{ ...r.thumb, width: "100%", height: 24, background: bg, display: "block", borderRadius: 3 }} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </BlockStack>
+  );
+}
+
+function PreviewBxgyB2g1() {
+  return (
+    <BlockStack gap="200">
+      <Row selected popular="Best Deal" title="Buy 2, get 1 free" save="SAVE 33%" price="$1,459.90" strike="$2,189.85" />
+      <Text as="p" tone="subdued" alignment="center" variant="bodySm">
+        Single-bar BXGY — classic conversion booster.
+      </Text>
+    </BlockStack>
+  );
+}
+
+function PreviewBxgy50Second() {
+  return (
+    <BlockStack gap="200">
+      <Row selected popular="Most Popular" title="Buy 1, second 50% off" save="SAVE 25%" price="$1,094.92" strike="$1,459.90" />
+      <Text as="p" tone="subdued" alignment="center" variant="bodySm">
+        Half-off second item — gentler than free.
+      </Text>
+    </BlockStack>
+  );
+}
+
+function PreviewSpendUnlock() {
+  return (
+    <BlockStack gap="200">
+      <div style={{ background: "#fff7f8", border: "2px solid #fbe4e7", borderRadius: 10, padding: 12 }}>
+        <div style={{ fontWeight: 700, fontSize: 13, textAlign: "center", marginBottom: 8 }}>Spend more, unlock more</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, fontSize: 9, textAlign: "center" }}>
+          {[
+            { tag: "$75", title: "Free shipping" },
+            { tag: "$150", title: "Free gift" },
+            { tag: "$300", title: "VIP gift" },
+          ].map((g) => (
+            <div key={g.title}>
+              <div style={{ background: "var(--pumper-theme, #d9263a)", color: "#fff", padding: "2px 4px", borderRadius: 3, fontSize: 9, fontWeight: 700, marginBottom: 4 }}>
+                {g.tag}
+              </div>
+              <span style={{ ...r.thumb, width: "100%", height: 32, display: "block" }} />
+              <div style={{ marginTop: 4, fontWeight: 600 }}>{g.title}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </BlockStack>
+  );
+}
+
+
+const CARDS: CardSpec[] = [
+  { key: "qb_same", title: "Quantity breaks for the same product", href: "/app/quantity-breaks/new", preview: PreviewQbSame },
+  { key: "qb_diff", title: "Quantity breaks for different products", href: "/app/quantity-breaks/new", preview: PreviewQbDifferent },
+  { key: "qb_volume_4", title: "Volume discount (4 tiers)", href: "/app/quantity-breaks/new", preview: PreviewQbVolume4 },
+  { key: "qb_tiered_5", title: "Tiered savings (5 tiers)", href: "/app/quantity-breaks/new", preview: PreviewQbTiered5 },
+  { key: "qb_b2b_bulk", title: "B2B bulk pricing", href: "/app/quantity-breaks/new", preview: PreviewQbB2bBulk },
+  { key: "qb_free_gift", title: "Free gift with purchase", href: "/app/quantity-breaks/new", preview: PreviewQbFreeGift },
+  { key: "bogo_simple", title: "Buy 1, get 1 free (single tier)", href: "/app/quantity-breaks/new", preview: PreviewBogoSimple },
+  { key: "bxgy", title: "Buy X, get Y (BXGY) deal", href: "/app/bxgy-offers/new", preview: PreviewBxgy },
+  { key: "bxgy_b2g1", title: "Buy 2, get 1 free", href: "/app/bxgy-offers/new", preview: PreviewBxgyB2g1 },
+  { key: "bxgy_50_second", title: "Buy 1, second 50% off", href: "/app/bxgy-offers/new", preview: PreviewBxgy50Second },
+  { key: "bundle", title: "Complete the bundle", href: "/app/bundles/new", preview: PreviewBundle },
+  { key: "bundle_2", title: "Frequently bought together", href: "/app/bundles/new", preview: PreviewBundle2 },
+  { key: "bundle_3_for_x", title: "3 for $59 — flat price bundle", href: "/app/bundles/new", preview: PreviewBundle3ForX },
+  { key: "mix_match", title: "Mix & match — pick any 3", href: "/app/bundles/new", preview: PreviewMixMatch },
+  { key: "mix_match_5", title: "Mix & match — pick any 5", href: "/app/bundles/new", preview: PreviewMixMatch5 },
+  { key: "progressive", title: "Progressive gifts", href: "/app/progressive-gifts/new", preview: PreviewProgressive },
+  { key: "spend_unlock", title: "Spend & unlock", href: "/app/progressive-gifts/new", preview: PreviewSpendUnlock },
+  { key: "free_shipping_bar", title: "Free shipping bar", href: "/app/progressive-gifts/new", preview: PreviewFreeShippingBar },
+];
+
+const THEMES = [
+  { color: "#1a1a1a", label: "Black" },
+  { color: "#d9263a", label: "Red" },
+  { color: "#f59e0b", label: "Amber" },
+  { color: "#84cc16", label: "Lime" },
+  { color: "#10b981", label: "Emerald" },
+  { color: "#3b82f6", label: "Blue" },
+  { color: "#8b5cf6", label: "Violet" },
+  { color: "#ec4899", label: "Pink" },
+];
+
+export default function ChooseDiscountType() {
+  const navigate = useNavigate();
+  const { shopDomain } = useLoaderData<typeof loader>();
+  const [theme, setTheme] = useState<string>(THEMES[1]!.color);
+  const [selected, setSelected] = useState<CardKey>("qb_same");
+  const [comingSoonShown, setComingSoonShown] = useState<string | null>(null);
+
+  function onChoose(card: CardSpec) {
+    if (card.comingSoon || !card.href) {
+      setComingSoonShown(card.title);
+      return;
+    }
+    const sep = card.href.includes("?") ? "&" : "?";
+    const target = `${card.href}${sep}template=${card.key}&theme=${encodeURIComponent(theme)}`;
+    navigate(target);
   }
 
   return (
-    <PolarisVizProvider>
-      <Page title="Dashboard">
-        <BlockStack gap="500">
-          <UsageBanner usage={usage} />
-          <InlineStack align="end">
-            <DateRangePicker value={rangeParam} onChange={setRange} />
-          </InlineStack>
-
-          <Grid>
-            <Grid.Cell columnSpan={{ xs: 6, sm: 6, md: 2, lg: 4, xl: 4 }}>
-              <KpiCard
-                label="Total revenue"
-                value={formatMoney(kpis.totalRevenueCents, currency, locale)}
-                series={kpis.revenueSeries.map((s) => ({ x: s?.date ?? "", y: (s?.cents ?? 0) / 100 }))}
-              />
-            </Grid.Cell>
-            <Grid.Cell columnSpan={{ xs: 6, sm: 6, md: 2, lg: 4, xl: 4 }}>
-              <KpiCard
-                label="Average order value"
-                value={formatMoney(aov, currency, locale)}
-                series={kpis.ordersSeries.map((s, i) => ({ x: s?.date ?? "", y: (s?.count ?? 0) > 0 ? (kpis.revenueSeries[i]?.cents ?? 0) / (s?.count ?? 1) / 100 : 0 }))}
-              />
-            </Grid.Cell>
-            <Grid.Cell columnSpan={{ xs: 6, sm: 6, md: 2, lg: 4, xl: 4 }}>
-              <KpiCard
-                label="Total conversions"
-                value={String(kpis.totalOrders)}
-                series={kpis.ordersSeries.map((s) => ({ x: s?.date ?? "", y: s?.count ?? 0 }))}
-              />
-            </Grid.Cell>
-          </Grid>
-
-          <ActivityChart
-            series={activity}
-            bundles={bundleList}
-            selectedBundleIds={selectedBundleIds}
-            onChange={setBundles}
+    <Page
+      title="Dashboard"
+      subtitle="Pick a template to get started — you can fully customize it later."
+    >
+      {/* Activation status — first thing the merchant sees. Reads
+          straight from App Bridge's extensions() API so the answer
+          matches whatever Shopify's UI shows in the theme editor. */}
+      <div style={{ marginBottom: 16 }}>
+        <AppEmbedStatusBanner shopDomain={shopDomain} />
+      </div>
+      {/* Color theme picker, top-right */}
+      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8, marginBottom: 16 }}>
+        <Text as="span" tone="subdued" variant="bodySm">Color theme</Text>
+        {THEMES.map((t) => (
+          <button
+            key={t.color}
+            type="button"
+            aria-label={t.label}
+            onClick={() => setTheme(t.color)}
+            style={{
+              width: 28, height: 28, borderRadius: 999,
+              background: t.color,
+              border: theme === t.color ? "2px solid #1a1a1a" : "2px solid transparent",
+              boxShadow: theme === t.color ? "0 0 0 2px #fff inset" : undefined,
+              cursor: "pointer",
+              padding: 0,
+            }}
           />
+        ))}
+      </div>
 
-          <ConversionsSalesPair
-            conversions={convSales.conversions}
-            sales={convSales.sales}
-            currency={currency}
-            locale={locale}
-          />
+      {comingSoonShown && (
+        <div style={{ marginBottom: 16 }}>
+          <Banner tone="info" onDismiss={() => setComingSoonShown(null)}>
+            <Text as="p">
+              <strong>{comingSoonShown}</strong> is coming soon.
+            </Text>
+          </Banner>
+        </div>
+      )}
 
-          <TopBundlesTable rows={topBundles} currency={currency} locale={locale} />
-
-          <QbTierBreakdownTable rows={qbTier} currency={currency} locale={locale} />
-        </BlockStack>
-      </Page>
-    </PolarisVizProvider>
+      <div
+        style={{
+          // CSS variable consumed by every preview to tint accent colors
+          ["--pumper-theme" as string]: theme,
+          columnCount: 3,
+          columnGap: 16,
+        }}
+      >
+        {CARDS.map((card) => {
+          const isSelected = selected === card.key;
+          const PreviewComp = card.preview;
+          return (
+            <div
+              key={card.key}
+              role="button"
+              tabIndex={0}
+              onClick={() => setSelected(card.key)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setSelected(card.key);
+                }
+              }}
+              style={{
+                background: "#fff",
+                border: `2px solid ${isSelected ? theme : "#e5e7eb"}`,
+                borderRadius: 12,
+                padding: 16,
+                cursor: "pointer",
+                display: "flex",
+                flexDirection: "column",
+                gap: 16,
+                breakInside: "avoid",
+                marginBottom: 16,
+                width: "100%",
+              }}
+              aria-pressed={isSelected}
+            >
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-start" }}>
+                <PreviewComp />
+              </div>
+              <div style={{ textAlign: "center" }}>
+                <Text as="p" variant="headingSm">
+                  {card.title}
+                  {card.comingSoon && (
+                    <Text as="span" variant="bodySm" tone="subdued">  · Coming soon</Text>
+                  )}
+                </Text>
+              </div>
+              <Button fullWidth variant="primary" onClick={() => onChoose(card)}>
+                Choose
+              </Button>
+            </div>
+          );
+        })}
+      </div>
+    </Page>
   );
 }
+

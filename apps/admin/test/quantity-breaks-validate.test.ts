@@ -15,7 +15,6 @@ const VALID: Parameters<typeof validateQb>[0] = {
   ctaLabel: null,
   styleOverrides: null,
   textOverrides: null,
-      subscription: null,
   visibility: "all",
   visibilityProductIds: [],
   visibilityCollectionIds: [],
@@ -31,8 +30,13 @@ describe("validateQb", () => {
     expect(r.valid).toBe(false);
   });
 
-  it("accepts missing productId — visibility settings drive matching now", () => {
+  it("rejects missing productId unless bindToCurrentProduct is true", () => {
     const r = validateQb({ ...VALID, productId: "" });
+    expect(r.valid).toBe(false);
+  });
+
+  it("accepts missing productId when bindToCurrentProduct is true", () => {
+    const r = validateQb({ ...VALID, productId: "", bindToCurrentProduct: true });
     expect(r.valid).toBe(true);
   });
 
@@ -154,7 +158,6 @@ describe("validateQb textOverrides + styleOverrides + headline/cta", () => {
     combinable: false,
     headline: null,
     ctaLabel: null,
-    subscription: null,
     visibility: "all" as const,
     visibilityProductIds: [],
     visibilityCollectionIds: [],
@@ -186,7 +189,6 @@ describe("validateQb textOverrides + styleOverrides + headline/cta", () => {
     const r = validateQb({
       ...baseInput,
       textOverrides: null,
-      subscription: null,
       styleOverrides: { textColor: "black" },
     });
     expect(r.valid).toBe(false);
@@ -197,7 +199,6 @@ describe("validateQb textOverrides + styleOverrides + headline/cta", () => {
       ...baseInput,
       headline: "x".repeat(101),
       textOverrides: null,
-      subscription: null,
       styleOverrides: null,
     });
     expect(r.valid).toBe(false);
@@ -208,7 +209,6 @@ describe("validateQb textOverrides + styleOverrides + headline/cta", () => {
       ...baseInput,
       ctaLabel: "x".repeat(51),
       textOverrides: null,
-      subscription: null,
       styleOverrides: null,
     });
     expect(r.valid).toBe(false);

@@ -42,24 +42,31 @@ export async function addToCart(
     setTimeout(() => { if (!done) { done = true; resolve(false); } }, timeoutMs);
   });
 
+  // Build the request the same way Shopify's stock theme does — FormData
+  // (browser sets multipart Content-Type) and no `X-Requested-With`. Some
+  // stores' Cloudflare WAF profiles flag JSON+XHR-style POSTs to /cart/add.js
+  // as bot traffic and answer with a 429 "Just a moment…" challenge. The
+  // multipart form pattern is the one Shopify's reference themes use, so
+  // it routinely passes the WAF unchallenged.
+  const formData = new FormData();
+  lines.forEach((l, i) => {
+    formData.append(`items[${i}][id]`, toCartVariantId(l.variantId));
+    formData.append(`items[${i}][quantity]`, String(l.qty));
+    const properties: Record<string, string> = {};
+    if (l.bundleId) properties._pumper_bundle_id = l.bundleId;
+    if (l.giftBundleId) properties._pumper_gift_id = l.giftBundleId;
+    if (l.extraProperties) Object.assign(properties, l.extraProperties);
+    for (const [k, v] of Object.entries(properties)) {
+      formData.append(`items[${i}][properties][${k}]`, v);
+    }
+  });
+
   let res: Response;
   try {
     res = await fetch("/cart/add.js", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest" },
-      body: JSON.stringify({
-        items: lines.map((l) => {
-          const properties: Record<string, string> = {};
-          if (l.bundleId) properties._pumper_bundle_id = l.bundleId;
-          if (l.giftBundleId) properties._pumper_gift_id = l.giftBundleId;
-          if (l.extraProperties) Object.assign(properties, l.extraProperties);
-          return {
-            id: toCartVariantId(l.variantId),
-            quantity: l.qty,
-            properties,
-          };
-        }),
-      }),
+      credentials: "same-origin",
+      body: formData,
     });
   } catch (e) {
     return { ok: false, error: (e as Error).message ?? "Network error" };

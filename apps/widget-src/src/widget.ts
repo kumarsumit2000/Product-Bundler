@@ -5,9 +5,7 @@ import { renderBundle } from "./render-bundle";
 import { renderQb } from "./render-qb";
 import { renderMixMatch } from "./render-mix-match";
 import { renderBxgy } from "./render-bxgy";
-import { renderNewsletter, renderPopupInline, maybeStartNewsletterPopup } from "./render-newsletter";
 import { renderProgressive } from "./render-progressive";
-import { renderCountdown } from "./render-countdown";
 import { startStickyAtc } from "./render-sticky-atc";
 import { configureAnalytics } from "./analytics";
 import { setLocale } from "./i18n";
@@ -140,7 +138,7 @@ export function applyCssVars(
   }
 }
 
-type ShortcodeKind = "bundle" | "qb" | "mix" | "pg" | "ct" | "bxgy";
+type ShortcodeKind = "bundle" | "qb" | "mix" | "pg" | "bxgy";
 type ShortcodeSpec = { kind: ShortcodeKind; selector: string; attr: string };
 
 const SHORTCODES: ShortcodeSpec[] = [
@@ -149,7 +147,6 @@ const SHORTCODES: ShortcodeSpec[] = [
   { kind: "mix",    selector: "[data-pumper-mix-match]:not([data-pumper-rendered])", attr: "data-pumper-mix-match" },
   { kind: "bxgy",   selector: "[data-pumper-bxgy]:not([data-pumper-rendered])",      attr: "data-pumper-bxgy"      },
   { kind: "pg",     selector: "[data-pumper-progressive]:not([data-pumper-rendered])", attr: "data-pumper-progressive" },
-  { kind: "ct",     selector: "[data-pumper-countdown]:not([data-pumper-rendered])",   attr: "data-pumper-countdown" },
 ];
 
 function findRenderedWidgetEl(): HTMLElement | null {
@@ -159,7 +156,7 @@ function findRenderedWidgetEl(): HTMLElement | null {
   return cta.closest<HTMLElement>(".pumper-mount, [data-pumper-bundle], [data-pumper-qb], [data-pumper-mix-match]") ?? cta.parentElement;
 }
 
-const DEFAULT_ADDONS_ORDER = ["countdown", "widget", "progressive"] as const;
+const DEFAULT_ADDONS_ORDER = ["widget", "progressive"] as const;
 
 function normalizeAddonsOrder(input: string[] | null | undefined): string[] {
   const valid = new Set(DEFAULT_ADDONS_ORDER);
@@ -180,7 +177,7 @@ function normalizeAddonsOrder(input: string[] | null | undefined): string[] {
 function renderLinkedAddons(
   parent: HTMLElement,
   cfg: WidgetConfig,
-  linkedCountdownId: string | null | undefined,
+  _linkedCountdownId: string | null | undefined,
   linkedProgressiveGiftId: string | null | undefined,
   addonsOrder?: string[] | null,
 ): void {
@@ -190,23 +187,19 @@ function renderLinkedAddons(
   parent.parentElement?.querySelectorAll(`[${beforeKey}], [${afterKey}]`)
     .forEach((n) => n.remove());
 
-  const ct = linkedCountdownId
-    ? (cfg.countdowns ?? []).find((c) => c.id === linkedCountdownId) ?? null
-    : null;
+  // Standalone countdowns were dropped in the Pumper-parity strip-down.
+  // We still accept the param for callsite compatibility (every widget
+  // type passes its `linkedCountdownId` here), but never render.
   const pg = linkedProgressiveGiftId
     ? (cfg.progressiveGifts ?? []).find((p) => p.id === linkedProgressiveGiftId) ?? null
     : null;
-  if (!ct && !pg) return;
+  if (!pg) return;
 
   const order = normalizeAddonsOrder(addonsOrder);
   const widgetIdx = order.indexOf("widget");
 
-  const renderInto = (slot: HTMLElement, key: "countdown" | "progressive") => {
-    if (key === "countdown" && ct) {
-      const m = document.createElement("div");
-      slot.appendChild(m);
-      renderCountdown(m, ct);
-    } else if (key === "progressive" && pg) {
+  const renderInto = (slot: HTMLElement, key: "progressive") => {
+    if (key === "progressive" && pg) {
       const m = document.createElement("div");
       slot.appendChild(m);
       renderProgressive(m, pg);
@@ -226,7 +219,7 @@ function renderLinkedAddons(
   const beforeSlot = makeSlot(beforeKey, "marginBottom");
   for (let i = 0; i < widgetIdx; i++) {
     const item = order[i];
-    if (item === "countdown" || item === "progressive") renderInto(beforeSlot, item);
+    if (item === "progressive") renderInto(beforeSlot, item);
   }
   if (beforeSlot.childElementCount > 0) {
     parent.parentElement?.insertBefore(beforeSlot, parent);
@@ -235,7 +228,7 @@ function renderLinkedAddons(
   const afterSlot = makeSlot(afterKey, "marginTop");
   for (let i = widgetIdx + 1; i < order.length; i++) {
     const item = order[i];
-    if (item === "countdown" || item === "progressive") renderInto(afterSlot, item);
+    if (item === "progressive") renderInto(afterSlot, item);
   }
   if (afterSlot.childElementCount > 0) {
     if (parent.nextSibling) {
@@ -290,11 +283,6 @@ function renderShortcode(el: HTMLElement, kind: ShortcodeKind, id: string, cfg: 
     el.dataset.pumperRendered = "1";
     return;
   }
-  // kind === "ct"
-  const ct = (cfg.countdowns ?? []).find((c) => c.id === id);
-  if (!ct) { el.innerHTML = ""; el.dataset.pumperRendered = "1"; return; }
-  renderCountdown(el, ct);
-  el.dataset.pumperRendered = "1";
 }
 
 function collectShortcodes(): Array<{ el: HTMLElement; kind: ShortcodeKind; id: string }> {
@@ -343,14 +331,9 @@ function renderMount(mount: HTMLElement, cfg: WidgetConfig): void {
   mount.dataset.pumperRendered = "1";
 }
 
-function collectNewsletterMounts(): HTMLElement[] {
-  return Array.from(document.querySelectorAll<HTMLElement>("[data-pumper-newsletter]:not([data-pumper-rendered])"));
-}
-
 export async function initWidget(): Promise<void> {
   const mounts = Array.from(document.querySelectorAll<HTMLElement>(".pumper-mount:not([data-pumper-rendered])"));
   const shortcodes = collectShortcodes();
-  const newsletterMounts = collectNewsletterMounts();
 
   const apiBase = (window._pumperConfig?.apiBase) ?? "https://bundler.deepseatools.in/api/storefront";
   const shopFromGlobal = window._pumperConfig?.shop;
@@ -359,9 +342,8 @@ export async function initWidget(): Promise<void> {
   const shop = shopFromGlobal ?? shopFromMount ?? shopFromPreview ?? "";
   if (!shop) return;
 
-  // Bail only if there's no shop context AND no work to do. With a known shop
-  // we still need to fetch config to know whether to fire the newsletter popup.
-  const hasInlineWork = mounts.length > 0 || shortcodes.length > 0 || newsletterMounts.length > 0;
+  // Bail only if there's no shop context AND no work to do.
+  const hasInlineWork = mounts.length > 0 || shortcodes.length > 0;
   if (!hasInlineWork && !shopFromGlobal) return;
 
   configureAnalytics({ apiBase, shop });
@@ -375,7 +357,6 @@ export async function initWidget(): Promise<void> {
     }
     mounts.forEach((m) => { m.innerHTML = ""; m.style.minHeight = ""; });
     shortcodes.forEach((s) => { s.el.innerHTML = ""; s.el.style.minHeight = ""; });
-    newsletterMounts.forEach((m) => { m.innerHTML = ""; });
     return;
   }
 
@@ -383,33 +364,14 @@ export async function initWidget(): Promise<void> {
 
   for (const m of mounts) renderMount(m, cfg);
   for (const sc of shortcodes) renderShortcode(sc.el, sc.kind, sc.id, cfg);
-  for (const nm of newsletterMounts) {
-    if (cfg.newsletter) {
-      applyCssVars(nm, cfg, null);
-      // Mode attribute drives preview-side dual rendering. Without it, behavior
-      // matches storefront: render inline (popup is handled by the auto-popup hook).
-      const mode = nm.getAttribute("data-pumper-newsletter-mode");
-      if (mode === "popup") {
-        if (cfg.newsletter.popup) {
-          renderPopupInline(nm, cfg.newsletter);
-        } else {
-          nm.innerHTML = "";
-        }
-      } else {
-        renderNewsletter(nm, cfg.newsletter);
-      }
-      nm.dataset.pumperRendered = "1";
-    } else {
-      nm.innerHTML = "";
-      nm.dataset.pumperRendered = "1";
-    }
-  }
+  const isPreview = !!window._pumperPreview;
 
-  // Auto-popup (idempotent — early-returns if already shown / dismissed / excluded)
-  if (cfg.newsletter && cfg.newsletter.popup && !window._pumperPreview) {
-    applyCssVars(document.documentElement, cfg, null);
-    maybeStartNewsletterPopup(cfg.newsletter);
-  }
+  // Defensively clear any leftover removed-surface mount markers from
+  // older Bundler installs still pinned to a merchant theme.
+  document.querySelectorAll<HTMLElement>("[data-pumper-newsletter], [data-pumper-signup-form], [data-pumper-cart-upsell], [data-pumper-countdown]").forEach((el) => {
+    el.innerHTML = "";
+    el.dataset.pumperRendered = "1";
+  });
 
   // Auto sticky-ATC (PDP only). Picks the sticky config from any active bundle
   // or QB that targets the current product and has stickyAtc.enabled. The first

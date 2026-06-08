@@ -2,7 +2,7 @@ import type { BxgyOfferConfig, BxgyBarConfig, WidgetConfig } from "./types";
 import { addToCart, type CartLineInput } from "./add-to-cart";
 import { emit } from "./analytics";
 import { formatMoney } from "./format";
-import { t } from "./i18n";
+import { t, tWith } from "./i18n";
 
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
@@ -37,6 +37,28 @@ function renderBadge(bar: BxgyBarConfig, math: BarMath, currency: string, locale
 }
 
 export function renderBxgy(mount: HTMLElement, offer: BxgyOfferConfig, config: WidgetConfig): void {
+  // Follow current PDP product when the offer is configured for it. Same
+  // pattern as render-qb so universal BXGY templates work site-wide.
+  const followCurrent = offer.bindToCurrentProduct === true;
+  const pdpProductId = window._pumperConfig?.productId;
+  const pdpVariants = window._pumperConfig?.productVariants;
+  const pdpTitle = window._pumperConfig?.productTitle;
+  const pdpImage = window._pumperConfig?.productImage ?? null;
+  if (followCurrent) {
+    if (!pdpProductId || !pdpVariants || pdpVariants.length === 0) {
+      mount.innerHTML = "";
+      mount.style.minHeight = "";
+      return;
+    }
+    offer = {
+      ...offer,
+      productId: pdpProductId,
+      productTitle: pdpTitle ?? offer.productTitle,
+      productImage: pdpImage ?? offer.productImage,
+      productVariants: pdpVariants,
+    };
+  }
+
   const variant = offer.productVariants.find((v) => v.available) ?? offer.productVariants[0];
   if (!variant || offer.productVariants.every((v) => !v.available)) {
     mount.innerHTML = "";
@@ -61,8 +83,9 @@ export function renderBxgy(mount: HTMLElement, offer: BxgyOfferConfig, config: W
     const giftMin = offer.freeGiftMinBuyQty ?? 1;
     const hasGift = !!(offer.freeGiftVariantId || offer.freeGiftProductId);
     const giftUnlockedHere = hasGift && bar.buyQty >= giftMin;
-    const giftCallout = giftUnlockedHere
-      ? `<div class="pumper-qb-tier-gift">🎁 + FREE gift unlocked!</div>`
+    const calloutHidden = offer.textOverrides?.["bxgy.freeGiftCallout.hidden"] === "1";
+    const giftCallout = giftUnlockedHere && !calloutHidden
+      ? `<div class="pumper-qb-tier-gift">${escapeHtml(tWith(offer.textOverrides ?? null, "bxgy.freeGiftCallout"))}</div>`
       : "";
 
     return `

@@ -47,6 +47,11 @@ function EmbedCodeCardWithSnippet({ snippet }: { snippet: string }) {
           Paste this anywhere your theme accepts HTML — homepage, blog post, custom page,
           or a page builder&apos;s HTML element.
         </Text>
+        <Text as="p" tone="subdued" variant="bodySm">
+          <strong>Note:</strong> the embed code renders the widget wherever you paste it,
+          even if your Visibility setting says &quot;Specific products&quot;. Visibility rules only
+          apply when the widget is auto-mounted via the theme app block (drag-drop on a PDP).
+        </Text>
         <TextField
           label="Embed code"
           labelHidden

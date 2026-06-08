@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { type AppLoadContext } from "~/shopify.server";
 import { getDb, schema } from "~/db.server";
 import { writeStorefrontEvent } from "~/lib/analytics/events-write";
+import { checkRateLimit } from "~/lib/rate-limit";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -45,6 +46,14 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const shop = (body.shop ?? "").toLowerCase();
   if (!shop) {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
+  }
+
+  // Per-shop rate limit. Analytics events are higher-volume than config
+  // calls but 1000/min still leaves plenty of headroom for a busy PDP
+  // firing impression + click + add-to-cart.
+  const rl = await checkRateLimit(env.SHOP_SETTINGS_CACHE, shop);
+  if (!rl.allowed) {
+    return new Response(null, { status: 429, headers: CORS_HEADERS });
   }
 
   const db = getDb(env.DB);

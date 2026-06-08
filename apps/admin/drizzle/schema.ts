@@ -51,12 +51,6 @@ export type QbTier = {
 export type LayoutVariant = "list" | "grid";
 export type FontStyle = "regular" | "medium" | "semibold" | "bold";
 
-export type Subscription = {
-  enabled: boolean;
-  discountPercent: number;
-  interval: "weekly" | "biweekly" | "monthly" | "quarterly";
-};
-
 export type StickyAtcConfig = {
   enabled: boolean;
   showImage: boolean;
@@ -133,13 +127,20 @@ export type StyleOverrides = Partial<{
   unitLabelFontStyle: FontStyle;
 }>;
 
-export type BundleTextKey = "bundle.totalLabel" | "bundle.savingsBadge";
+export type BundleTextKey =
+  | "bundle.totalLabel"
+  | "bundle.savingsBadge"
+  | "bundle.freeGiftCallout"
+  | "bundle.freeGiftCallout.hidden";
 export type QbTextKey =
   | "qb.tierLabel"
   | "qb.savingsBadge"
   | "qb.mostPopular"
-  | "qb.giftBadge";
-export type TextOverrides = Partial<Record<BundleTextKey | QbTextKey, string>>;
+  | "qb.giftBadge"
+  | "qb.freeGiftCallout"
+  | "qb.freeGiftCallout.hidden";
+export type BxgyTextKey = "bxgy.freeGiftCallout" | "bxgy.freeGiftCallout.hidden";
+export type TextOverrides = Partial<Record<BundleTextKey | QbTextKey | BxgyTextKey, string>>;
 
 export const bundles = sqliteTable("bundles", {
   id: text("id").primaryKey(),
@@ -159,14 +160,17 @@ export const bundles = sqliteTable("bundles", {
   ctaLabel: text("cta_label"),
   freeGiftVariantId: text("free_gift_variant_id"),
   freeGiftProductId: text("free_gift_product_id"),
-  subscription: text("subscription", { mode: "json" }).$type<Subscription | null>(),
   mode: text("mode", { enum: ["classic", "mix_match"] }).notNull().default("classic"),
   collectionId: text("collection_id"),
+  bindToCurrentCollection: integer("bind_to_current_collection", { mode: "boolean" }).notNull().default(false),
   targetQty: integer("target_qty"),
   linkedCountdownId: text("linked_countdown_id"),
   linkedProgressiveGiftId: text("linked_progressive_gift_id"),
   stickyAtc: text("sticky_atc", { mode: "json" }).$type<StickyAtcConfig | null>(),
   addonsOrder: text("addons_order", { mode: "json" }).$type<string[] | null>(),
+  sortOrder: integer("sort_order").notNull().default(0),
+  activeStartAt: integer("active_start_at", { mode: "timestamp" }),
+  activeEndAt: integer("active_end_at", { mode: "timestamp" }),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 }, (t) => ({
@@ -202,7 +206,6 @@ export const quantityBreaks = sqliteTable("quantity_breaks", {
   textOverrides: text("text_overrides", { mode: "json" }).$type<TextOverrides | null>(),
   headline: text("headline"),
   ctaLabel: text("cta_label"),
-  subscription: text("subscription", { mode: "json" }).$type<Subscription | null>(),
   visibility: text("visibility").notNull().default("specific"),
   visibilityProductIds: text("visibility_product_ids", { mode: "json" }).$type<string[]>().notNull().default([]),
   visibilityCollectionIds: text("visibility_collection_ids", { mode: "json" }).$type<string[]>().notNull().default([]),
@@ -215,6 +218,10 @@ export const quantityBreaks = sqliteTable("quantity_breaks", {
   freeGiftVariantId: text("free_gift_variant_id"),
   freeGiftProductId: text("free_gift_product_id"),
   freeGiftMinQty: integer("free_gift_min_qty").notNull().default(1),
+  bindToCurrentProduct: integer("bind_to_current_product", { mode: "boolean" }).notNull().default(false),
+  sortOrder: integer("sort_order").notNull().default(0),
+  activeStartAt: integer("active_start_at", { mode: "timestamp" }),
+  activeEndAt: integer("active_end_at", { mode: "timestamp" }),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 }, (t) => ({
@@ -247,42 +254,17 @@ export type CountdownStyleOverrides = Partial<{
   textAlign: "left" | "center" | "right";
 }>;
 
-export const countdownTimers = sqliteTable("countdown_timers", {
-  id: text("id").primaryKey(),
-  shopId: text("shop_id").notNull().references(() => shops.id, { onDelete: "cascade" }),
-  name: text("name").notNull(),
-  status: text("status").notNull().default("draft"),
-  endAt: integer("end_at", { mode: "timestamp" }).notNull(),
-  headline: text("headline").notNull().default("Sale ends in"),
-  expiredHeadline: text("expired_headline").notNull().default("This deal has ended"),
-  layout: text("layout").notNull().default("inline"),
-  styleOverrides: text("style_overrides", { mode: "json" }).$type<CountdownStyleOverrides | null>(),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
-}, (t) => ({
-  shopIdx: index("ct_shop_idx").on(t.shopId),
-}));
 
-export const newsletterSettings = sqliteTable("newsletter_settings", {
-  shopId: text("shop_id").primaryKey().references(() => shops.id, { onDelete: "cascade" }),
-  enabled: integer("enabled", { mode: "boolean" }).notNull().default(false),
-  headline: text("headline").notNull().default("Get 10% off your first order"),
-  subtitle: text("subtitle").notNull().default("Join our newsletter for early access and exclusive deals."),
-  placeholder: text("placeholder").notNull().default("you@email.com"),
-  ctaLabel: text("cta_label").notNull().default("Subscribe"),
-  successMessage: text("success_message").notNull().default("Thanks! Check your inbox for the discount code."),
-  tags: text("tags").notNull().default("newsletter,prospect"),
-  popupEnabled: integer("popup_enabled", { mode: "boolean" }).notNull().default(false),
-  popupTrigger: text("popup_trigger").notNull().default("delay"),
-  popupDelaySeconds: integer("popup_delay_seconds").notNull().default(5),
-  popupScrollPercent: integer("popup_scroll_percent").notNull().default(50),
-  popupFrequencyDays: integer("popup_frequency_days").notNull().default(7),
-  popupImageUrl: text("popup_image_url").notNull().default(""),
-  popupImagePosition: text("popup_image_position").notNull().default("none"),
-  excludedPaths: text("excluded_paths").notNull().default(""),
-  styleOverrides: text("style_overrides", { mode: "json" }).$type<NewsletterStyleOverrides | null>(),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
-});
+
+
+
+
+
+
+
+
+
+
 
 export type NewsletterStyleOverrides = Partial<{
   backgroundColor: string;
@@ -380,6 +362,10 @@ export const bxgyOffers = sqliteTable("bxgy_offers", {
   freeGiftMinBuyQty: integer("free_gift_min_buy_qty").notNull().default(1),
   checkboxUpsellsEnabled: integer("checkbox_upsells_enabled", { mode: "boolean" }).notNull().default(false),
   checkboxUpsells: text("checkbox_upsells", { mode: "json" }).$type<QbCheckboxUpsell[]>().notNull().default([]),
+  bindToCurrentProduct: integer("bind_to_current_product", { mode: "boolean" }).notNull().default(false),
+  sortOrder: integer("sort_order").notNull().default(0),
+  activeStartAt: integer("active_start_at", { mode: "timestamp" }),
+  activeEndAt: integer("active_end_at", { mode: "timestamp" }),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 }, (t) => ({
@@ -427,12 +413,8 @@ export type ProgressiveGift = typeof progressiveGifts.$inferSelect;
 export type NewProgressiveGift = typeof progressiveGifts.$inferInsert;
 export type BxgyOffer = typeof bxgyOffers.$inferSelect;
 export type NewBxgyOffer = typeof bxgyOffers.$inferInsert;
-export type NewsletterSettings = typeof newsletterSettings.$inferSelect;
-export type NewNewsletterSettings = typeof newsletterSettings.$inferInsert;
 export type StickyAtcSettings = typeof stickyAtcSettings.$inferSelect;
 export type NewStickyAtcSettings = typeof stickyAtcSettings.$inferInsert;
-export type CountdownTimer = typeof countdownTimers.$inferSelect;
-export type NewCountdownTimer = typeof countdownTimers.$inferInsert;
 export type NewQuantityBreak = typeof quantityBreaks.$inferInsert;
 export type ShopSettings = typeof shopSettings.$inferSelect;
 
@@ -472,10 +454,18 @@ export const bundleDaily = sqliteTable("bundle_daily", {
   applicationCount: integer("application_count").notNull().default(0),
   revenueCents: integer("revenue_cents").notNull().default(0),
   orders: integer("orders").notNull().default(0),
+  impressionCount: integer("impression_count").notNull().default(0),
+  clickCount: integer("click_count").notNull().default(0),
+  atcCount: integer("atc_count").notNull().default(0),
 }, (t) => ({
   pk: primaryKey({ columns: [t.shopId, t.date, t.bundleId] }),
   shopDateIdx: index("bundle_daily_shop_date_idx").on(t.shopId, t.date),
 }));
+
+export const eventAggregationState = sqliteTable("event_aggregation_state", {
+  shopId: text("shop_id").primaryKey().references(() => shops.id, { onDelete: "cascade" }),
+  lastAggregatedTs: integer("last_aggregated_ts").notNull().default(0),
+});
 
 export type Event = typeof events.$inferSelect;
 export type NewEvent = typeof events.$inferInsert;

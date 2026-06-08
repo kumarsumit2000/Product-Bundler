@@ -58,6 +58,30 @@ function tierUnitCents(tier: QbTier, basePriceCents: number): number {
 }
 
 export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig): void {
+  // When the QB is configured to follow the current PDP product, pull product
+  // info from the App Embed's globals instead of the QB's bound product. This
+  // is what powers universal "10% off 2, 20% off 5" templates that work on
+  // every PDP without one row per product.
+  const followCurrent = qb.bindToCurrentProduct === true;
+  const pdpProductId = window._pumperConfig?.productId;
+  const pdpVariants = window._pumperConfig?.productVariants;
+  const pdpTitle = window._pumperConfig?.productTitle;
+  const pdpImage = window._pumperConfig?.productImage ?? null;
+  if (followCurrent) {
+    if (!pdpProductId || !pdpVariants || pdpVariants.length === 0) {
+      mount.innerHTML = "";
+      mount.style.minHeight = "";
+      return;
+    }
+    qb = {
+      ...qb,
+      productId: pdpProductId,
+      productTitle: pdpTitle ?? qb.productTitle,
+      productImage: pdpImage ?? qb.productImage,
+      productVariants: pdpVariants,
+    };
+  }
+
   const variant = qb.productVariants.find((v) => v.available) ?? qb.productVariants[0];
   if (!variant || qb.productVariants.every((v) => !v.available)) {
     mount.innerHTML = "";
@@ -109,8 +133,9 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
     const qbGiftMinQty = qb.freeGiftMinQty ?? 1;
     const hasQbGift = !!(qb.freeGiftVariantId || qb.freeGiftProductId);
     const qbGiftUnlockedHere = hasQbGift && tr.qty >= qbGiftMinQty;
-    const qbGiftCallout = qbGiftUnlockedHere
-      ? `<div class="pumper-qb-tier-gift">🎁 + FREE gift unlocked!</div>`
+    const qbCalloutHidden = qb.textOverrides?.["qb.freeGiftCallout.hidden"] === "1";
+    const qbGiftCallout = qbGiftUnlockedHere && !qbCalloutHidden
+      ? `<div class="pumper-qb-tier-gift">${escapeHtml(tWith(qb.textOverrides, "qb.freeGiftCallout"))}</div>`
       : "";
 
     return `

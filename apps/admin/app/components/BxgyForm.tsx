@@ -17,6 +17,10 @@ import { EMPTY_STYLE_FORM, buildStyleOverrides } from "~/lib/preview-overrides";
 import type { StickyAtcConfig } from "../../drizzle/schema";
 
 type Status = "draft" | "active" | "paused";
+// DOM id the route uses to wire a Polaris Page primaryAction "Save"
+// button to this form.
+export const BXGY_FORM_ID = "bxgy-form";
+
 export type BxgyVisibility = "all" | "all_except" | "specific" | "collections";
 
 export type BxgyFormValues = StylePanelValues & {
@@ -30,7 +34,6 @@ export type BxgyFormValues = StylePanelValues & {
   visibility: BxgyVisibility;
   visibilityProducts: PickedProduct[];
   visibilityCollections: PickedCollection[];
-  linkedCountdownId: string | null;
   linkedProgressiveGiftId: string | null;
   addonsOrder: AddonsOrderItem[];
   stickyAtc: StickyAtcConfig;
@@ -41,6 +44,11 @@ export type BxgyFormValues = StylePanelValues & {
   freeGiftMinBuyQty: string;
   checkboxUpsellsEnabled: boolean;
   checkboxUpsells: UpsellFormValue[];
+  textOverrides: Record<string, string>;
+  bindToCurrentProduct: boolean;
+  sortOrder: string;
+  activeStartAt: string;
+  activeEndAt: string;
 };
 
 type AddonOption = { id: string; name: string };
@@ -50,7 +58,6 @@ type Props = {
   initialValues?: Partial<BxgyFormValues>;
   errors?: Record<string, string>;
   onValuesChange?: (v: BxgyFormValues) => void;
-  countdownOptions?: AddonOption[];
   progressiveGiftOptions?: AddonOption[];
 };
 
@@ -68,7 +75,6 @@ const DEFAULTS: BxgyFormValues = {
   visibility: "specific",
   visibilityProducts: [],
   visibilityCollections: [],
-  linkedCountdownId: null,
   linkedProgressiveGiftId: null,
   addonsOrder: [...DEFAULT_ADDONS_ORDER],
   stickyAtc: STICKY_ATC_DEFAULTS,
@@ -79,11 +85,16 @@ const DEFAULTS: BxgyFormValues = {
   freeGiftMinBuyQty: "1",
   checkboxUpsellsEnabled: false,
   checkboxUpsells: [],
+  textOverrides: { "bxgy.freeGiftCallout": "", "bxgy.freeGiftCallout.hidden": "" },
+  bindToCurrentProduct: false,
+  sortOrder: "0",
+  activeStartAt: "",
+  activeEndAt: "",
 };
 
 export function BxgyForm({
   submitLabel, initialValues, errors, onValuesChange,
-  countdownOptions = [], progressiveGiftOptions = [],
+  progressiveGiftOptions = [],
 }: Props) {
   const [values, setValues] = useState<BxgyFormValues>({ ...DEFAULTS, ...initialValues });
   const navigation = useNavigation();
@@ -98,7 +109,7 @@ export function BxgyForm({
   const hasErrors = errors && Object.keys(errors).length > 0;
 
   return (
-    <Form method="post">
+    <Form method="post" id={BXGY_FORM_ID}>
       <input type="hidden" name="bars" value={JSON.stringify(values.bars)} />
       <input type="hidden" name="productId" value={values.product[0]?.productId ?? ""} />
       <input type="hidden" name="visibility" value={values.visibility} />
@@ -112,7 +123,6 @@ export function BxgyForm({
         name="visibilityCollectionIds"
         value={JSON.stringify(values.visibilityCollections.map((c) => c.collectionId))}
       />
-      <input type="hidden" name="linkedCountdownId" value={values.linkedCountdownId ?? ""} />
       <input type="hidden" name="linkedProgressiveGiftId" value={values.linkedProgressiveGiftId ?? ""} />
       <input type="hidden" name="addonsOrder" value={JSON.stringify(values.addonsOrder)} />
       <input type="hidden" name="stickyAtc" value={JSON.stringify(values.stickyAtc)} />
@@ -151,6 +161,19 @@ export function BxgyForm({
         name="styleOverrides"
         value={JSON.stringify(buildStyleOverrides(values) ?? {})}
       />
+      <input
+        type="hidden"
+        name="textOverrides"
+        value={JSON.stringify(
+          Object.fromEntries(Object.entries(values.textOverrides).filter(([, v]) => v.length > 0)),
+        )}
+      />
+      <input type="hidden" name="status" value={values.status} />
+      <input type="hidden" name="combinable" value={values.combinable ? "on" : ""} />
+      <input type="hidden" name="bindToCurrentProduct" value={values.bindToCurrentProduct ? "on" : ""} />
+      <input type="hidden" name="sortOrder" value={values.sortOrder} />
+      <input type="hidden" name="activeStartAt" value={values.activeStartAt} />
+      <input type="hidden" name="activeEndAt" value={values.activeEndAt} />
 
       <BlockStack gap="500">
         {hasErrors && (
@@ -172,15 +195,40 @@ export function BxgyForm({
               maxLength={100}
               placeholder="Internal name (e.g. Spring BOGO)"
             />
-            <Text as="p" tone="subdued">
-              Pick the product this offer applies to — bars buy / get N units of it.
-            </Text>
-            <ProductPicker
-              products={values.product}
-              onChange={(p) => update("product", p)}
-              showQty={false}
+            <ChoiceList
+              title="Apply offer to"
+              titleHidden
+              choices={[
+                {
+                  label: "A specific product",
+                  value: "specific",
+                  helpText: "Bars buy/get units of the product you pick below.",
+                },
+                {
+                  label: "Whichever product the customer is viewing",
+                  value: "current",
+                  helpText: "Universal template — works on every product page (e.g. 'Buy 2 of anything, get 1 free').",
+                },
+              ]}
+              selected={[values.bindToCurrentProduct ? "current" : "specific"]}
+              onChange={(s) => update("bindToCurrentProduct", s[0] === "current")}
             />
-            {errors?.productId && <Banner tone="critical">{errors.productId}</Banner>}
+            {!values.bindToCurrentProduct && (
+              <>
+                <ProductPicker
+                  products={values.product}
+                  onChange={(p) => update("product", p)}
+                  showQty={false}
+                />
+                {errors?.productId && <Banner tone="critical">{errors.productId}</Banner>}
+              </>
+            )}
+            {values.bindToCurrentProduct && (
+              <Banner tone="info">
+                Bars will buy and get units of whatever product the customer is currently viewing,
+                using that product's variants and prices.
+              </Banner>
+            )}
           </BlockStack>
         </Card>
 
@@ -196,45 +244,44 @@ export function BxgyForm({
           </BlockStack>
         </Card>
 
-        <Card>
-          <BlockStack gap="400">
-            <Text as="h2" variant="headingMd">Visibility</Text>
-            <Text as="p" tone="subdued">Control which product pages this offer shows on.</Text>
-            <ChoiceList
-              title="Show on"
-              titleHidden
-              choices={[
-                { label: "Same as picked product", value: "specific" },
-                { label: "All products", value: "all" },
-                { label: "All products except selected", value: "all_except" },
-                { label: "Products in selected collections", value: "collections" },
-              ]}
-              selected={[values.visibility]}
-              onChange={(s) => update("visibility", s[0] as BxgyVisibility)}
-            />
-            {values.visibility === "all_except" && (
-              <ProductPicker
-                products={values.visibilityProducts}
-                onChange={(p) => update("visibilityProducts", p)}
-                multiple
-                showQty={false}
+        {!values.bindToCurrentProduct && (
+          <Card>
+            <BlockStack gap="400">
+              <Text as="h2" variant="headingMd">Visibility</Text>
+              <Text as="p" tone="subdued">Control which product pages this offer shows on.</Text>
+              <ChoiceList
+                title="Show on"
+                titleHidden
+                choices={[
+                  { label: "Same as picked product", value: "specific" },
+                  { label: "All products", value: "all" },
+                  { label: "All products except selected", value: "all_except" },
+                  { label: "Products in selected collections", value: "collections" },
+                ]}
+                selected={[values.visibility]}
+                onChange={(s) => update("visibility", s[0] as BxgyVisibility)}
               />
-            )}
-            {values.visibility === "collections" && (
-              <MultiCollectionPicker
-                collections={values.visibilityCollections}
-                onChange={(c) => update("visibilityCollections", c)}
-              />
-            )}
-          </BlockStack>
-        </Card>
+              {values.visibility === "all_except" && (
+                <ProductPicker
+                  products={values.visibilityProducts}
+                  onChange={(p) => update("visibilityProducts", p)}
+                  multiple
+                  showQty={false}
+                />
+              )}
+              {values.visibility === "collections" && (
+                <MultiCollectionPicker
+                  collections={values.visibilityCollections}
+                  onChange={(c) => update("visibilityCollections", c)}
+                />
+              )}
+            </BlockStack>
+          </Card>
+        )}
 
         <WidgetAddonsCard
-          countdowns={countdownOptions}
           progressiveGifts={progressiveGiftOptions}
-          linkedCountdownId={values.linkedCountdownId}
           linkedProgressiveGiftId={values.linkedProgressiveGiftId}
-          addonsOrder={values.addonsOrder}
           widgetLabel="BXGY widget"
           onChange={(patch) => setValues((s) => ({ ...s, ...patch }))}
         />
@@ -323,6 +370,35 @@ export function BxgyForm({
 
         <Card>
           <BlockStack gap="400">
+            <Text as="h2" variant="headingMd">Text overrides</Text>
+            <Text as="p" tone="subdued">Rename labels shown on the widget. Leave empty to use defaults.</Text>
+            <Checkbox
+              label="Show free gift callout"
+              checked={values.textOverrides["bxgy.freeGiftCallout.hidden"] !== "1"}
+              onChange={(checked) =>
+                update("textOverrides", {
+                  ...values.textOverrides,
+                  "bxgy.freeGiftCallout.hidden": checked ? "" : "1",
+                })
+              }
+              helpText="Hide this if you don't want any callout shown when a bar unlocks the free gift."
+            />
+            <TextField
+              label="Free gift unlocked callout"
+              value={values.textOverrides["bxgy.freeGiftCallout"] ?? ""}
+              onChange={(v) => update("textOverrides", { ...values.textOverrides, "bxgy.freeGiftCallout": v })}
+              placeholder="Unlock Free Gift 🎁"
+              helpText="Shown inside a bar card when its buy quantity unlocks the free gift."
+              autoComplete="off"
+              maxLength={120}
+              disabled={values.textOverrides["bxgy.freeGiftCallout.hidden"] === "1"}
+            />
+            {errors?.textOverrides && <Banner tone="critical">{errors.textOverrides}</Banner>}
+          </BlockStack>
+        </Card>
+
+        <Card>
+          <BlockStack gap="400">
             <Text as="h2" variant="headingMd">Settings</Text>
             <ChoiceList
               title="Status"
@@ -333,13 +409,35 @@ export function BxgyForm({
               ]}
               selected={[values.status]}
               onChange={(s) => update("status", s[0] as Status)}
-              name="status"
             />
             <Checkbox
               label="Combinable with other discounts"
               checked={values.combinable}
               onChange={(c) => update("combinable", c)}
-              name="combinable"
+            />
+            <TextField
+              label="Sort order"
+              type="number"
+              value={values.sortOrder}
+              onChange={(v) => update("sortOrder", v)}
+              autoComplete="off"
+              helpText="Lower numbers show first when multiple BXGY offers target the same product page."
+            />
+            <TextField
+              label="Active from (optional)"
+              type="datetime-local"
+              value={values.activeStartAt}
+              onChange={(v) => update("activeStartAt", v)}
+              autoComplete="off"
+              helpText="Offer stays hidden before this. Leave blank for immediate."
+            />
+            <TextField
+              label="Active until (optional)"
+              type="datetime-local"
+              value={values.activeEndAt}
+              onChange={(v) => update("activeEndAt", v)}
+              autoComplete="off"
+              helpText="Offer hides automatically after this. Leave blank for no expiry."
             />
             <TextField
               label="Headline (optional)"

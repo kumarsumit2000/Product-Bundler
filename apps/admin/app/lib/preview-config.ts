@@ -46,7 +46,6 @@ type BundleShape = {
   ctaLabel: string | null;
   styleOverrides: Record<string, unknown> | null;
   textOverrides: Record<string, string> | null;
-  linkedCountdownId?: string | null;
   linkedProgressiveGiftId?: string | null;
   addonsOrder?: string[] | null;
   freeGiftVariantId?: string | null;
@@ -137,7 +136,6 @@ type QbShape = {
     title: string;
     subtitle: string;
   }>;
-  linkedCountdownId?: string | null;
   linkedProgressiveGiftId?: string | null;
   addonsOrder?: string[] | null;
   freeGiftVariantId?: string | null;
@@ -176,6 +174,40 @@ export function defaultPreviewSettings(): Settings {
   };
 }
 
+const MOCK_PRODUCT_TITLES = [
+  "Sample product",
+  "Sample add-on",
+  "Sample accessory",
+  "Sample combo item",
+  "Sample bundle pick",
+  "Sample variant",
+  "Sample extra",
+  "Sample bonus item",
+];
+
+function mockBundleProducts(count: number): ProductRef[] {
+  return Array.from({ length: count }, (_, i) => ({
+    productId: `gid://shopify/Product/preview-${i}`,
+    variantId: `preview-v-${i}`,
+    qty: 1,
+    title: MOCK_PRODUCT_TITLES[i % MOCK_PRODUCT_TITLES.length]!,
+    image: null,
+    available: true,
+    priceCents: 4999,
+  }));
+}
+
+function mockCollectionProducts(count: number): CollectionProduct[] {
+  return Array.from({ length: count }, (_, i) => ({
+    productId: `gid://shopify/Product/preview-${i}`,
+    variantId: `preview-v-${i}`,
+    title: MOCK_PRODUCT_TITLES[i % MOCK_PRODUCT_TITLES.length]!,
+    image: null,
+    available: true,
+    priceCents: 4999,
+  }));
+}
+
 export function buildPreviewBundleConfig(args: {
   shop: string;
   mockProduct: MockProduct;
@@ -183,10 +215,24 @@ export function buildPreviewBundleConfig(args: {
   bundle: BundleShape;
   addons?: AddonsShape;
 }) {
+  // Pre-populate the preview iframe with mock products when the merchant
+  // hasn't picked any yet — otherwise the renderer bails out (classic) or
+  // shows "not enough stock" (mix & match) and the preview pane looks empty.
+  let bundle = args.bundle;
+  if (bundle.mode === "classic" && bundle.products.length === 0) {
+    bundle = { ...bundle, products: mockBundleProducts(2) };
+  } else if (
+    bundle.mode === "mix_match" &&
+    (bundle.collectionProducts === null || bundle.collectionProducts.length === 0)
+  ) {
+    const target = bundle.targetQty ?? 3;
+    bundle = { ...bundle, collectionProducts: mockCollectionProducts(Math.max(target + 2, 6)) };
+  }
+
   return {
     shop: args.shop,
     settings: args.settings,
-    bundles: [args.bundle],
+    bundles: [bundle],
     quantityBreaks: [],
     countdowns: args.addons?.countdowns ?? [],
     progressiveGifts: args.addons?.progressiveGifts ?? [],
@@ -242,7 +288,7 @@ type BxgyShape = {
   headline: string | null;
   ctaLabel: string | null;
   styleOverrides?: Record<string, unknown> | null;
-  linkedCountdownId?: string | null;
+  textOverrides?: Record<string, string> | null;
   linkedProgressiveGiftId?: string | null;
   addonsOrder?: string[] | null;
   freeGiftVariantId?: string | null;

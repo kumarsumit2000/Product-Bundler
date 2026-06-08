@@ -1,6 +1,11 @@
 import type { BundleConfig, BxgyOfferConfig, QbConfig, WidgetConfig } from "./types";
 
 function bundleVisibleOn(b: BundleConfig, productId: string, pageCollectionIds: string[]): boolean {
+  // Mix & match bundles set to follow the current PDP's collection match on
+  // every PDP — visibility is implied by the binding (whatever product is
+  // open IS the trigger).
+  if (b.mode === "mix_match" && b.bindToCurrentCollection) return true;
+
   const visibility = b.visibility ?? (b.triggerProductIds.length > 0 ? "specific" : "same_as_members");
   if (visibility === "all") return true;
   if (visibility === "all_except") return !b.triggerProductIds.includes(productId);
@@ -36,6 +41,12 @@ export function matchQb(config: WidgetConfig, productId: string): QbConfig | nul
 }
 
 function qbVisibleOn(q: QbConfig, productId: string, pageCollectionIds: string[]): boolean {
+  // Universal-template mode: the merchant explicitly said "apply this QB to
+  // whichever product the customer is viewing". Match on every PDP so the
+  // template actually works — otherwise the (possibly stale) visibility
+  // filter blocks it on the very PDPs the merchant configured it for.
+  if (q.bindToCurrentProduct) return true;
+
   const visibility = q.visibility ?? "specific";
   const products = q.visibilityProductIds ?? [];
   const collections = q.visibilityCollectionIds ?? [];
@@ -64,6 +75,9 @@ export function matchMixMatch(config: WidgetConfig, productId: string): BundleCo
 }
 
 function bxgyVisibleOn(o: BxgyOfferConfig, productId: string, pageCollectionIds: string[]): boolean {
+  // Universal-template mode (same rationale as QB).
+  if (o.bindToCurrentProduct) return true;
+
   const visibility = o.visibility ?? "all";
   const products = o.visibilityProductIds ?? [];
   const collections = o.visibilityCollectionIds ?? [];

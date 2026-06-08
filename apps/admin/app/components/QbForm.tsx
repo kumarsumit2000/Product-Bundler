@@ -25,6 +25,10 @@ import { type StylePanelValues } from "./StylePanel";
 import { SimpleQbStylePanel } from "./SimpleQbStylePanel";
 import { EMPTY_STYLE_FORM, buildStyleOverrides } from "~/lib/preview-overrides";
 
+// DOM id the route uses to wire a Polaris Page primaryAction "Save"
+// button to this form.
+export const QB_FORM_ID = "qb-form";
+
 type Status = "draft" | "active" | "paused";
 export type QbVisibility = "all" | "all_except" | "specific" | "collections";
 
@@ -37,12 +41,15 @@ export type QbFormValues = StylePanelValues & {
   headline: string;
   ctaLabel: string;
   textOverrides: Record<string, string>;
+  bindToCurrentProduct: boolean;
+  sortOrder: string;
+  activeStartAt: string;
+  activeEndAt: string;
   visibility: QbVisibility;
   visibilityProducts: PickedProduct[];
   visibilityCollections: PickedCollection[];
   checkboxUpsellsEnabled: boolean;
   checkboxUpsells: UpsellFormValue[];
-  linkedCountdownId: string | null;
   linkedProgressiveGiftId: string | null;
   addonsOrder: AddonsOrderItem[];
   stickyAtc: StickyAtcConfig;
@@ -60,7 +67,6 @@ type Props = {
   errors?: Record<string, string>;
   submitLabel: string;
   onValuesChange?: (v: QbFormValues) => void;
-  countdownOptions?: AddonOption[];
   progressiveGiftOptions?: AddonOption[];
 };
 
@@ -78,13 +84,18 @@ const DEFAULTS: QbFormValues = {
     "qb.savingsBadge": "",
     "qb.mostPopular": "",
     "qb.giftBadge": "",
+    "qb.freeGiftCallout": "",
+    "qb.freeGiftCallout.hidden": "",
   },
+  bindToCurrentProduct: false,
+  sortOrder: "0",
+  activeStartAt: "",
+  activeEndAt: "",
   visibility: "all",
   visibilityProducts: [],
   visibilityCollections: [],
   checkboxUpsellsEnabled: false,
   checkboxUpsells: [],
-  linkedCountdownId: null,
   linkedProgressiveGiftId: null,
   addonsOrder: [...DEFAULT_ADDONS_ORDER],
   stickyAtc: STICKY_ATC_DEFAULTS,
@@ -95,7 +106,7 @@ const DEFAULTS: QbFormValues = {
   freeGiftMinQty: "2",
 };
 
-export function QbForm({ initialValues, errors, submitLabel, onValuesChange, countdownOptions = [], progressiveGiftOptions = [] }: Props) {
+export function QbForm({ initialValues, errors, submitLabel, onValuesChange, progressiveGiftOptions = [] }: Props) {
   const [values, setValues] = useState<QbFormValues>({ ...DEFAULTS, ...initialValues });
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
@@ -110,11 +121,11 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange, cou
   const hasErrors = errors && Object.keys(errors).length > 0;
 
   return (
-    <Form method="post">
+    <Form method="post" id={QB_FORM_ID}>
       <input
         type="hidden"
         name="productId"
-        value={values.visibilityProducts[0]?.productId ?? values.product[0]?.productId ?? ""}
+        value={values.product[0]?.productId ?? values.visibilityProducts[0]?.productId ?? ""}
       />
       <input type="hidden" name="visibility" value={values.visibility} />
       <input
@@ -127,7 +138,6 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange, cou
         name="visibilityCollectionIds"
         value={JSON.stringify(values.visibilityCollections.map((c) => c.collectionId))}
       />
-      <input type="hidden" name="linkedCountdownId" value={values.linkedCountdownId ?? ""} />
       <input type="hidden" name="linkedProgressiveGiftId" value={values.linkedProgressiveGiftId ?? ""} />
       <input type="hidden" name="addonsOrder" value={JSON.stringify(values.addonsOrder)} />
       <input type="hidden" name="stickyAtc" value={JSON.stringify(values.stickyAtc)} />
@@ -175,7 +185,12 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange, cou
           Object.fromEntries(Object.entries(values.textOverrides).filter(([, v]) => v.length > 0)),
         )}
       />
-      <input type="hidden" name="subscription" value="null" />
+      <input type="hidden" name="status" value={values.status} />
+      <input type="hidden" name="combinable" value={values.combinable ? "on" : ""} />
+      <input type="hidden" name="bindToCurrentProduct" value={values.bindToCurrentProduct ? "on" : ""} />
+      <input type="hidden" name="sortOrder" value={values.sortOrder} />
+      <input type="hidden" name="activeStartAt" value={values.activeStartAt} />
+      <input type="hidden" name="activeEndAt" value={values.activeEndAt} />
       <input
         type="hidden"
         name="tiers"
@@ -227,6 +242,50 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange, cou
 
         <Card>
           <BlockStack gap="400">
+            <Text as="h2" variant="headingMd">Product</Text>
+            <ChoiceList
+              title="Apply discount to"
+              titleHidden
+              choices={[
+                {
+                  label: "A specific product",
+                  value: "specific",
+                  helpText: "The discount always applies to the product you pick below.",
+                },
+                {
+                  label: "Whichever product the customer is viewing",
+                  value: "current",
+                  helpText: "Universal template — works on every product page without binding to one product.",
+                },
+              ]}
+              selected={[values.bindToCurrentProduct ? "current" : "specific"]}
+              onChange={(s) => update("bindToCurrentProduct", s[0] === "current")}
+            />
+            {!values.bindToCurrentProduct && (
+              <>
+                <Text as="p" tone="subdued">
+                  Pick the product whose variants get added to the cart when a tier is chosen.
+                  Visibility settings (below) independently control which PDPs the widget shows on.
+                </Text>
+                <ProductPicker
+                  products={values.product}
+                  onChange={(p) => update("product", p)}
+                  showQty={false}
+                />
+                {errors?.productId && <Banner tone="critical">{errors.productId}</Banner>}
+              </>
+            )}
+            {values.bindToCurrentProduct && (
+              <Banner tone="info">
+                The widget will read the current product's variants and prices directly from
+                the PDP. Tier discounts apply as a percentage off whatever the customer is viewing.
+              </Banner>
+            )}
+          </BlockStack>
+        </Card>
+
+        <Card>
+          <BlockStack gap="400">
             <Text as="h2" variant="headingMd">Tiers</Text>
             <QbTierBuilder
               tiers={values.tiers}
@@ -237,46 +296,45 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange, cou
           </BlockStack>
         </Card>
 
-        <Card>
-          <BlockStack gap="400">
-            <Text as="h2" variant="headingMd">Visibility</Text>
-            <Text as="p" tone="subdued">Control which product pages this widget shows on.</Text>
-            <ChoiceList
-              title="Show on"
-              titleHidden
-              choices={[
-                { label: "All products", value: "all" },
-                { label: "All products except selected", value: "all_except" },
-                { label: "Specific products", value: "specific" },
-                { label: "Products in selected collections", value: "collections" },
-              ]}
-              selected={[values.visibility]}
-              onChange={(s) => update("visibility", s[0] as QbVisibility)}
-            />
-            {(values.visibility === "all_except" || values.visibility === "specific") && (
-              <ProductPicker
-                products={values.visibilityProducts}
-                onChange={(p) => update("visibilityProducts", p)}
-                multiple
-                showQty={false}
+        {!values.bindToCurrentProduct && (
+          <Card>
+            <BlockStack gap="400">
+              <Text as="h2" variant="headingMd">Visibility</Text>
+              <Text as="p" tone="subdued">Control which product pages this widget shows on.</Text>
+              <ChoiceList
+                title="Show on"
+                titleHidden
+                choices={[
+                  { label: "All products", value: "all" },
+                  { label: "All products except selected", value: "all_except" },
+                  { label: "Specific products", value: "specific" },
+                  { label: "Products in selected collections", value: "collections" },
+                ]}
+                selected={[values.visibility]}
+                onChange={(s) => update("visibility", s[0] as QbVisibility)}
               />
-            )}
-            {values.visibility === "collections" && (
-              <MultiCollectionPicker
-                collections={values.visibilityCollections}
-                onChange={(c) => update("visibilityCollections", c)}
-              />
-            )}
-            {errors?.visibility && <Banner tone="critical">{errors.visibility}</Banner>}
-          </BlockStack>
-        </Card>
+              {(values.visibility === "all_except" || values.visibility === "specific") && (
+                <ProductPicker
+                  products={values.visibilityProducts}
+                  onChange={(p) => update("visibilityProducts", p)}
+                  multiple
+                  showQty={false}
+                />
+              )}
+              {values.visibility === "collections" && (
+                <MultiCollectionPicker
+                  collections={values.visibilityCollections}
+                  onChange={(c) => update("visibilityCollections", c)}
+                />
+              )}
+              {errors?.visibility && <Banner tone="critical">{errors.visibility}</Banner>}
+            </BlockStack>
+          </Card>
+        )}
 
         <WidgetAddonsCard
-          countdowns={countdownOptions}
           progressiveGifts={progressiveGiftOptions}
-          linkedCountdownId={values.linkedCountdownId}
           linkedProgressiveGiftId={values.linkedProgressiveGiftId}
-          addonsOrder={values.addonsOrder}
           widgetLabel="Quantity break widget"
           onChange={(patch) => setValues((s) => ({ ...s, ...patch }))}
         />
@@ -374,13 +432,35 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange, cou
               ]}
               selected={[values.status]}
               onChange={(s) => update("status", s[0] as Status)}
-              name="status"
             />
             <Checkbox
               label="Combinable with other discounts"
               checked={values.combinable}
               onChange={(c) => update("combinable", c)}
-              name="combinable"
+            />
+            <TextField
+              label="Sort order"
+              type="number"
+              value={values.sortOrder}
+              onChange={(v) => update("sortOrder", v)}
+              autoComplete="off"
+              helpText="Lower numbers show first when multiple QBs target the same product page."
+            />
+            <TextField
+              label="Active from (optional)"
+              type="datetime-local"
+              value={values.activeStartAt}
+              onChange={(v) => update("activeStartAt", v)}
+              autoComplete="off"
+              helpText="Widget stays hidden before this. Leave blank for immediate."
+            />
+            <TextField
+              label="Active until (optional)"
+              type="datetime-local"
+              value={values.activeEndAt}
+              onChange={(v) => update("activeEndAt", v)}
+              autoComplete="off"
+              helpText="Widget hides automatically after this. Leave blank for no expiry."
             />
           </BlockStack>
         </Card>
@@ -450,6 +530,27 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange, cou
               helpText="Available variables: {variantTitle}"
               autoComplete="off"
               maxLength={120}
+            />
+            <Checkbox
+              label="Show free gift callout"
+              checked={values.textOverrides["qb.freeGiftCallout.hidden"] !== "1"}
+              onChange={(checked) =>
+                update("textOverrides", {
+                  ...values.textOverrides,
+                  "qb.freeGiftCallout.hidden": checked ? "" : "1",
+                })
+              }
+              helpText="Hide this if you don't want any callout shown when a tier unlocks the free gift."
+            />
+            <TextField
+              label="Free gift unlocked callout"
+              value={values.textOverrides["qb.freeGiftCallout"] ?? ""}
+              onChange={(v) => update("textOverrides", { ...values.textOverrides, "qb.freeGiftCallout": v })}
+              placeholder="Unlock Free Gift 🎁"
+              helpText="Shown inside the tier card when its quantity unlocks the free gift."
+              autoComplete="off"
+              maxLength={120}
+              disabled={values.textOverrides["qb.freeGiftCallout.hidden"] === "1"}
             />
             {(errors?.styleOverrides || errors?.textOverrides) && (
               <Banner tone="critical">{errors?.styleOverrides || errors?.textOverrides}</Banner>

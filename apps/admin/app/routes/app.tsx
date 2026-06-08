@@ -69,13 +69,11 @@ export default function App() {
       >
         <NavMenu>
           <Link to="/app" rel="home">Dashboard</Link>
-          <Link to="/app/new">Create new</Link>
+          <Link to="/app/analytics">Analytics</Link>
           <Link to="/app/bundles">Bundles</Link>
           <Link to="/app/quantity-breaks">Quantity breaks</Link>
           <Link to="/app/bxgy-offers">Buy X, get Y</Link>
-          <Link to="/app/progressive-gifts">Progressive gifts</Link>
-          <Link to="/app/countdowns">Countdowns</Link>
-          <Link to="/app/newsletter">Newsletter</Link>
+          <Link to="/app/progressive-gifts">Free gift &amp; shipping</Link>
           <Link to="/app/billing">Billing</Link>
           <Link to="/app/support">Support</Link>
         </NavMenu>

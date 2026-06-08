@@ -1,6 +1,6 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/cloudflare";
 import { json, redirect } from "@remix-run/cloudflare";
-import { useActionData, useLoaderData } from "@remix-run/react";
+import { useActionData, useLoaderData, useNavigation } from "@remix-run/react";
 import { useState } from "react";
 import { Page, Layout, Card, BlockStack, Text, Button } from "@shopify/polaris";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
@@ -8,16 +8,16 @@ import { getDb } from "~/db.server";
 import { getUsage } from "~/lib/billing/usage";
 import { canCreateNew } from "~/lib/billing/gating";
 import * as qbRepo from "~/lib/quantity-breaks/repo";
-import * as countdownRepo from "~/lib/countdowns/repo";
+import { parseDateLocal } from "~/lib/parse-date-local";
 import * as pgRepo from "~/lib/progressive-gifts/repo";
 import { enrichProgressiveGiftsForPreview } from "~/lib/preview-pg-enrich";
 import { validateQb } from "~/lib/quantity-breaks/validate";
-import { parseSubscriptionForm } from "~/lib/parse-subscription";
 import { parseStickyAtc } from "~/lib/parse-sticky-atc";
 import { parseAddonsOrder } from "~/lib/parse-addons-order";
 import { syncShopConfig } from "~/lib/metafield-sync";
 import { ensureDiscountNodes } from "~/lib/discount-nodes";
-import { QbForm, type QbFormValues } from "~/components/QbForm";
+import { QbForm, QB_FORM_ID, type QbFormValues } from "~/components/QbForm";
+import { submitFormById } from "~/lib/submit-form-by-id";
 import { qbTemplate } from "~/lib/template-presets";
 import { PreviewPane } from "~/components/PreviewPane";
 import { StickyAtcPreview } from "~/components/StickyAtcPreview";
@@ -31,10 +31,9 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
   const { session, admin } = await authenticate.admin(request, ctx);
   const db = getDb(ctx.cloudflare.env.DB);
-  const [usage, countdowns, pgs] = await Promise.all([
+  const [usage, pgs] = await Promise.all([
     getUsage(db, session.shop),
-    countdownRepo.listByShop(db, session.shop),
-    pgRepo.listByShop(db, session.shop),
+        pgRepo.listByShop(db, session.shop),
   ]);
   const allProgressiveGifts = await enrichProgressiveGiftsForPreview(admin, pgs);
   const url = new URL(request.url);
@@ -45,19 +44,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   return json({
     gate,
     plan: usage.plan,
-    countdownOptions: countdowns.map((c) => ({ id: c.id, name: c.name })),
     progressiveGiftOptions: pgs.map((p) => ({ id: p.id, name: p.name })),
-    allCountdowns: countdowns
-      .filter((c) => c.status === "active")
-      .map((c) => ({
-        id: c.id,
-        name: c.name,
-        endAt: new Date(c.endAt).getTime(),
-        headline: c.headline,
-        expiredHeadline: c.expiredHeadline,
-        layout: c.layout as "inline" | "bar",
-        styleOverrides: (c.styleOverrides ?? null) as Record<string, unknown> | null,
-      })),
     allProgressiveGifts,
     preset,
     theme,
@@ -96,11 +83,14 @@ export async function action({ request, context }: ActionFunctionArgs) {
       extraProducts: ((t as { extraProducts?: Array<{ productId: string; variantId: string | null; qty: number }> }).extraProducts ?? []),
     })),
     combinable: form.get("combinable") === "on",
+    bindToCurrentProduct: form.get("bindToCurrentProduct") === "on",
+    sortOrder: Math.max(0, parseInt((form.get("sortOrder") as string) || "0", 10) || 0),
+    activeStartAt: parseDateLocal(form.get("activeStartAt") as string),
+    activeEndAt: parseDateLocal(form.get("activeEndAt") as string),
     headline: null as string | null,
     ctaLabel: null as string | null,
     styleOverrides: null as StyleOverrides | null,
     textOverrides: null as TextOverrides | null,
-    subscription: parseSubscriptionForm(form.get("subscription")),
   };
 
   const styleOverridesRaw = (form.get("styleOverrides") as string) || "{}";
@@ -129,7 +119,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const visibilityCollectionIds = (() => { try { return JSON.parse((form.get("visibilityCollectionIds") as string) || "[]") as string[]; } catch { return []; } })();
   const checkboxUpsellsEnabled = form.get("checkboxUpsellsEnabled") === "on";
   const checkboxUpsells = (() => { try { return JSON.parse((form.get("checkboxUpsells") as string) || "[]") as never[]; } catch { return [] as never[]; } })();
-  const linkedCountdownId = ((form.get("linkedCountdownId") as string) || "").trim() || null;
   const linkedProgressiveGiftId = ((form.get("linkedProgressiveGiftId") as string) || "").trim() || null;
   const stickyAtc = parseStickyAtc(form.get("stickyAtc") as string | null);
   const addonsOrder = parseAddonsOrder(form.get("addonsOrder") as string | null);
@@ -165,9 +154,12 @@ export async function action({ request, context }: ActionFunctionArgs) {
     collectionId: null,
     tiers: input.tiers,
     combinable: input.combinable,
+    bindToCurrentProduct: input.bindToCurrentProduct,
+    sortOrder: input.sortOrder,
+    activeStartAt: input.activeStartAt,
+    activeEndAt: input.activeEndAt,
     styleOverrides: input.styleOverrides,
     textOverrides: input.textOverrides,
-    subscription: input.subscription,
     headline: input.headline,
     ctaLabel: input.ctaLabel,
     visibility: normalizedVisibility,
@@ -175,8 +167,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
     visibilityCollectionIds,
     checkboxUpsellsEnabled,
     checkboxUpsells,
-    linkedCountdownId,
     linkedProgressiveGiftId,
+    linkedCountdownId: null,
     stickyAtc,
     addonsOrder,
     freeGiftVariantId,
@@ -202,8 +194,10 @@ export async function action({ request, context }: ActionFunctionArgs) {
 }
 
 export default function QbNew() {
-  const { gate, plan, countdownOptions, progressiveGiftOptions, allCountdowns, allProgressiveGifts, preset, theme } = useLoaderData<typeof loader>();
+  const { gate, plan, progressiveGiftOptions, allProgressiveGifts, preset, theme } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
+  const navigation = useNavigation();
+  const isSubmitting = navigation.state === "submitting";
   const errors =
     actionData && "errors" in actionData ? actionData.errors : undefined;
 
@@ -324,7 +318,6 @@ export default function QbNew() {
             title: u.title,
             subtitle: u.subtitle,
           })),
-          linkedCountdownId: values.linkedCountdownId,
           linkedProgressiveGiftId: values.linkedProgressiveGiftId,
           addonsOrder: values.addonsOrder,
           freeGiftVariantId: values.freeGiftEnabled && values.freeGiftMode === "variant"
@@ -351,7 +344,6 @@ export default function QbNew() {
             : null,
         },
         addons: {
-          countdowns: allCountdowns,
           progressiveGifts: allProgressiveGifts,
         },
       })
@@ -364,6 +356,11 @@ export default function QbNew() {
         content: "Quantity breaks",
         url: "/app/quantity-breaks",
       }}
+      primaryAction={{
+        content: "Save quantity break",
+        onAction: () => submitFormById(QB_FORM_ID),
+        loading: isSubmitting,
+      }}
     >
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
         <div>
@@ -372,7 +369,6 @@ export default function QbNew() {
             errors={errors}
             initialValues={initialValues}
             onValuesChange={setValues}
-            countdownOptions={countdownOptions}
             progressiveGiftOptions={progressiveGiftOptions}
           />
         </div>

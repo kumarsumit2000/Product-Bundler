@@ -6,6 +6,8 @@ const ALLOWED_QB_TEXT_KEYS = new Set([
   "qb.savingsBadge",
   "qb.mostPopular",
   "qb.giftBadge",
+  "qb.freeGiftCallout",
+  "qb.freeGiftCallout.hidden",
 ]);
 
 export type QbInput = {
@@ -18,10 +20,10 @@ export type QbInput = {
   ctaLabel: string | null;
   styleOverrides: Record<string, unknown> | null;
   textOverrides: Record<string, unknown> | null;
-  subscription: { enabled: boolean; discountPercent: number; interval: "weekly" | "biweekly" | "monthly" | "quarterly" } | null;
   visibility?: "all" | "all_except" | "specific" | "collections";
   visibilityProductIds?: string[];
   visibilityCollectionIds?: string[];
+  bindToCurrentProduct?: boolean;
 };
 
 export type ValidationResult =
@@ -37,9 +39,12 @@ export function validateQb(input: QbInput): ValidationResult {
     errors.name = "Name must be 100 characters or less";
   }
 
-  // productId is no longer required — visibility settings drive product
-  // matching. We still persist whatever was set (auto-derived from
-  // visibilityProductIds[0] when present) for backward compat.
+  // The QB needs a product to read variants/prices from on the storefront,
+  // UNLESS it's set to follow the current PDP product (universal template).
+  // Visibility settings independently control which PDPs the widget appears on.
+  if (!input.productId && !input.bindToCurrentProduct) {
+    errors.productId = "Pick the product whose variants the QB applies to";
+  }
 
   const visibility = input.visibility ?? "specific";
   const vProducts = input.visibilityProductIds ?? [];

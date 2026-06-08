@@ -1,7 +1,12 @@
 import type { BundleProduct } from "../../../drizzle/schema";
 import { validateStyleOverrides } from "../validate-style";
 
-const ALLOWED_BUNDLE_TEXT_KEYS = new Set(["bundle.totalLabel", "bundle.savingsBadge"]);
+const ALLOWED_BUNDLE_TEXT_KEYS = new Set([
+  "bundle.totalLabel",
+  "bundle.savingsBadge",
+  "bundle.freeGiftCallout",
+  "bundle.freeGiftCallout.hidden",
+]);
 
 export type BundleInput = {
   name: string;
@@ -15,11 +20,13 @@ export type BundleInput = {
   ctaLabel: string | null;
   mode: "classic" | "mix_match";
   collectionId: string | null;
+  bindToCurrentCollection?: boolean;
   targetQty: number | null;
   styleOverrides: Record<string, unknown> | null;
   textOverrides: Record<string, unknown> | null;
+  freeGiftEnabled?: boolean;
   freeGiftVariantId: string | null;
-  subscription: { enabled: boolean; discountPercent: number; interval: "weekly" | "biweekly" | "monthly" | "quarterly" } | null;
+  freeGiftProductId?: string | null;
 };
 
 export type ValidationResult =
@@ -39,7 +46,10 @@ export function validateBundle(input: BundleInput): ValidationResult {
     if (Array.isArray(input.products) && input.products.length > 0) {
       errors.products = "Mix & Match bundles must not have specific products";
     }
-    if (!input.collectionId) {
+    // Collection is only required when the bundle is bound to a specific
+    // collection. When bindToCurrentCollection=true, the source collection
+    // is resolved at render time from the current PDP's primary collection.
+    if (!input.collectionId && !input.bindToCurrentCollection) {
       errors.collectionId = "Collection is required for Mix & Match";
     }
     if (!Number.isInteger(input.targetQty) || (input.targetQty as number) < 2) {
@@ -107,6 +117,13 @@ export function validateBundle(input: BundleInput): ValidationResult {
 
   const styleErr = validateStyleOverrides(input.styleOverrides);
   if (styleErr) errors.styleOverrides = styleErr;
+
+  // If the merchant turned on "Include a free gift" but never picked a
+  // variant or product, the widget would render nothing and they'd never
+  // realize the gift didn't save. Catch this here.
+  if (input.freeGiftEnabled && !input.freeGiftVariantId && !input.freeGiftProductId) {
+    errors.freeGift = "Pick a free gift variant or product, or turn off the free gift toggle";
+  }
 
   return Object.keys(errors).length === 0 ? { valid: true } : { valid: false, errors };
 }

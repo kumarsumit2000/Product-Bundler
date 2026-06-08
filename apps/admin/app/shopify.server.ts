@@ -56,6 +56,7 @@ export type AppLoadContext = {
       SHOPIFY_API_SECRET: string;
       SHOPIFY_WEBHOOK_SECRET: string;
       DATABASE_ENCRYPTION_KEY: string;
+      CRON_TOKEN?: string;
     };
   };
 };
@@ -84,15 +85,41 @@ export function createShopifyApp(context: AppLoadContext) {
 }
 
 export const authenticate = {
-  admin: (request: Request, context: AppLoadContext) => {
+  admin: async (request: Request, context: AppLoadContext) => {
     const shopify = createShopifyApp(context);
-    return shopify.authenticate.admin(request);
+    const result = await shopify.authenticate.admin(request);
+    // Auto-heal the shop row: under `unstable_newEmbeddedAuthStrategy` the
+    // legacy /auth/* loader doesn't run on reinstall (token exchange bypasses
+    // it), so a stale `uninstalled_at` from a previous uninstall is left in
+    // place even after the merchant comes back. That stale value makes the
+    // storefront-config endpoint return 404 for the shop, silently breaking
+    // every storefront widget. Upsert on every admin request so the row's
+    // install state reflects what the SDK already verified.
+    await markShopInstalled(context, result.session.shop, result.session.scope ?? "").catch((err) => {
+      console.error("[shopify.auth] markShopInstalled failed:", err);
+    });
+    return result;
   },
   webhook: (request: Request, context: AppLoadContext) => {
     const shopify = createShopifyApp(context);
     return shopify.authenticate.webhook(request);
   },
 };
+
+async function markShopInstalled(context: AppLoadContext, shopId: string, scopes: string): Promise<void> {
+  // Lazy-import db helpers so this file stays a leaf of the dependency
+  // graph (it's imported from every route loader).
+  const { getDb, schema } = await import("./db.server");
+  const db = getDb(context.cloudflare.env.DB);
+  const now = new Date();
+  await db
+    .insert(schema.shops)
+    .values({ id: shopId, scopes, installedAt: now })
+    .onConflictDoUpdate({
+      target: schema.shops.id,
+      set: { scopes, uninstalledAt: null },
+    });
+}
 
 export const unauthenticated = {
   admin: (shop: string, context: AppLoadContext) => {

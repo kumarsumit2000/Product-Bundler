@@ -112,6 +112,12 @@ export function QbUpsellsBuilder({ enabled, onEnabledChange, upsells, onUpsellsC
                       helpText="Variables: {{saved_amount}}, {{discount}}"
                       placeholder="Save {{saved_amount}}!"
                     />
+                    <Checkbox
+                      label="Pre-select this upsell by default"
+                      checked={u.selectedByDefault}
+                      onChange={(selectedByDefault) => update(i, { selectedByDefault })}
+                      helpText="Customer sees the checkbox already ticked and the item already counted in the total — nudges higher AOV."
+                    />
                   </FormLayout>
                 </BlockStack>
               </Card>

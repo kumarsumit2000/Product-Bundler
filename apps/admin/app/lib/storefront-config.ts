@@ -3,9 +3,7 @@ import { schema } from "~/db.server";
 import * as bundleRepo from "./bundles/repo";
 import * as qbRepo from "./quantity-breaks/repo";
 import * as bxgyRepo from "./bxgy-offers/repo";
-import * as newsletterRepo from "./newsletter/repo";
 import * as pgRepo from "./progressive-gifts/repo";
-import * as countdownRepo from "./countdowns/repo";
 import {
   fetchProductDetails,
   fetchCollectionTopProducts,
@@ -22,7 +20,7 @@ export async function buildStorefrontConfig(
   admin: AdminGraphqlClient,
   shopId: string,
 ) {
-  const [bundlesAll, qbsAll, bxgyAll, settingsRow, shopRow, newsletter, pgsAll, countdownsAll] = await Promise.all([
+  const [bundlesAll, qbsAll, bxgyAll, settingsRow, shopRow, pgsAll] = await Promise.all([
     bundleRepo.listByShop(db, shopId),
     qbRepo.listByShop(db, shopId),
     bxgyRepo.listByShop(db, shopId),
@@ -38,41 +36,56 @@ export async function buildStorefrontConfig(
       .where(eq(schema.shops.id, shopId))
       .limit(1)
       .then((r: { currency: string; primaryLocale: string }[]) => r[0] ?? null),
-    newsletterRepo.getOrDefault(db, shopId),
     pgRepo.listByShop(db, shopId),
-    countdownRepo.listByShop(db, shopId),
   ]);
-  // (typed-deconstruct overflow — handled below)
 
   const progressiveGifts = pgsAll.filter((p) => p.status === "active");
 
-  const bundles = bundlesAll.filter((b) => b.status === "active");
-  const qbs = qbsAll.filter((q) => q.status === "active");
-  const bxgyOffers = bxgyAll.filter((o) => o.status === "active");
+  // Pre-sort by sortOrder ASC so the widget's match.ts always picks the
+  // merchant's chosen priority when multiple rules target the same PDP.
+  // Ties fall back to createdAt ASC (older rows win) — deterministic.
+  const bySort = <T extends { sortOrder?: number; createdAt: Date }>(a: T, b: T): number =>
+    (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.createdAt.getTime() - b.createdAt.getTime();
+  // Scheduling: only surface widgets currently inside their active window.
+  // Status=active is necessary but not sufficient — a scheduled-for-Black-Friday
+  // bundle is "active" all year but only renders during its window.
+  const now = Date.now();
+  const inWindow = (a: { activeStartAt?: Date | null; activeEndAt?: Date | null }): boolean => {
+    if (a.activeStartAt && now < a.activeStartAt.getTime()) return false;
+    if (a.activeEndAt && now > a.activeEndAt.getTime()) return false;
+    return true;
+  };
+  const bundles = bundlesAll.filter((b) => b.status === "active" && inWindow(b)).sort(bySort);
+  const qbs = qbsAll.filter((q) => q.status === "active" && inWindow(q)).sort(bySort);
+  const bxgyOffers = bxgyAll.filter((o) => o.status === "active" && inWindow(o)).sort(bySort);
+  // cart-upsells removed in Pumper-parity strip-down — preserve the
+  // empty array shape so any downstream consumers don't crash.
+  const cartUpsells: Array<never> = [];
 
   // Collect all product IDs that need details
   const allProductIds = new Set<string>();
+  // Shopify's GraphQL `nodes(ids: [ID!]!)` rejects empty/invalid global IDs
+  // with a 500. Merchants can save a QB/BXGY without picking a product (e.g.
+  // visibility=all on QB), so we have to defensively skip falsy ids here.
+  const addId = (id: string | null | undefined) => {
+    if (id && id.startsWith("gid://")) allProductIds.add(id);
+  };
   for (const b of bundles) {
     if (b.mode !== "mix_match") {
-      for (const p of b.products) allProductIds.add(p.productId);
+      for (const p of b.products) addId(p.productId);
     }
   }
-  for (const q of qbs) allProductIds.add(q.productId);
+  for (const q of qbs) addId(q.productId);
   for (const o of bxgyOffers) {
-    if (o.productId) allProductIds.add(o.productId);
-    if (o.freeGiftProductId) allProductIds.add(o.freeGiftProductId);
+    addId(o.productId);
+    addId(o.freeGiftProductId);
   }
   for (const pg of progressiveGifts) {
-    for (const t of pg.thresholds) {
-      if (t.giftProductId) allProductIds.add(t.giftProductId);
-    }
+    for (const t of pg.thresholds) addId(t.giftProductId);
   }
-  for (const b of bundles) {
-    if (b.freeGiftProductId) allProductIds.add(b.freeGiftProductId);
-  }
-  for (const q of qbs) {
-    if (q.freeGiftProductId) allProductIds.add(q.freeGiftProductId);
-  }
+  for (const b of bundles) addId(b.freeGiftProductId);
+  for (const q of qbs) addId(q.freeGiftProductId);
+  void cartUpsells; // intentionally unused after Pumper-parity strip-down
 
   const productMap = await fetchProductDetails(admin, [...allProductIds]);
 
@@ -162,6 +175,9 @@ export async function buildStorefrontConfig(
       isMostPopular: tr.isMostPopular,
       available: variants.some((v) => v.available),
       freeGiftVariantId: tr.freeGiftVariantId ?? null,
+      freeGiftVariantTitle: tr.freeGiftVariantId
+        ? (variantTitles[tr.freeGiftVariantId] ?? null)
+        : null,
       freeGiftAvailable: tr.freeGiftVariantId
         ? (variantAvailability[tr.freeGiftVariantId] ?? false)
         : null,
@@ -169,6 +185,9 @@ export async function buildStorefrontConfig(
         ? {
             mode: tr.bogo.mode,
             targetVariantId: tr.bogo.targetVariantId ?? null,
+            targetVariantTitle: tr.bogo.targetVariantId
+              ? (variantTitles[tr.bogo.targetVariantId] ?? null)
+              : null,
             bonusQty: tr.bogo.bonusQty,
             targetAvailable: tr.bogo.targetVariantId
               ? (variantAvailability[tr.bogo.targetVariantId] ?? false)
@@ -196,16 +215,15 @@ export async function buildStorefrontConfig(
       textOverrides: q.textOverrides,
       headline: q.headline,
       ctaLabel: q.ctaLabel,
-      subscription: q.subscription ?? null,
       visibility: q.visibility ?? "specific",
       visibilityProductIds: q.visibilityProductIds ?? [],
       visibilityCollectionIds: q.visibilityCollectionIds ?? [],
-      linkedCountdownId: q.linkedCountdownId ?? null,
       linkedProgressiveGiftId: q.linkedProgressiveGiftId ?? null,
       stickyAtc: q.stickyAtc ?? null,
       addonsOrder: q.addonsOrder ?? null,
       checkboxUpsellsEnabled: q.checkboxUpsellsEnabled ?? false,
       checkboxUpsells: q.checkboxUpsells ?? [],
+      bindToCurrentProduct: q.bindToCurrentProduct ?? false,
       freeGiftVariantId: q.freeGiftVariantId ?? null,
       freeGiftVariantTitle: q.freeGiftVariantId ? (variantTitles[q.freeGiftVariantId] ?? null) : null,
       freeGiftAvailable: q.freeGiftVariantId ? (variantAvailability[q.freeGiftVariantId] ?? false) : null,
@@ -244,6 +262,7 @@ export async function buildStorefrontConfig(
       mode: b.mode,
       products: b.mode === "mix_match" ? [] : b.products.map(enrichBundleProduct),
       collectionId: b.collectionId,
+      bindToCurrentCollection: b.bindToCurrentCollection ?? false,
       targetQty: b.targetQty,
       collectionProducts:
         b.mode === "mix_match" && b.collectionId
@@ -273,8 +292,6 @@ export async function buildStorefrontConfig(
             priceCents: v.priceCents,
           }))
         : null,
-      subscription: b.subscription ?? null,
-      linkedCountdownId: b.linkedCountdownId ?? null,
       linkedProgressiveGiftId: b.linkedProgressiveGiftId ?? null,
       stickyAtc: b.stickyAtc ?? null,
       addonsOrder: b.addonsOrder ?? null,
@@ -300,10 +317,10 @@ export async function buildStorefrontConfig(
         headline: o.headline,
         ctaLabel: o.ctaLabel,
         styleOverrides: o.styleOverrides,
+        textOverrides: o.textOverrides,
         visibility: o.visibility as "all" | "all_except" | "specific" | "collections",
         visibilityProductIds: o.visibilityProductIds,
         visibilityCollectionIds: o.visibilityCollectionIds,
-        linkedCountdownId: o.linkedCountdownId ?? null,
         linkedProgressiveGiftId: o.linkedProgressiveGiftId ?? null,
         addonsOrder: o.addonsOrder ?? null,
         stickyAtc: o.stickyAtc ?? null,
@@ -324,6 +341,7 @@ export async function buildStorefrontConfig(
           : null,
         checkboxUpsellsEnabled: o.checkboxUpsellsEnabled ?? false,
         checkboxUpsells: o.checkboxUpsells ?? [],
+        bindToCurrentProduct: o.bindToCurrentProduct ?? false,
       };
     }),
     progressiveGifts: progressiveGifts.map((pg) => ({
@@ -360,41 +378,15 @@ export async function buildStorefrontConfig(
         };
       }),
     })),
-    countdowns: countdownsAll
-      .filter((c) => c.status === "active")
-      .map((c) => ({
-        id: c.id,
-        name: c.name,
-        endAt: new Date(c.endAt).getTime(),
-        headline: c.headline,
-        expiredHeadline: c.expiredHeadline,
-        layout: c.layout as "inline" | "bar",
-        styleOverrides: c.styleOverrides ?? null,
-      })),
-    newsletter: newsletter.enabled
-      ? {
-          headline: newsletter.headline,
-          subtitle: newsletter.subtitle,
-          placeholder: newsletter.placeholder,
-          ctaLabel: newsletter.ctaLabel,
-          successMessage: newsletter.successMessage,
-          tags: newsletter.tags,
-          styleOverrides: newsletter.styleOverrides ?? null,
-          popup: newsletter.popupEnabled
-            ? {
-                trigger: newsletter.popupTrigger as "delay" | "exit_intent" | "scroll",
-                delaySeconds: newsletter.popupDelaySeconds,
-                scrollPercent: newsletter.popupScrollPercent,
-                frequencyDays: newsletter.popupFrequencyDays,
-                imageUrl: newsletter.popupImageUrl || null,
-                imagePosition: newsletter.popupImagePosition as "none" | "top" | "bottom" | "left" | "right",
-                excludedPaths: newsletter.excludedPaths
-                  .split(/[\n,]/)
-                  .map((s) => s.trim())
-                  .filter(Boolean),
-              }
-            : null,
-        }
-      : null,
+    // The newsletter / signup-form / cart-upsell / countdown / post-
+    // purchase surfaces were removed in the Pumper-parity strip-down.
+    // Empty payloads are kept on the response for one release so any
+    // older widget still hosted on a merchant theme degrades to "no
+    // surfaces present" instead of crashing on undefined access.
+    countdowns: [],
+    newsletter: null,
+    newsletterCampaigns: [],
+    signupForms: [],
+    cartUpsells: [],
   };
 }

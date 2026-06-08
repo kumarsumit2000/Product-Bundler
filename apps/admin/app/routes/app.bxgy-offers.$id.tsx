@@ -1,55 +1,45 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/cloudflare";
 import { json, redirect } from "@remix-run/cloudflare";
-import { useActionData, useLoaderData } from "@remix-run/react";
+import { useActionData, useLoaderData, useNavigation } from "@remix-run/react";
 import { useState } from "react";
 import { Page } from "@shopify/polaris";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
 import { getDb } from "~/db.server";
 import * as bxgyRepo from "~/lib/bxgy-offers/repo";
-import * as countdownRepo from "~/lib/countdowns/repo";
+import { parseDateLocal, toDatetimeLocal } from "~/lib/parse-date-local";
 import * as pgRepo from "~/lib/progressive-gifts/repo";
 import { enrichProgressiveGiftsForPreview } from "~/lib/preview-pg-enrich";
 import { syncShopConfig } from "~/lib/metafield-sync";
 import { ensureDiscountNodes } from "~/lib/discount-nodes";
 import { parseStickyAtc } from "~/lib/parse-sticky-atc";
 import { parseAddonsOrder } from "~/lib/parse-addons-order";
-import { BxgyForm, type BxgyFormValues } from "~/components/BxgyForm";
+import { BxgyForm, BXGY_FORM_ID, type BxgyFormValues } from "~/components/BxgyForm";
+import { submitFormById } from "~/lib/submit-form-by-id";
 import { PreviewPane } from "~/components/PreviewPane";
 import { EmbedCodeCard } from "~/components/EmbedCodeCard";
 import { STICKY_ATC_DEFAULTS } from "~/components/StickyAtcCard";
 import { DEFAULT_ADDONS_ORDER, type AddonsOrderItem } from "~/components/WidgetAddonsCard";
 import { buildPreviewBxgyConfig, defaultMockProduct, defaultPreviewSettings } from "~/lib/preview-config";
-import { buildStyleOverrides, styleOverridesToFormFields } from "~/lib/preview-overrides";
+import { buildStyleOverrides, buildTextOverrides, styleOverridesToFormFields } from "~/lib/preview-overrides";
 import { useSavedToast } from "~/lib/toast";
 import type { BxgyBarValue } from "~/components/BxgyBarBuilder";
-import type { StyleOverrides } from "../../drizzle/schema";
+import type { StyleOverrides, TextOverrides } from "../../drizzle/schema";
+
+const ALLOWED_BXGY_TEXT_KEYS = new Set(["bxgy.freeGiftCallout", "bxgy.freeGiftCallout.hidden"]);
 
 export async function loader({ request, params, context }: LoaderFunctionArgs) {
   const ctx = context as AppLoadContext;
   const { session, admin } = await authenticate.admin(request, ctx);
   const db = getDb(ctx.cloudflare.env.DB);
-  const [offer, countdowns, pgs] = await Promise.all([
+  const [offer, pgs] = await Promise.all([
     bxgyRepo.getById(db, session.shop, params.id!),
-    countdownRepo.listByShop(db, session.shop),
     pgRepo.listByShop(db, session.shop),
   ]);
   if (!offer) throw new Response("Not found", { status: 404 });
   const allProgressiveGifts = await enrichProgressiveGiftsForPreview(admin, pgs);
   return json({
     offer,
-    countdownOptions: countdowns.map((c) => ({ id: c.id, name: c.name })),
     progressiveGiftOptions: pgs.map((p) => ({ id: p.id, name: p.name })),
-    allCountdowns: countdowns
-      .filter((c) => c.status === "active")
-      .map((c) => ({
-        id: c.id,
-        name: c.name,
-        endAt: new Date(c.endAt).getTime(),
-        headline: c.headline,
-        expiredHeadline: c.expiredHeadline,
-        layout: c.layout as "inline" | "bar",
-        styleOverrides: (c.styleOverrides ?? null) as Record<string, unknown> | null,
-      })),
     allProgressiveGifts,
   });
 }
@@ -62,7 +52,10 @@ export async function action({ request, params, context }: ActionFunctionArgs) {
   if (!name) return json({ errors: { name: "Name is required" } }, { status: 400 });
 
   const productId = ((form.get("productId") as string) || "").trim();
-  if (!productId) return json({ errors: { productId: "Pick a product" } }, { status: 400 });
+  const bindToCurrentProduct = form.get("bindToCurrentProduct") === "on";
+  if (!productId && !bindToCurrentProduct) {
+    return json({ errors: { productId: "Pick a product" } }, { status: 400 });
+  }
 
   let bars: BxgyBarValue[] = [];
   try { bars = JSON.parse((form.get("bars") as string) || "[]"); } catch { bars = []; }
@@ -84,7 +77,6 @@ export async function action({ request, params, context }: ActionFunctionArgs) {
   })();
   const visibilityProductIds = visibility === "specific" ? [productId] : visibilityProductIdsRaw;
 
-  const linkedCountdownId = ((form.get("linkedCountdownId") as string) || "").trim() || null;
   const linkedProgressiveGiftId = ((form.get("linkedProgressiveGiftId") as string) || "").trim() || null;
   const stickyAtc = parseStickyAtc(form.get("stickyAtc") as string | null);
   const addonsOrder = parseAddonsOrder(form.get("addonsOrder") as string | null);
@@ -108,6 +100,18 @@ export async function action({ request, params, context }: ActionFunctionArgs) {
     parsedStyleOverrides = Object.keys(filtered).length > 0 ? (filtered as StyleOverrides) : null;
   } catch { parsedStyleOverrides = null; }
 
+  const textOverridesRaw = (form.get("textOverrides") as string) || "{}";
+  let parsedTextOverrides: TextOverrides | null = null;
+  try {
+    const to = JSON.parse(textOverridesRaw) as Record<string, unknown>;
+    const filtered: Record<string, string> = {};
+    for (const [k, v] of Object.entries(to)) {
+      if (!ALLOWED_BXGY_TEXT_KEYS.has(k)) continue;
+      if (typeof v === "string" && v.length > 0 && v.length <= 120) filtered[k] = v;
+    }
+    parsedTextOverrides = Object.keys(filtered).length > 0 ? (filtered as TextOverrides) : null;
+  } catch { parsedTextOverrides = null; }
+
   const db = getDb(ctx.cloudflare.env.DB);
   await bxgyRepo.update(db, session.shop, params.id!, {
     name,
@@ -117,11 +121,15 @@ export async function action({ request, params, context }: ActionFunctionArgs) {
     ctaLabel: ((form.get("ctaLabel") as string) || "") || null,
     bars,
     combinable: form.get("combinable") === "on",
+    bindToCurrentProduct,
+    sortOrder: Math.max(0, parseInt((form.get("sortOrder") as string) || "0", 10) || 0),
+    activeStartAt: parseDateLocal(form.get("activeStartAt") as string),
+    activeEndAt: parseDateLocal(form.get("activeEndAt") as string),
     visibility,
     visibilityProductIds,
     visibilityCollectionIds,
     styleOverrides: parsedStyleOverrides,
-    linkedCountdownId,
+    textOverrides: parsedTextOverrides,
     linkedProgressiveGiftId,
     stickyAtc,
     addonsOrder,
@@ -140,9 +148,11 @@ export async function action({ request, params, context }: ActionFunctionArgs) {
 }
 
 export default function BxgyEdit() {
-  const { offer, countdownOptions, progressiveGiftOptions, allCountdowns, allProgressiveGifts } = useLoaderData<typeof loader>();
+  const { offer, progressiveGiftOptions, allProgressiveGifts } = useLoaderData<typeof loader>();
   useSavedToast();
   const actionData = useActionData<typeof action>();
+  const navigation = useNavigation();
+  const isSubmitting = navigation.state === "submitting";
   const errors = actionData && "errors" in actionData ? actionData.errors : undefined;
   const snippet = `<div data-pumper-bxgy="${offer.id}"></div>`;
   const [values, setValues] = useState<BxgyFormValues | null>(null);
@@ -157,6 +167,10 @@ export default function BxgyEdit() {
     ctaLabel: offer.ctaLabel ?? "",
     bars: offer.bars,
     combinable: offer.combinable,
+    bindToCurrentProduct: offer.bindToCurrentProduct ?? false,
+    sortOrder: String(offer.sortOrder ?? 0),
+    activeStartAt: toDatetimeLocal(offer.activeStartAt as Date | null),
+    activeEndAt: toDatetimeLocal(offer.activeEndAt as Date | null),
     visibility: (offer.visibility as BxgyFormValues["visibility"]) ?? "specific",
     visibilityProducts: (offer.visibilityProductIds ?? [])
       .filter((id) => id !== offer.productId)
@@ -164,7 +178,6 @@ export default function BxgyEdit() {
     visibilityCollections: (offer.visibilityCollectionIds ?? []).map((id) => ({
       collectionId: id, title: id,
     })),
-    linkedCountdownId: offer.linkedCountdownId ?? null,
     linkedProgressiveGiftId: offer.linkedProgressiveGiftId ?? null,
     addonsOrder: (offer.addonsOrder as AddonsOrderItem[] | null) ?? [...DEFAULT_ADDONS_ORDER],
     stickyAtc: offer.stickyAtc
@@ -198,6 +211,10 @@ export default function BxgyEdit() {
       selectedByDefault: u.selectedByDefault,
     })),
     ...styleOverridesToFormFields(offer.styleOverrides as Record<string, unknown> | null),
+    textOverrides: {
+      "bxgy.freeGiftCallout": (offer.textOverrides as Record<string, string> | null)?.["bxgy.freeGiftCallout"] ?? "",
+      "bxgy.freeGiftCallout.hidden": (offer.textOverrides as Record<string, string> | null)?.["bxgy.freeGiftCallout.hidden"] ?? "",
+    },
   };
 
   const previewConfig = values
@@ -219,7 +236,7 @@ export default function BxgyEdit() {
           headline: values.headline || null,
           ctaLabel: values.ctaLabel || null,
           styleOverrides: buildStyleOverrides(values),
-          linkedCountdownId: values.linkedCountdownId,
+          textOverrides: buildTextOverrides(values.textOverrides),
           linkedProgressiveGiftId: values.linkedProgressiveGiftId,
           addonsOrder: values.addonsOrder,
           freeGiftVariantId: values.freeGiftEnabled && values.freeGiftMode === "variant"
@@ -261,14 +278,13 @@ export default function BxgyEdit() {
           })),
         },
         addons: {
-          countdowns: allCountdowns,
           progressiveGifts: allProgressiveGifts,
         },
       })
     : null;
 
   return (
-    <Page title={offer.name} backAction={{ content: "Buy X, get Y", url: "/app/bxgy-offers" }}>
+    <Page title={offer.name} backAction={{ content: "Buy X, get Y", url: "/app/bxgy-offers" }} primaryAction={{ content: "Save changes", onAction: () => submitFormById(BXGY_FORM_ID), loading: isSubmitting }}>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
         <div>
           <BxgyForm
@@ -276,7 +292,6 @@ export default function BxgyEdit() {
             errors={errors}
             initialValues={initial}
             onValuesChange={setValues}
-            countdownOptions={countdownOptions}
             progressiveGiftOptions={progressiveGiftOptions}
           />
         </div>

@@ -106,6 +106,14 @@ export function renderBundle(mount: HTMLElement, bundle: BundleConfig, config: W
     ? `<div class="pumper-qb-gift-badge pumper-qb-gift-badge--unavailable">🎁 Free gift unavailable — out of stock</div>`
     : "";
 
+  const giftIncluded =
+    (bundle.freeGiftVariantId && bundle.freeGiftAvailable) ||
+    (bundle.freeGiftProductId && (bundle.freeGiftProductVariants ?? []).some((v) => v.available));
+  const calloutHidden = bundle.textOverrides?.["bundle.freeGiftCallout.hidden"] === "1";
+  const giftCallout = giftIncluded && !calloutHidden
+    ? `<div class="pumper-qb-tier-gift">${escapeHtml(tWith(bundle.textOverrides, "bundle.freeGiftCallout"))}</div>`
+    : "";
+
   const ctaLabel = anyOOS
     ? t("bundle.unavailable")
     : (bundle.ctaLabel ?? (totals.savingsCents > 0
@@ -117,6 +125,7 @@ export function renderBundle(mount: HTMLElement, bundle: BundleConfig, config: W
       <h3 class="pumper-bundle-heading">${escapeHtml(heading)}</h3>
       <div class="pumper-bundle-rows">${rows}</div>
       ${giftBadge}
+      ${giftCallout}
       ${totalLine}
       <button class="pumper-cta" data-action="add-to-cart" ${anyOOS ? "disabled" : ""}>${escapeHtml(ctaLabel)}</button>
     </section>
