@@ -1,9 +1,16 @@
 import type { QbConfig, QbTier, WidgetConfig } from "./types";
 import { addToCart } from "./add-to-cart";
 import type { CartLineInput } from "./add-to-cart";
+import { createPurchaseOptions } from "./render-purchase-options";
+import type { PurchaseOptions, PurchaseSelection } from "./render-purchase-options";
 import { emit } from "./analytics";
 import { formatMoney } from "./format";
 import { t, tWith } from "./i18n";
+
+const INERT_PURCHASE_OPTIONS: PurchaseOptions = {
+  active: false,
+  getSelection: () => ({ mode: "onetime", sellingPlanId: null }),
+};
 
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
@@ -94,6 +101,57 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
   if (selectedIndex < 0) selectedIndex = 0;
 
   const heading = qb.headline || config.settings.qbHeadline || t("qb.heading");
+
+  // Subscribe & Save purchase options. The whole mount is rewritten on every
+  // tier click (renderAll), so the controller is re-created after each render
+  // into a dedicated slot inside the card. We persist the user's One-time vs
+  // Subscribe choice (and chosen plan) across those re-creations via a closure
+  // so switching tiers doesn't reset it. `purchaseOptions` is the live handle
+  // the add-to-cart click reads. When subscription is disabled it stays inert.
+  const subEnabled = qb.subscription?.enabled === true;
+  let purchaseOptions: PurchaseOptions = INERT_PURCHASE_OPTIONS;
+  let savedSelection: PurchaseSelection = { mode: "onetime", sellingPlanId: null };
+
+  const mountPurchaseOptions = () => {
+    if (!subEnabled || !qb.subscription) {
+      purchaseOptions = INERT_PURCHASE_OPTIONS;
+      return;
+    }
+    const slot = mount.querySelector<HTMLElement>(".pumper-qb-po");
+    if (!slot) {
+      purchaseOptions = INERT_PURCHASE_OPTIONS;
+      return;
+    }
+    const pumper = typeof window !== "undefined" ? window._pumperConfig : undefined;
+    const subGroups = pumper?.sellingPlanGroups ?? [];
+    const subAllocations =
+      pumper?.productVariants?.find((v) => v.variantId === variant.variantId)?.sellingPlanAllocations ?? [];
+
+    purchaseOptions = createPurchaseOptions(slot, qb.subscription, {
+      groups: subGroups,
+      allocations: subAllocations,
+      oneTimePriceCents: variant.priceCents,
+      currency: config.settings.currency,
+      locale: config.settings.locale,
+    });
+
+    // Restore the previously chosen mode/plan after a re-create so the user's
+    // selection survives tier switches. createPurchaseOptions has no initial-
+    // state arg, so we replay the choice by clicking the relevant row.
+    if (purchaseOptions.active && savedSelection.mode === "subscribe") {
+      slot.querySelector<HTMLElement>('[data-po-mode="subscribe"]')?.click();
+      if (savedSelection.sellingPlanId) {
+        const planSel = slot.querySelector<HTMLSelectElement>(".pumper-po-plan");
+        if (planSel && planSel.value !== savedSelection.sellingPlanId) {
+          const hasPlan = Array.from(planSel.options).some((o) => o.value === savedSelection.sellingPlanId);
+          if (hasPlan) {
+            planSel.value = savedSelection.sellingPlanId;
+            planSel.dispatchEvent(new Event("change"));
+          }
+        }
+      }
+    }
+  };
 
   const renderRows = () => qb.tiers.map((tr, i) => {
     const unitCents = tierUnitCents(tr, variant.priceCents);
@@ -269,9 +327,11 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
         <div class="pumper-qb-tiers">${renderRows()}</div>
         ${renderQbGiftRow()}
         ${renderUpsells()}
+        ${subEnabled ? `<div class="pumper-qb-po"></div>` : ""}
         ${renderCta()}
       </section>
     `;
+    mountPurchaseOptions();
     bindHandlers();
   };
 
@@ -281,6 +341,8 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
         const idx = parseInt(row.dataset.tierIndex!, 10);
         if (qb.tiers[idx]?.available === false) return;
         selectedIndex = idx;
+        // Persist the purchase-options choice across the re-render below.
+        savedSelection = purchaseOptions.getSelection();
         emit("widget_click", { widgetType: "qb", widgetId: qb.id, productId: qb.productId, tierQty: qb.tiers[idx]!.qty });
         renderAll();
       });
@@ -294,8 +356,9 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
         cta.disabled = true;
         const unitCents = tierUnitCents(tr, variant.priceCents);
 
+        const poSel = purchaseOptions.getSelection();
         const lines: CartLineInput[] = [
-          { variantId: variant.variantId, qty: tr.qty, bundleId: qb.id },
+          { variantId: variant.variantId, qty: tr.qty, bundleId: qb.id, sellingPlanId: poSel.sellingPlanId ?? undefined },
         ];
 
         if (tr.freeGiftVariantId && tr.freeGiftAvailable !== false) {
