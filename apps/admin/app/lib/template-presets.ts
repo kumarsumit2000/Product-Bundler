@@ -2,6 +2,9 @@
 // new-form initial values so a merchant who picks a card from /app/new lands
 // on a form that already looks like the preview they clicked.
 
+import { EMPTY_SUBSCRIPTION } from "./parse-subscription";
+import type { SubscriptionConfig } from "../../drizzle/schema";
+
 export type QbTemplateTier = {
   qty: number;
   discountType: "percentage" | "flat" | "fixed_per_unit";
@@ -19,6 +22,7 @@ export type QbTemplate = {
   tiers: QbTemplateTier[];
   freeGiftMinQty?: number;
   freeGiftEnabled?: boolean;
+  subscription?: SubscriptionConfig;
 };
 
 export function qbTemplate(template: string | null): QbTemplate | null {
@@ -107,6 +111,17 @@ export function qbTemplate(template: string | null): QbTemplate | null {
           { qty: 8, discountType: "percentage", discountValue: 20, label: "Save 20%", isMostPopular: false },
           { qty: 12, discountType: "percentage", discountValue: 25, label: "Save 25%", isMostPopular: false },
         ],
+      };
+    case "qb_subscribe":
+      return {
+        name: "Subscribe & Save",
+        headline: "Subscribe & Save",
+        ctaLabel: "",
+        tiers: [
+          { qty: 1, discountType: "percentage", discountValue: 0, label: "1 Pack", isMostPopular: false },
+          { qty: 2, discountType: "percentage", discountValue: 20, label: "2 Packs", isMostPopular: true },
+        ],
+        subscription: { ...EMPTY_SUBSCRIPTION, enabled: true },
       };
     case "qb_b2b_bulk":
       return {

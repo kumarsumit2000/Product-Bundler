@@ -21,6 +21,7 @@ type CardKey =
   | "qb_free_gift"
   | "qb_tiered_5"
   | "qb_b2b_bulk"
+  | "qb_subscribe"
   | "bogo_simple"
   | "mix_match"
   | "mix_match_5"
@@ -139,6 +140,15 @@ function PreviewQbSame() {
     <BlockStack gap="200">
       <Row title="Single" sub="Standard price" price="$729.95" />
       <Row selected popular="Most Popular" title="Duo" sub="You save 15%" save="SAVE $218.98" price="$1,240.92" strike="$1,459.90" />
+    </BlockStack>
+  );
+}
+
+function PreviewQbSubscribe() {
+  return (
+    <BlockStack gap="200">
+      <Row title="1 Pack" sub="One-time purchase" price="$729.95" />
+      <Row selected popular="Subscribe & Save" title="2 Packs" sub="Subscribe & Save 20%" save="SAVE 20%" price="$1,167.92" strike="$1,459.90" />
     </BlockStack>
   );
 }
@@ -449,6 +459,7 @@ const CARDS: CardSpec[] = [
   { key: "qb_tiered_5", title: "Tiered savings (5 tiers)", href: "/app/quantity-breaks/new", preview: PreviewQbTiered5 },
   { key: "qb_b2b_bulk", title: "B2B bulk pricing", href: "/app/quantity-breaks/new", preview: PreviewQbB2bBulk },
   { key: "qb_free_gift", title: "Free gift with purchase", href: "/app/quantity-breaks/new", preview: PreviewQbFreeGift },
+  { key: "qb_subscribe", title: "Subscribe & Save", href: "/app/quantity-breaks/new", preview: PreviewQbSubscribe },
   { key: "bogo_simple", title: "Buy 1, get 1 free (single tier)", href: "/app/quantity-breaks/new", preview: PreviewBogoSimple },
   { key: "bxgy", title: "Buy X, get Y (BXGY) deal", href: "/app/bxgy-offers/new", preview: PreviewBxgy },
   { key: "bxgy_b2g1", title: "Buy 2, get 1 free", href: "/app/bxgy-offers/new", preview: PreviewBxgyB2g1 },

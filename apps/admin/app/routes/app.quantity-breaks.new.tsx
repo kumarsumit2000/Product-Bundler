@@ -223,6 +223,7 @@ export default function QbNew() {
               freeGiftMinQty: String(preset.freeGiftMinQty ?? 1),
             }
           : {}),
+        ...(preset.subscription ? { subscription: preset.subscription } : {}),
         ...(theme ? { primaryColor: theme } : {}),
       }
     : undefined;
