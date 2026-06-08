@@ -362,3 +362,84 @@
   .pumper-sticky-cta { padding: 10px 14px; }
 }
 
+/* ============================================================
+   Subscribe & Save — purchase options block
+   Rendered by render-purchase-options.ts into a QB/bundle card.
+   ============================================================ */
+.pumper-po {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+  /* Reserve space so the block doesn't shift layout (CLS) as it renders. */
+  min-height: 96px;
+}
+.pumper-po-heading {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 2px;
+  color: var(--pumper-block-title-color, var(--pumper-text, #1A1A1A));
+}
+.pumper-po-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 2px;
+  background: var(--pumper-tier-bg, #fff);
+  border: 1px solid var(--pumper-border, #e3e3e3);
+  border-radius: var(--pumper-radius, 8px);
+  padding: 10px;
+  cursor: pointer;
+  position: relative;
+}
+.pumper-po-row > input[type="radio"] { grid-row: 1; margin: 0; }
+.pumper-po-onetime,
+.pumper-po-title { grid-column: 2; font-size: 13px; font-weight: 600; }
+.pumper-po-price { grid-column: 3; grid-row: 1; text-align: right; font-weight: 700; font-size: 14px; color: var(--pumper-price-color, inherit); }
+.pumper-po-subtitle,
+.pumper-po-details { grid-column: 2 / span 2; font-size: 11px; color: var(--pumper-subtitle-color, #888); }
+.pumper-po-plan {
+  grid-column: 2 / span 2;
+  margin-top: 4px;
+  max-width: 100%;
+  padding: 6px 8px;
+  font-size: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #fff;
+}
+.pumper-po-save {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #e7f6ec;
+  color: #1a7f37;
+  font-size: 11px;
+  font-weight: 600;
+  vertical-align: middle;
+}
+/* Selected state mirrors the QB selected tier (accent border + tint). */
+.pumper-po-row[aria-selected="true"],
+.pumper-po-row:has(input:checked) {
+  border-color: var(--pumper-primary, #7B1E2A);
+  background: var(--pumper-selected-bg, #fff7f8);
+}
+
+/* Modern: richer rounded card with a bit more breathing room. */
+.pumper-po-modern .pumper-po-row { border-radius: 10px; padding: 12px; }
+.pumper-po-modern .pumper-po-row[aria-selected="true"],
+.pumper-po-modern .pumper-po-row:has(input:checked) {
+  border-width: 2px;
+  box-shadow: inset 0 0 0 1px var(--pumper-primary, #7B1E2A);
+}
+/* Classic: flatter, squarer, no inner ring. */
+.pumper-po-classic { gap: 0; }
+.pumper-po-classic .pumper-po-row { border-radius: 4px; }
+.pumper-po-classic .pumper-po-row + .pumper-po-row { border-top: 0; }
+.pumper-po-classic .pumper-po-row[aria-selected="true"],
+.pumper-po-classic .pumper-po-row:has(input:checked) {
+  box-shadow: none;
+}
+

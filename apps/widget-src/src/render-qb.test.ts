@@ -89,7 +89,7 @@ describe("renderQb", () => {
       QB.tiers[2]!,
     ]};
     renderQb(mount, q, CONFIG);
-    const badges = mount.querySelectorAll(".pumper-qb-gift-badge");
+    const badges = mount.querySelectorAll(".pumper-qb-tier-gift");
     expect(badges.length).toBeGreaterThanOrEqual(2);
   });
 
@@ -101,7 +101,7 @@ describe("renderQb", () => {
     ]};
     renderQb(mount, q, CONFIG);
     const tierRow = mount.querySelectorAll(".pumper-qb-tier")[1] as HTMLElement;
-    expect(tierRow.querySelector(".pumper-qb-gift-badge--unavailable")).not.toBeNull();
+    expect(tierRow.querySelector(".pumper-qb-tier-gift--unavailable")).not.toBeNull();
   });
 
   it("renders override for qb.mostPopular when set", () => {

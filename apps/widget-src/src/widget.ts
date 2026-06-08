@@ -7,6 +7,7 @@ import { renderMixMatch } from "./render-mix-match";
 import { renderBxgy } from "./render-bxgy";
 import { renderProgressive } from "./render-progressive";
 import { startStickyAtc } from "./render-sticky-atc";
+import { hideThirdPartySubscriptionWidgets } from "./render-purchase-options";
 import { configureAnalytics } from "./analytics";
 import { setLocale } from "./i18n";
 
@@ -365,6 +366,15 @@ export async function initWidget(): Promise<void> {
   for (const m of mounts) renderMount(m, cfg);
   for (const sc of shortcodes) renderShortcode(sc.el, sc.kind, sc.id, cfg);
   const isPreview = !!window._pumperPreview;
+
+  // If any active offer opts into hiding other apps' subscription widgets,
+  // sweep them off the page once so ours is the only purchase-options UI.
+  const anyHide = [
+    ...cfg.bundles,
+    ...cfg.quantityBreaks,
+    ...(cfg.bxgyOffers ?? []),
+  ].some((o) => o.subscription?.enabled && o.subscription?.hideThirdPartyWidget);
+  if (anyHide) hideThirdPartySubscriptionWidgets();
 
   // Defensively clear any leftover removed-surface mount markers from
   // older Bundler installs still pinned to a merchant theme.

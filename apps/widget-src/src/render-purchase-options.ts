@@ -65,3 +65,15 @@ export function createPurchaseOptions(mount: HTMLElement, cfg: SubscriptionConfi
 
   return { active: true, getSelection: () => ({ mode, sellingPlanId: mode === "subscribe" ? selectedPlanId : null }) };
 }
+
+const THIRD_PARTY_SUB_SELECTORS = [
+  "[data-subscription-widget]", ".rc_widget", ".shopify-subscription-widget",
+  ".seal-subscription-widget", ".appstle_subscription_wrapper", ".subscription-widget",
+];
+// Best-effort: hide other apps' subscription widgets so ours is the only one shown.
+export function hideThirdPartySubscriptionWidgets(): void {
+  if (typeof document === "undefined") return;
+  for (const sel of THIRD_PARTY_SUB_SELECTORS) {
+    document.querySelectorAll<HTMLElement>(sel).forEach((el) => { el.style.display = "none"; });
+  }
+}
