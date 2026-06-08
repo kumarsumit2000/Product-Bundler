@@ -79,6 +79,20 @@ export type StyleOverrides = Partial<{
 
 export type TextOverrides = Record<string, string>;
 
+export type SubscriptionConfig = {
+  enabled: boolean;
+  heading: string;
+  title: string;
+  subtitle: string;
+  details: string;
+  widgetStyle: "modern" | "classic";
+  showDiscountLabel: boolean;
+  hideThirdPartyWidget: boolean;
+};
+
+export type SellingPlanAllocation = { planId: string; priceCents: number };
+export type SellingPlanGroup = { id: string; name: string; plans: { id: string; name: string }[] };
+
 export type BundleConfig = {
   id: string;
   name: string;
@@ -114,6 +128,7 @@ export type BundleConfig = {
   linkedProgressiveGiftId?: string | null;
   stickyAtc?: StickyAtcConfig | null;
   addonsOrder?: string[] | null;
+  subscription?: SubscriptionConfig | null;
 };
 
 export type QbVariant = {
@@ -121,6 +136,7 @@ export type QbVariant = {
   title: string;
   available: boolean;
   priceCents: number;
+  sellingPlanAllocations?: SellingPlanAllocation[];
 };
 
 export type QbTier = {
@@ -198,6 +214,7 @@ export type QbConfig = {
     available: boolean;
     priceCents: number;
   }> | null;
+  subscription?: SubscriptionConfig | null;
 };
 
 export type Settings = {
@@ -327,6 +344,7 @@ export type BxgyOfferConfig = {
   }> | null;
   checkboxUpsellsEnabled?: boolean;
   checkboxUpsells?: QbCheckboxUpsell[];
+  subscription?: SubscriptionConfig | null;
 };
 
 export type WidgetConfig = {
@@ -360,6 +378,8 @@ declare global {
       currentCollectionId?: string;
       currentCollectionProducts?: CollectionProduct[];
       customerId?: string;
+      sellingPlanGroups?: SellingPlanGroup[];
+      requiresSellingPlan?: boolean;
     };
     _pumperPreview?: boolean;
     _pumperPreviewConfig?: WidgetConfig;
