@@ -87,6 +87,7 @@ describe("syncShopConfig", () => {
       ctaLabel: null,
       freeGiftVariantId: null,
       freeGiftProductId: null,
+      subscription: null,
       linkedCountdownId: null,
       linkedProgressiveGiftId: null,
       stickyAtc: null,
@@ -138,6 +139,7 @@ describe("syncShopConfig", () => {
       addonsOrder: null,
       freeGiftVariantId: null,
       freeGiftProductId: null,
+      subscription: null,
       freeGiftMinQty: 1,
     });
     const { admin, calls } = makeAdmin();
@@ -173,6 +175,7 @@ describe("syncShopConfig", () => {
       ctaLabel: null,
       freeGiftVariantId: null,
       freeGiftProductId: null,
+      subscription: null,
       mode: "mix_match",
       collectionId: "gid://shopify/Collection/9",
       bindToCurrentCollection: false,
@@ -238,6 +241,7 @@ describe("syncShopConfig", () => {
       addonsOrder: null,
       freeGiftVariantId: null,
       freeGiftProductId: null,
+      subscription: null,
       freeGiftMinQty: 1,
     });
     const { admin, calls } = makeAdmin();
@@ -277,6 +281,7 @@ describe("syncShopConfig", () => {
       ctaLabel: null,
       freeGiftVariantId: null,
       freeGiftProductId: null,
+      subscription: null,
       linkedCountdownId: null,
       linkedProgressiveGiftId: null,
       stickyAtc: null,

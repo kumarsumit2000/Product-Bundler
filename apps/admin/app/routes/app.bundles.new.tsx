@@ -160,6 +160,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     linkedCountdownId: null,
     stickyAtc,
     addonsOrder,
+    subscription: null,
   });
 
   try {

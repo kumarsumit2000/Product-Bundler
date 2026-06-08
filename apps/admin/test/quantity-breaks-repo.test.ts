@@ -33,6 +33,7 @@ const NEW_QB_INPUT = {
   textOverrides: null,
   headline: null,
   ctaLabel: null,
+  subscription: null,
   visibility: "specific" as const,
   visibilityProductIds: [],
   visibilityCollectionIds: [],

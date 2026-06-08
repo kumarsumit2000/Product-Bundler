@@ -162,6 +162,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     textOverrides: input.textOverrides,
     headline: input.headline,
     ctaLabel: input.ctaLabel,
+    subscription: null,
     visibility: normalizedVisibility,
     visibilityProductIds,
     visibilityCollectionIds,

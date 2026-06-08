@@ -130,6 +130,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     visibilityProductIds,
     visibilityCollectionIds,
     styleOverrides: parsedStyleOverrides,
+    subscription: null,
     textOverrides: parsedTextOverrides,
     linkedProgressiveGiftId,
     linkedCountdownId: null,

@@ -51,6 +51,17 @@ export type QbTier = {
 export type LayoutVariant = "list" | "grid";
 export type FontStyle = "regular" | "medium" | "semibold" | "bold";
 
+export type SubscriptionConfig = {
+  enabled: boolean;
+  heading: string;            // "Purchase Options"
+  title: string;              // "Subscribe & Save"
+  subtitle: string;           // "Cancel anytime"
+  details: string;            // "Enjoy flexible billing & discounts"
+  widgetStyle: "modern" | "classic";
+  showDiscountLabel: boolean;
+  hideThirdPartyWidget: boolean;
+};
+
 export type StickyAtcConfig = {
   enabled: boolean;
   showImage: boolean;
@@ -160,6 +171,7 @@ export const bundles = sqliteTable("bundles", {
   ctaLabel: text("cta_label"),
   freeGiftVariantId: text("free_gift_variant_id"),
   freeGiftProductId: text("free_gift_product_id"),
+  subscription: text("subscription", { mode: "json" }).$type<SubscriptionConfig | null>(),
   mode: text("mode", { enum: ["classic", "mix_match"] }).notNull().default("classic"),
   collectionId: text("collection_id"),
   bindToCurrentCollection: integer("bind_to_current_collection", { mode: "boolean" }).notNull().default(false),
@@ -206,6 +218,7 @@ export const quantityBreaks = sqliteTable("quantity_breaks", {
   textOverrides: text("text_overrides", { mode: "json" }).$type<TextOverrides | null>(),
   headline: text("headline"),
   ctaLabel: text("cta_label"),
+  subscription: text("subscription", { mode: "json" }).$type<SubscriptionConfig | null>(),
   visibility: text("visibility").notNull().default("specific"),
   visibilityProductIds: text("visibility_product_ids", { mode: "json" }).$type<string[]>().notNull().default([]),
   visibilityCollectionIds: text("visibility_collection_ids", { mode: "json" }).$type<string[]>().notNull().default([]),
@@ -352,6 +365,7 @@ export const bxgyOffers = sqliteTable("bxgy_offers", {
   visibilityProductIds: text("visibility_product_ids", { mode: "json" }).$type<string[]>().notNull().default([]),
   visibilityCollectionIds: text("visibility_collection_ids", { mode: "json" }).$type<string[]>().notNull().default([]),
   styleOverrides: text("style_overrides", { mode: "json" }).$type<StyleOverrides | null>(),
+  subscription: text("subscription", { mode: "json" }).$type<SubscriptionConfig | null>(),
   textOverrides: text("text_overrides", { mode: "json" }).$type<TextOverrides | null>(),
   linkedCountdownId: text("linked_countdown_id"),
   linkedProgressiveGiftId: text("linked_progressive_gift_id"),
