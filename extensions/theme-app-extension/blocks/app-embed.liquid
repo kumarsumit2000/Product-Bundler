@@ -19,8 +19,19 @@
         variantId: "gid://shopify/ProductVariant/{{ v.id }}",
         title: {{ v.title | json }},
         priceCents: {{ v.price }},
-        available: {{ v.available | json }}
+        available: {{ v.available | json }},
+        sellingPlanAllocations: [
+          {% for a in v.selling_plan_allocations %}{ planId: "gid://shopify/SellingPlan/{{ a.selling_plan.id }}", priceCents: {{ a.per_delivery_price | default: a.price }} }{% unless forloop.last %},{% endunless %}{% endfor %}
+        ]
       }{% unless forloop.last %},{% endunless %}
+      {% endfor %}
+    ],
+    requiresSellingPlan: {{ product.requires_selling_plan | json }},
+    sellingPlanGroups: [
+      {% for g in product.selling_plan_groups %}
+      { id: {{ g.id | json }}, name: {{ g.name | json }}, plans: [
+        {% for p in g.selling_plans %}{ id: "gid://shopify/SellingPlan/{{ p.id }}", name: {{ p.name | json }} }{% unless forloop.last %},{% endunless %}{% endfor %}
+      ] }{% unless forloop.last %},{% endunless %}
       {% endfor %}
     ],
     {% comment %}
