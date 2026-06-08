@@ -6,6 +6,7 @@ export type CartLineInput = {
   bundleId?: string;
   giftBundleId?: string;
   extraProperties?: Record<string, string>;
+  sellingPlanId?: string;
 };
 
 export type AddResult = { ok: true } | { ok: false; error: string };
@@ -14,7 +15,9 @@ export type AddResult = { ok: true } | { ok: false; error: string };
 // gid://shopify/ProductVariant/<n> form. Variants stored in our config are
 // GIDs (from Admin API); strip down before submitting to the storefront cart.
 export function toCartVariantId(variantId: string): string {
-  const m = variantId.match(/\/ProductVariant\/(\d+)/);
+  // Strip a gid://shopify/<Type>/<n> global id down to the trailing numeric id.
+  // Covers ProductVariant (cart item id) and SellingPlan (selling_plan id).
+  const m = variantId.match(/\/(?:ProductVariant|SellingPlan)\/(\d+)/);
   return m ? m[1]! : variantId;
 }
 
@@ -52,6 +55,9 @@ export async function addToCart(
   lines.forEach((l, i) => {
     formData.append(`items[${i}][id]`, toCartVariantId(l.variantId));
     formData.append(`items[${i}][quantity]`, String(l.qty));
+    if (l.sellingPlanId) {
+      formData.append(`items[${i}][selling_plan]`, toCartVariantId(l.sellingPlanId));
+    }
     const properties: Record<string, string> = {};
     if (l.bundleId) properties._pumper_bundle_id = l.bundleId;
     if (l.giftBundleId) properties._pumper_gift_id = l.giftBundleId;

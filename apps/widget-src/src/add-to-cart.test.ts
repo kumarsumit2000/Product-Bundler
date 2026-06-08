@@ -129,4 +129,18 @@ describe("addToCart", () => {
     expect(result.ok).toBe(true);
     expect(window.location.href).toBe("");
   });
+
+  it("appends items[i][selling_plan] when sellingPlanId is set", async () => {
+    const calls: FormData[] = [];
+    const fetchMock = vi.fn(async (_url: string, init: any) => {
+      calls.push(init.body as FormData);
+      return new Response(JSON.stringify({ items: [] }), { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    Object.defineProperty(window, "location", { value: { href: "" }, writable: true });
+    await addToCart("b1", [{ variantId: "gid://shopify/ProductVariant/42", qty: 2, sellingPlanId: "gid://shopify/SellingPlan/7" }], { timeoutMs: 0 });
+    const body = calls[0]!;
+    expect(body.get("items[0][selling_plan]")).toBe("7");
+    expect(body.get("items[0][id]")).toBe("42");
+  });
 });
