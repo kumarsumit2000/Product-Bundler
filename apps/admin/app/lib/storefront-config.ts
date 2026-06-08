@@ -215,6 +215,7 @@ export async function buildStorefrontConfig(
       textOverrides: q.textOverrides,
       headline: q.headline,
       ctaLabel: q.ctaLabel,
+      subscription: q.subscription ?? null,
       visibility: q.visibility ?? "specific",
       visibilityProductIds: q.visibilityProductIds ?? [],
       visibilityCollectionIds: q.visibilityCollectionIds ?? [],
@@ -295,6 +296,7 @@ export async function buildStorefrontConfig(
       linkedProgressiveGiftId: b.linkedProgressiveGiftId ?? null,
       stickyAtc: b.stickyAtc ?? null,
       addonsOrder: b.addonsOrder ?? null,
+      subscription: b.subscription ?? null,
     })),
     quantityBreaks: qbs.map(buildQb),
     bxgyOffers: bxgyOffers.map((o) => {
@@ -342,6 +344,7 @@ export async function buildStorefrontConfig(
         checkboxUpsellsEnabled: o.checkboxUpsellsEnabled ?? false,
         checkboxUpsells: o.checkboxUpsells ?? [],
         bindToCurrentProduct: o.bindToCurrentProduct ?? false,
+        subscription: o.subscription ?? null,
       };
     }),
     progressiveGifts: progressiveGifts.map((pg) => ({

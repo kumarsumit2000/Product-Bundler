@@ -83,6 +83,11 @@ describe("buildStorefrontConfig", () => {
         bogo: { mode: "add_same", targetVariantId: "gid://shopify/ProductVariant/8", bonusQty: 1 },
       }],
       combinable: false, styleOverrides: null,
+      subscription: {
+        enabled: true, heading: "Purchase Options", title: "Subscribe & Save",
+        subtitle: "Cancel anytime", details: "Flexible billing",
+        widgetStyle: "modern", showDiscountLabel: true, hideThirdPartyWidget: false,
+      },
       createdAt: new Date(), updatedAt: new Date(),
     }).run();
 
@@ -110,6 +115,11 @@ describe("buildStorefrontConfig", () => {
     const tier = cfg.quantityBreaks[0]!.tiers[0]!;
     expect(tier.freeGiftAvailable).toBe(true);
     expect(tier.bogo!.targetAvailable).toBe(false);
+    expect(cfg.quantityBreaks[0]!.subscription).toEqual({
+      enabled: true, heading: "Purchase Options", title: "Subscribe & Save",
+      subtitle: "Cancel anytime", details: "Flexible billing",
+      widgetStyle: "modern", showDiscountLabel: true, hideThirdPartyWidget: false,
+    });
   });
 
   it("emits textOverrides on bundles and quantityBreaks", async () => {
