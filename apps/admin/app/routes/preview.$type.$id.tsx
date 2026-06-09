@@ -49,6 +49,40 @@ export async function loader({ context, params }: LoaderFunctionArgs) {
   window.addEventListener("message", function (e) {
     if (e.data && e.data.type === "pumper:preview" && e.data.config) {
       window._pumperPreviewConfig = e.data.config;
+      // Subscribe & Save preview: the purchase-options block only renders when
+      // the product carries selling plans + per-variant allocations. Those are
+      // absent in preview, so inject a mock when any offer has subscription
+      // enabled. Mock allocations are priced 10% under the variant so the
+      // "Subscribe & Save" discount label shows.
+      (function () {
+        var cfg = e.data.config;
+        var groups = [].concat(cfg.quantityBreaks || [], cfg.bundles || [], cfg.bxgyOffers || []);
+        var subEnabled = groups.some(function (g) { return g && g.subscription && g.subscription.enabled; });
+        if (!subEnabled) return;
+        var variants = [];
+        groups.forEach(function (g) {
+          (g.productVariants || []).forEach(function (v) {
+            if (!v || !v.variantId) return;
+            if (variants.some(function (x) { return x.variantId === v.variantId; })) return;
+            variants.push({
+              variantId: v.variantId,
+              title: v.title,
+              available: v.available,
+              priceCents: v.priceCents,
+              sellingPlanAllocations: [
+                { planId: "gid://shopify/SellingPlan/1", priceCents: Math.round((v.priceCents || 0) * 0.9) }
+              ]
+            });
+          });
+        });
+        window._pumperConfig = window._pumperConfig || {};
+        window._pumperConfig.sellingPlanGroups = [
+          { id: "preview-grp", name: "Subscribe & Save", plans: [
+            { id: "gid://shopify/SellingPlan/1", name: "Monthly Subscription" }
+          ] }
+        ];
+        window._pumperConfig.productVariants = variants;
+      })();
       var firstBundleProductId = (e.data.config.bundles && e.data.config.bundles[0] && e.data.config.bundles[0].products && e.data.config.bundles[0].products[0] && e.data.config.bundles[0].products[0].productId)
         || (e.data.config.bundles && e.data.config.bundles[0] && e.data.config.bundles[0].collectionProducts && e.data.config.bundles[0].collectionProducts[0] && e.data.config.bundles[0].collectionProducts[0].productId)
         || (e.data.config.quantityBreaks && e.data.config.quantityBreaks[0] && e.data.config.quantityBreaks[0].productId)

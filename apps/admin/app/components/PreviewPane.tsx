@@ -5,9 +5,12 @@ type Props = {
   type: "bundle" | "qb" | "mix_match" | "newsletter" | "bxgy";
   id: string;
   config: unknown;
+  // When true, render just the auto-sizing iframe with no Polaris Card chrome
+  // or "Live preview" heading. Used by the dashboard template cards.
+  bare?: boolean;
 };
 
-export function PreviewPane({ type, id, config }: Props) {
+export function PreviewPane({ type, id, config, bare = false }: Props) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const lastSentRef = useRef<string>("");
   const [height, setHeight] = useState<number>(280);
@@ -43,6 +46,19 @@ export function PreviewPane({ type, id, config }: Props) {
   // the page in a column layout, so pinning it on scroll just covered the
   // form below.
 
+  const iframe = (
+    <iframe
+      ref={iframeRef}
+      src={`/preview/${type}/${encodeURIComponent(id)}`}
+      style={{ width: "100%", height: `${height}px`, border: "none", display: "block", transition: "height .15s" }}
+      title="Widget preview"
+    />
+  );
+
+  if (bare) {
+    return iframe;
+  }
+
   return (
     <Card>
       <BlockStack gap="200">
@@ -54,12 +70,7 @@ export function PreviewPane({ type, id, config }: Props) {
           overflowX="hidden"
           overflowY="hidden"
         >
-          <iframe
-            ref={iframeRef}
-            src={`/preview/${type}/${encodeURIComponent(id)}`}
-            style={{ width: "100%", height: `${height}px`, border: "none", display: "block", transition: "height .15s" }}
-            title="Widget preview"
-          />
+          {iframe}
         </Box>
       </BlockStack>
     </Card>
