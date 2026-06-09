@@ -12,466 +12,272 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   return json({ shopDomain: session.shop });
 }
 
-type CardKey =
-  | "qb_same"
-  | "qb_diff"
-  | "bundle"
-  | "progressive"
-  | "qb_volume_4"
-  | "qb_free_gift"
-  | "qb_tiered_5"
-  | "qb_b2b_bulk"
-  | "qb_subscribe"
-  | "bogo_simple"
-  | "mix_match"
-  | "mix_match_5"
-  | "bundle_2"
-  | "bundle_3_for_x"
-  | "spend_unlock"
-  | "free_shipping_bar"
-  | "bxgy"
-  | "bxgy_b2g1"
-  | "bxgy_50_second";
+// Each key MUST match a template preset in ~/lib/template-presets so the
+// create form prefills correctly when "Customize it now" is clicked.
+type CardKey = "qb_volume_4" | "bxgy" | "qb_free_gift" | "qb_subscribe" | "mix_match";
 type CardSpec = {
   key: CardKey;
   title: string;
-  href: string | null;
-  comingSoon?: boolean;
+  href: string;
+  cta: string;
   preview: () => JSX.Element;
 };
-
-const SAMPLE_PRODUCT = "The Multi-location Snowboard";
 
 // ----- Reusable preview primitives ---------------------------------------
 const r = {
   card: (selected: boolean): React.CSSProperties => ({
     border: `2px solid ${selected ? "var(--pumper-theme, #d9263a)" : "#fbe4e7"}`,
-    background: "#fff7f8",
-    borderRadius: 10,
-    padding: 12,
+    background: selected ? "#fff" : "#fdeef0",
+    borderRadius: 12,
+    padding: "12px 14px",
     display: "flex",
     alignItems: "center",
-    gap: 10,
-    fontSize: 13,
+    gap: 12,
+    fontSize: 14,
     color: "#1a1a1a",
     position: "relative",
   }),
   radio: (selected: boolean): React.CSSProperties => ({
-    width: 16, height: 16, borderRadius: 999,
+    width: 18,
+    height: 18,
+    borderRadius: 999,
     border: `2px solid ${selected ? "var(--pumper-theme, #d9263a)" : "#cbd5e1"}`,
-    background: selected ? "radial-gradient(var(--pumper-theme, #d9263a) 5px, #fff 5px)" : "#fff",
+    background: selected
+      ? "radial-gradient(var(--pumper-theme, #d9263a) 5px, #fff 6px)"
+      : "#fff",
     flexShrink: 0,
   }),
-  badge: (): React.CSSProperties => ({
-    background: "var(--pumper-theme, #d9263a)",
-    color: "#fff",
-    fontSize: 9,
-    padding: "1px 6px",
-    borderRadius: 3,
-    fontWeight: 700,
-    letterSpacing: ".5px",
-  }),
-  saveTag: (): React.CSSProperties => ({
-    background: "#fce4e7",
-    color: "var(--pumper-theme, #d9263a)",
-    fontSize: 10,
-    padding: "1px 6px",
-    borderRadius: 3,
-    fontWeight: 600,
-  }),
-  strike: { textDecoration: "line-through", color: "#a3a3a3", marginLeft: 4, fontSize: 11 } as React.CSSProperties,
-  freeGiftBanner: {
-    background: "var(--pumper-theme, #d9263a)",
-    color: "#fff",
-    padding: "6px 10px",
+  stdPill: {
+    border: "1px solid #d8a7af",
+    color: "#1a1a1a",
+    fontSize: 11,
+    padding: "1px 8px",
     borderRadius: 6,
+    whiteSpace: "nowrap",
+  } as React.CSSProperties,
+  offPill: {
+    background: "#fbd5dc",
+    color: "var(--pumper-theme, #b21e36)",
     fontSize: 11,
     fontWeight: 600,
-    textAlign: "center",
+    padding: "2px 8px",
+    borderRadius: 6,
+    whiteSpace: "nowrap",
   } as React.CSSProperties,
-  thumb: {
-    width: 36, height: 36, borderRadius: 4, background: "#cbd5e1",
+  price: { fontWeight: 700, fontSize: 15, whiteSpace: "nowrap" } as React.CSSProperties,
+  strike: { textDecoration: "line-through", color: "#9aa0a6", fontSize: 12 } as React.CSSProperties,
+  thumb: { width: 44, height: 44, borderRadius: 8, background: "#cfd4da", flexShrink: 0 } as React.CSSProperties,
+  cornerPill: {
+    position: "absolute",
+    top: -11,
+    right: 12,
+    background: "var(--pumper-theme, #7b1e2a)",
+    color: "#fff",
+    fontSize: 10,
+    padding: "2px 10px",
+    borderRadius: 6,
+    fontWeight: 700,
+    letterSpacing: ".3px",
   } as React.CSSProperties,
-  popularPill: {
-    position: "absolute", top: -10, right: 8,
-    background: "var(--pumper-theme, #d9263a)", color: "#fff",
-    fontSize: 9, padding: "2px 6px", borderRadius: 999, fontWeight: 700,
-    letterSpacing: ".5px",
+  dropdown: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 6,
+    border: "1px solid #cbd5e1",
+    borderRadius: 8,
+    padding: "4px 10px",
+    fontSize: 12,
+    color: "#374151",
+    background: "#fff",
+    minWidth: 120,
   } as React.CSSProperties,
 };
 
-// ----- Per-type previews --------------------------------------------------
+function Radio({ selected }: { selected: boolean }) {
+  return <span style={r.radio(selected)} />;
+}
 
-type RowProps = {
-  selected?: boolean;
-  popular?: string;
-  title: string;
-  sub?: string;
-  save?: string;
-  price?: string;
-  strike?: string;
-};
-
-function Row({ selected = false, popular, title, sub, save, price, strike }: RowProps) {
+function Dropdown({ children, width }: { children: React.ReactNode; width?: number }) {
   return (
-    <div style={{ ...r.card(selected), alignItems: "flex-start" }}>
-      {popular && <span style={r.popularPill}>★ {popular}</span>}
-      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
-        <span style={{ fontWeight: 600 }}>{title}</span>
-        {sub && <span style={{ color: "#888", fontSize: 11 }}>{sub}</span>}
-        {(save || price) && (
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            {save && <span style={r.saveTag()}>{save}</span>}
-            {price && (
-              <span style={{ fontWeight: 700, marginLeft: "auto", whiteSpace: "nowrap" }}>
-                {price}
-                {strike && <span style={r.strike}>{strike}</span>}
-              </span>
-            )}
-          </div>
-        )}
+    <span style={{ ...r.dropdown, ...(width ? { minWidth: width } : {}) }}>
+      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{children}</span>
+      <span aria-hidden style={{ color: "#9aa0a6" }}>▾</span>
+    </span>
+  );
+}
+
+// A standard tier row: [radio] [image?] title + badge ........ price / strike
+function Tier(props: {
+  selected?: boolean;
+  imageBg?: string;
+  title: string;
+  std?: boolean;
+  off?: string;
+  sub?: string;
+  price: string;
+  strike?: string;
+  corner?: string;
+}) {
+  const { selected = false, imageBg, title, std, off, sub, price, strike, corner } = props;
+  return (
+    <div style={r.card(selected)}>
+      {corner && <span style={r.cornerPill}>{corner}</span>}
+      <Radio selected={selected} />
+      {imageBg && <span style={{ ...r.thumb, background: imageBg }} />}
+      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontWeight: 700 }}>{title}</span>
+          {std && <span style={r.stdPill}>Standard Price</span>}
+          {off && <span style={r.offPill}>{off}</span>}
+        </div>
+        {sub && <span style={{ color: "var(--pumper-theme, #b21e36)", fontSize: 12 }}>{sub}</span>}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+        <span style={r.price}>{price}</span>
+        {strike && <span style={r.strike}>{strike}</span>}
       </div>
     </div>
   );
 }
 
-function PreviewQbSame() {
+// ----- The 5 featured templates ------------------------------------------
+
+function PreviewBuyMoreSaveMore() {
   return (
-    <BlockStack gap="200">
-      <Row title="Single" sub="Standard price" price="$729.95" />
-      <Row selected popular="Most Popular" title="Duo" sub="You save 15%" save="SAVE $218.98" price="$1,240.92" strike="$1,459.90" />
+    <BlockStack gap="300">
+      <Tier selected title="Buy 1" std price="$24.95" />
+      <Tier title="Buy 2" off="20% OFF" price="$39.92" strike="$49.90" />
+      <Tier title="Buy 3" off="30% OFF" price="$52.41" strike="$74.85" />
+      <Tier title="Buy 4" off="40% OFF" price="$59.88" strike="$99.80" corner="Best Value" />
     </BlockStack>
   );
 }
 
-function PreviewQbSubscribe() {
+function PreviewBogoOffers() {
   return (
-    <BlockStack gap="200">
-      <Row title="1 Pack" sub="One-time purchase" price="$729.95" />
-      <Row selected popular="Subscribe & Save" title="2 Packs" sub="Subscribe & Save 20%" save="SAVE 20%" price="$1,167.92" strike="$1,459.90" />
+    <BlockStack gap="300">
+      <Tier selected imageBg="#9aa0a6" title="Buy 1" std price="$24.95" />
+      <Tier imageBg="#7b8088" title="Buy 2 Get 1 Free!" off="33% OFF" price="$49.90" strike="$74.85" />
+      <Tier imageBg="#5f646b" title="Buy 3 Get 2 Free!" off="40% OFF" price="$74.85" strike="$124.75" />
     </BlockStack>
   );
 }
 
-function PreviewBxgy() {
+function PreviewUnlockFreeGifts() {
   return (
-    <BlockStack gap="200">
-      <Row title="Buy 1, get 1 free" save="SAVE 50%" price="$729.95" strike="$1,459.90" />
-      <Row title="Buy 2, get 3 free" save="SAVE 60%" price="$1,459.90" strike="$3,649.75" />
-      <div style={{ ...r.card(true), flexDirection: "column", alignItems: "stretch", gap: 6 }}>
-        <Row selected title="Buy 3, get 6 free" save="SAVE 67%" price="$2,189.85" strike="$6,569.55" />
-        <div style={r.freeGiftBanner}>+ FREE special gift!</div>
-      </div>
-    </BlockStack>
-  );
-}
-
-function PreviewQbDifferent() {
-  return (
-    <BlockStack gap="200">
-      <div style={r.card(true)}>
-        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
-          <span style={{ fontWeight: 600 }}>1 pack</span>
-          <span style={{ color: "#888", fontSize: 11 }}>Standard price</span>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ ...r.thumb, width: 18, height: 24, background: "#86efac" }} />
-            <span style={{ fontSize: 11, color: "#374151" }}>{SAMPLE_PRODUCT}</span>
-          </div>
-        </div>
-        <span style={{ fontWeight: 700, whiteSpace: "nowrap" }}>$729.95</span>
-      </div>
-      <Row popular="MOST POPULAR" title="2 pack" sub="You save $218.98" price="$1,240.92" strike="$1,459.90" />
-    </BlockStack>
-  );
-}
-
-function PreviewBundle() {
-  return (
-    <BlockStack gap="200">
-      <Row title={SAMPLE_PRODUCT} sub="Standard price" price="$729.95" />
+    <BlockStack gap="300">
       <div style={{ ...r.card(true), flexDirection: "column", alignItems: "stretch", gap: 8 }}>
-        <Row selected title="Complete the bundle" sub="Save $271.98!" price="$1,087.92" strike="$1,359.90" />
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: 8, background: "#fff", borderRadius: 6 }}>
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-            <span style={{ ...r.thumb, width: 28, height: 36, background: "#86efac" }} />
-            <span style={{ fontSize: 9, fontWeight: 600, textAlign: "center" }}>{SAMPLE_PRODUCT}</span>
-            <span style={{ fontSize: 10, fontWeight: 700 }}>$583.96 <span style={r.strike}>$729.95</span></span>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <Radio selected />
+          <div style={{ flex: 1 }}>
+            <span style={{ fontWeight: 700 }}>Single</span>{" "}
+            <span style={{ color: "var(--pumper-theme, #b21e36)", fontSize: 12 }}>Standard Price</span>
           </div>
-          <span style={{ color: "var(--pumper-theme, #d9263a)", fontSize: 16, fontWeight: 700 }}>+</span>
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-            <span style={{ ...r.thumb, width: 28, height: 36, background: "#fbcfe8" }} />
-            <span style={{ fontSize: 9, fontWeight: 600, textAlign: "center" }}>The Multi-managed Snowboard</span>
-            <span style={{ fontSize: 10, fontWeight: 700 }}>$503.96 <span style={r.strike}>$629.95</span></span>
-          </div>
+          <span style={r.price}>$24.95</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, paddingLeft: 30 }}>
+          <span style={{ fontSize: 12, color: "#6b7280" }}>Title</span>
+          <span style={{ fontSize: 11, color: "#9aa0a6" }}>#1</span>
+          <Dropdown width={150}>Selling Plans S…</Dropdown>
         </div>
       </div>
-    </BlockStack>
-  );
-}
-
-
-function PreviewProgressive() {
-  return (
-    <BlockStack gap="200">
-      <Row title="1 pack" price="$729.95" />
-      <Row title="2 pack" save="SAVE 15%" price="$1,240.92" strike="$1,459.90" />
-      <Row selected title="3 pack" save="SAVE 15%" price="$1,861.38" strike="$2,189.85" />
-      <Text as="h4" variant="headingSm" alignment="center">🎁 Unlock Free gifts with your order</Text>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-        {[
-          { tag: "FREE", title: "Free shipping", strike: "" },
-          { tag: "FREE $629.95", title: "The Multi-managed Snowboard", strike: "$629.95" },
-          { tag: "FREE $5.99", title: "Socks", strike: "$5.99" },
-        ].map((g) => (
-          <div key={g.title} style={{ border: "2px solid #fbe4e7", borderRadius: 8, padding: 6, fontSize: 9, textAlign: "center" }}>
-            <div style={{ background: "var(--pumper-theme, #d9263a)", color: "#fff", padding: "1px 4px", borderRadius: 3, fontSize: 8, fontWeight: 700, marginBottom: 4 }}>
-              {g.tag}
-            </div>
-            <span style={{ ...r.thumb, width: "100%", height: 36, display: "block", margin: "0 auto" }} />
-            <div style={{ marginTop: 4, fontWeight: 600 }}>{g.title}</div>
+      <div style={{ position: "relative", border: "2px solid var(--pumper-theme, #7b1e2a)", borderRadius: 12, overflow: "hidden" }}>
+        <span style={r.cornerPill}>Most Popular</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: "#fdeef0" }}>
+          <Radio selected={false} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700 }}>Duo</div>
+            <span style={{ color: "var(--pumper-theme, #b21e36)", fontSize: 12 }}>You Save $9.98</span>
           </div>
-        ))}
-      </div>
-    </BlockStack>
-  );
-}
-
-function PreviewBogoSimple() {
-  return (
-    <BlockStack gap="200">
-      <Row selected popular="Most Popular" title="Buy 1, get 1 free" save="SAVE 50%" price="$729.95" strike="$1,459.90" />
-      <Text as="p" tone="subdued" alignment="center" variant="bodySm">
-        Single-tier BOGO — simplest urgency offer.
-      </Text>
-    </BlockStack>
-  );
-}
-
-function PreviewQbVolume4() {
-  return (
-    <BlockStack gap="200">
-      <Row title="Single" price="$729.95" />
-      <Row title="2 pack" save="SAVE 10%" price="$1,313.91" strike="$1,459.90" />
-      <Row selected popular="Most Popular" title="4 pack" save="SAVE 20%" price="$2,335.84" strike="$2,919.80" />
-      <Row title="8 pack" save="SAVE 30%" price="$4,087.72" strike="$5,839.60" />
-    </BlockStack>
-  );
-}
-
-function PreviewQbFreeGift() {
-  return (
-    <BlockStack gap="200">
-      <Row title="Standard" price="$729.95" />
-      <Row title="2 pack" save="SAVE 10%" price="$1,313.91" />
-      <div style={{ ...r.card(true), flexDirection: "column", alignItems: "stretch", gap: 6 }}>
-        <Row selected popular="Most Popular" title="3 pack — Save 20%" save="SAVE 20%" price="$1,751.88" strike="$2,189.85" />
-        <div style={r.freeGiftBanner}>🎁 + FREE gift unlocked!</div>
-      </div>
-    </BlockStack>
-  );
-}
-
-function PreviewMixMatch() {
-  return (
-    <BlockStack gap="200">
-      <div style={{ ...r.card(true), flexDirection: "column", alignItems: "stretch", gap: 8 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontWeight: 600, fontSize: 13 }}>Pick any 3 — save 25%</span>
-          <span style={{ fontSize: 11, color: "var(--pumper-theme, #d9263a)", fontWeight: 600 }}>3 / 3</span>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
-          {["#86efac", "#fbcfe8", "#bfdbfe"].map((bg, i) => (
-            <div key={i} style={{ background: "#fff", border: `2px solid ${i === 0 ? "var(--pumper-theme, #d9263a)" : "#fbe4e7"}`, borderRadius: 6, padding: 6, textAlign: "center", fontSize: 9 }}>
-              <span style={{ ...r.thumb, width: "100%", height: 32, background: bg, display: "block", borderRadius: 3 }} />
-              <div style={{ marginTop: 4, fontWeight: 600 }}>Item {i + 1}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </BlockStack>
-  );
-}
-
-function PreviewFreeShippingBar() {
-  return (
-    <BlockStack gap="200">
-      <div style={{
-        background: "#fff7f8",
-        border: "2px solid #fbe4e7",
-        borderRadius: 10,
-        padding: 12,
-        textAlign: "center",
-      }}>
-        <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6 }}>🚚 Free shipping over $50</div>
-        <div style={{ fontSize: 11, color: "#666", marginBottom: 8 }}>Spend $25 more to unlock</div>
-        <div style={{ height: 6, background: "#fce4e7", borderRadius: 999 }}>
-          <div style={{ width: "50%", height: "100%", background: "var(--pumper-theme, #d9263a)", borderRadius: 999 }} />
-        </div>
-      </div>
-    </BlockStack>
-  );
-}
-
-
-function PreviewQbTiered5() {
-  return (
-    <BlockStack gap="200">
-      <Row title="2 pack" save="SAVE 5%" price="$1,386.91" strike="$1,459.90" />
-      <Row title="3 pack" save="SAVE 10%" price="$1,970.86" strike="$2,189.85" />
-      <Row selected popular="Most Popular" title="5 pack" save="SAVE 15%" price="$3,101.79" strike="$3,649.75" />
-      <Row title="8 pack" save="SAVE 20%" price="$4,671.68" strike="$5,839.60" />
-      <Row title="12 pack" save="SAVE 25%" price="$6,569.55" strike="$8,759.40" />
-    </BlockStack>
-  );
-}
-
-function PreviewQbB2bBulk() {
-  return (
-    <BlockStack gap="200">
-      <Row title="10+ units" save="SAVE 10%" price="$6,569.55" strike="$7,299.50" />
-      <Row selected popular="Most Popular" title="25+ units" save="SAVE 15%" price="$15,511.94" strike="$18,248.75" />
-      <Row title="50+ units" save="SAVE 20%" price="$29,198.00" strike="$36,497.50" />
-      <Text as="p" tone="subdued" alignment="center" variant="bodySm">
-        Built for wholesale / B2B accounts.
-      </Text>
-    </BlockStack>
-  );
-}
-
-function PreviewBundle2() {
-  return (
-    <BlockStack gap="200">
-      <Row title="Single" sub="Standard price" price="$729.95" />
-      <div style={{ ...r.card(true), flexDirection: "column", alignItems: "stretch", gap: 8 }}>
-        <Row selected title="Frequently bought together" sub="Save $135.99 (10%)" price="$1,223.91" strike="$1,359.90" />
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: 8, background: "#fff", borderRadius: 6 }}>
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-            <span style={{ ...r.thumb, width: 28, height: 36, background: "#86efac" }} />
-            <span style={{ fontSize: 9, fontWeight: 600, textAlign: "center" }}>{SAMPLE_PRODUCT}</span>
-          </div>
-          <span style={{ color: "var(--pumper-theme, #d9263a)", fontSize: 16, fontWeight: 700 }}>+</span>
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-            <span style={{ ...r.thumb, width: 28, height: 36, background: "#fbcfe8" }} />
-            <span style={{ fontSize: 9, fontWeight: 600, textAlign: "center" }}>The Multi-managed Snowboard</span>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+            <span style={r.price}>$39.92</span>
+            <span style={r.strike}>$49.90</span>
           </div>
         </div>
-      </div>
-    </BlockStack>
-  );
-}
-
-function PreviewBundle3ForX() {
-  return (
-    <BlockStack gap="200">
-      <div style={{ ...r.card(true), flexDirection: "column", alignItems: "stretch", gap: 8 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontWeight: 600, fontSize: 13 }}>Get any 3 for $59</span>
-          <span style={{ fontSize: 11, color: "var(--pumper-theme, #d9263a)", fontWeight: 600 }}>Flat price</span>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
-          {["#86efac", "#fbcfe8", "#bfdbfe"].map((bg, i) => (
-            <div key={i} style={{ background: "#fff", border: "2px solid #fbe4e7", borderRadius: 6, padding: 6, textAlign: "center", fontSize: 9 }}>
-              <span style={{ ...r.thumb, width: "100%", height: 32, background: bg, display: "block", borderRadius: 3 }} />
-              <div style={{ marginTop: 4, fontWeight: 600 }}>Item {i + 1}</div>
-            </div>
-          ))}
-        </div>
-        <div style={{ textAlign: "center", fontWeight: 700, fontSize: 13 }}>
-          Total: $59 <span style={r.strike}>$89.97</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "var(--pumper-theme, #e89aa8)" }}>
+          <span style={{ fontSize: 20 }}>🎁</span>
+          <span style={{ flex: 1, color: "#fff", fontWeight: 700 }}>+1 FREE GIFT</span>
+          <span style={{ ...r.strike, color: "#fbe4e7" }}>$100.00</span>
         </div>
       </div>
     </BlockStack>
   );
 }
 
-function PreviewMixMatch5() {
+function PreviewSubscribeSave() {
   return (
-    <BlockStack gap="200">
-      <div style={{ ...r.card(true), flexDirection: "column", alignItems: "stretch", gap: 8 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontWeight: 600, fontSize: 13 }}>Pick any 5 — save 30%</span>
-          <span style={{ fontSize: 11, color: "var(--pumper-theme, #d9263a)", fontWeight: 600 }}>5 / 5</span>
+    <BlockStack gap="300">
+      <Tier selected imageBg="#cfd4da" title="1 Pack" std price="$24.95" />
+      <Tier imageBg="#cfd4da" title="2 Packs" off="20% OFF" price="$39.92" strike="$49.90" />
+      <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "2px 0" }}>
+        <span style={{ flex: 1, height: 1, background: "#f0c8cf" }} />
+        <Text as="span" variant="headingSm" tone="subdued">Purchase Options</Text>
+        <span style={{ flex: 1, height: 1, background: "#f0c8cf" }} />
+      </div>
+      <div style={{ border: "2px dashed var(--pumper-theme, #b21e36)", borderRadius: 12, padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10, background: "#fdeef0" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ width: 18, height: 18, borderRadius: 5, background: "var(--pumper-theme, #7b1e2a)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, flexShrink: 0 }}>✓</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700 }}>Subscribe &amp; Save</div>
+            <span style={{ color: "var(--pumper-theme, #b21e36)", fontSize: 12 }}>Cancel anytime</span>
+          </div>
+          <span style={r.price}>$35.94</span>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 4 }}>
-          {["#86efac", "#fbcfe8", "#bfdbfe", "#fcd34d", "#a5b4fc"].map((bg, i) => (
-            <div key={i} style={{ background: "#fff", border: `2px solid ${i === 0 ? "var(--pumper-theme, #d9263a)" : "#fbe4e7"}`, borderRadius: 6, padding: 4, textAlign: "center" }}>
-              <span style={{ ...r.thumb, width: "100%", height: 24, background: bg, display: "block", borderRadius: 3 }} />
-            </div>
-          ))}
-        </div>
+        <Dropdown>Monthly Subscription</Dropdown>
       </div>
     </BlockStack>
   );
 }
 
-function PreviewBxgyB2g1() {
-  return (
-    <BlockStack gap="200">
-      <Row selected popular="Best Deal" title="Buy 2, get 1 free" save="SAVE 33%" price="$1,459.90" strike="$2,189.85" />
-      <Text as="p" tone="subdued" alignment="center" variant="bodySm">
-        Single-bar BXGY — classic conversion booster.
-      </Text>
-    </BlockStack>
+function PreviewBundleSave() {
+  const tile = (emoji: string) => (
+    <span
+      style={{
+        width: 64,
+        height: 64,
+        borderRadius: 14,
+        background: "#fff",
+        border: "1px solid #f4d4da",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: 28,
+      }}
+    >
+      {emoji}
+    </span>
   );
-}
-
-function PreviewBxgy50Second() {
   return (
-    <BlockStack gap="200">
-      <Row selected popular="Most Popular" title="Buy 1, second 50% off" save="SAVE 25%" price="$1,094.92" strike="$1,459.90" />
-      <Text as="p" tone="subdued" alignment="center" variant="bodySm">
-        Half-off second item — gentler than free.
-      </Text>
-    </BlockStack>
-  );
-}
-
-function PreviewSpendUnlock() {
-  return (
-    <BlockStack gap="200">
-      <div style={{ background: "#fff7f8", border: "2px solid #fbe4e7", borderRadius: 10, padding: 12 }}>
-        <div style={{ fontWeight: 700, fontSize: 13, textAlign: "center", marginBottom: 8 }}>Spend more, unlock more</div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, fontSize: 9, textAlign: "center" }}>
-          {[
-            { tag: "$75", title: "Free shipping" },
-            { tag: "$150", title: "Free gift" },
-            { tag: "$300", title: "VIP gift" },
-          ].map((g) => (
-            <div key={g.title}>
-              <div style={{ background: "var(--pumper-theme, #d9263a)", color: "#fff", padding: "2px 4px", borderRadius: 3, fontSize: 9, fontWeight: 700, marginBottom: 4 }}>
-                {g.tag}
-              </div>
-              <span style={{ ...r.thumb, width: "100%", height: 32, display: "block" }} />
-              <div style={{ marginTop: 4, fontWeight: 600 }}>{g.title}</div>
-            </div>
-          ))}
+    <BlockStack gap="300">
+      <div
+        style={{
+          background: "#fde7ec",
+          borderRadius: 16,
+          padding: "28px 18px",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 14,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          {tile("🩳")}
+          <span style={{ color: "var(--pumper-theme, #b21e36)", fontSize: 20, fontWeight: 700 }}>+</span>
+          {tile("👕")}
         </div>
+        {tile("🧤")}
       </div>
     </BlockStack>
   );
 }
-
 
 const CARDS: CardSpec[] = [
-  { key: "qb_same", title: "Quantity breaks for the same product", href: "/app/quantity-breaks/new", preview: PreviewQbSame },
-  { key: "qb_diff", title: "Quantity breaks for different products", href: "/app/quantity-breaks/new", preview: PreviewQbDifferent },
-  { key: "qb_volume_4", title: "Volume discount (4 tiers)", href: "/app/quantity-breaks/new", preview: PreviewQbVolume4 },
-  { key: "qb_tiered_5", title: "Tiered savings (5 tiers)", href: "/app/quantity-breaks/new", preview: PreviewQbTiered5 },
-  { key: "qb_b2b_bulk", title: "B2B bulk pricing", href: "/app/quantity-breaks/new", preview: PreviewQbB2bBulk },
-  { key: "qb_free_gift", title: "Free gift with purchase", href: "/app/quantity-breaks/new", preview: PreviewQbFreeGift },
-  { key: "qb_subscribe", title: "Subscribe & Save", href: "/app/quantity-breaks/new", preview: PreviewQbSubscribe },
-  { key: "bogo_simple", title: "Buy 1, get 1 free (single tier)", href: "/app/quantity-breaks/new", preview: PreviewBogoSimple },
-  { key: "bxgy", title: "Buy X, get Y (BXGY) deal", href: "/app/bxgy-offers/new", preview: PreviewBxgy },
-  { key: "bxgy_b2g1", title: "Buy 2, get 1 free", href: "/app/bxgy-offers/new", preview: PreviewBxgyB2g1 },
-  { key: "bxgy_50_second", title: "Buy 1, second 50% off", href: "/app/bxgy-offers/new", preview: PreviewBxgy50Second },
-  { key: "bundle", title: "Complete the bundle", href: "/app/bundles/new", preview: PreviewBundle },
-  { key: "bundle_2", title: "Frequently bought together", href: "/app/bundles/new", preview: PreviewBundle2 },
-  { key: "bundle_3_for_x", title: "3 for $59 — flat price bundle", href: "/app/bundles/new", preview: PreviewBundle3ForX },
-  { key: "mix_match", title: "Mix & match — pick any 3", href: "/app/bundles/new", preview: PreviewMixMatch },
-  { key: "mix_match_5", title: "Mix & match — pick any 5", href: "/app/bundles/new", preview: PreviewMixMatch5 },
-  { key: "progressive", title: "Progressive gifts", href: "/app/progressive-gifts/new", preview: PreviewProgressive },
-  { key: "spend_unlock", title: "Spend & unlock", href: "/app/progressive-gifts/new", preview: PreviewSpendUnlock },
-  { key: "free_shipping_bar", title: "Free shipping bar", href: "/app/progressive-gifts/new", preview: PreviewFreeShippingBar },
+  { key: "qb_volume_4", title: "Buy More Save More", href: "/app/quantity-breaks/new", cta: "Customize it now", preview: PreviewBuyMoreSaveMore },
+  { key: "bxgy", title: "BOGO Offers", href: "/app/bxgy-offers/new", cta: "Customize it now", preview: PreviewBogoOffers },
+  { key: "qb_free_gift", title: "Unlock Free Gifts", href: "/app/quantity-breaks/new", cta: "Customize it now", preview: PreviewUnlockFreeGifts },
+  { key: "qb_subscribe", title: "Subscribe & Save", href: "/app/quantity-breaks/new", cta: "Customize it now", preview: PreviewSubscribeSave },
+  { key: "mix_match", title: "Bundle & Save", href: "/app/bundles/new", cta: "Create a Bundle", preview: PreviewBundleSave },
 ];
 
 const THEMES = [
@@ -485,18 +291,23 @@ const THEMES = [
   { color: "#ec4899", label: "Pink" },
 ];
 
+function CardTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <span style={{ flex: 1, height: 1, background: "#e5e7eb" }} />
+      <Text as="h3" variant="headingMd">{children}</Text>
+      <span style={{ flex: 1, height: 1, background: "#e5e7eb" }} />
+    </div>
+  );
+}
+
 export default function ChooseDiscountType() {
   const navigate = useNavigate();
   const { shopDomain } = useLoaderData<typeof loader>();
   const [theme, setTheme] = useState<string>(THEMES[1]!.color);
-  const [selected, setSelected] = useState<CardKey>("qb_same");
-  const [comingSoonShown, setComingSoonShown] = useState<string | null>(null);
+  const [selected, setSelected] = useState<CardKey>("qb_volume_4");
 
   function onChoose(card: CardSpec) {
-    if (card.comingSoon || !card.href) {
-      setComingSoonShown(card.title);
-      return;
-    }
     const sep = card.href.includes("?") ? "&" : "?";
     const target = `${card.href}${sep}template=${card.key}&theme=${encodeURIComponent(theme)}`;
     navigate(target);
@@ -504,12 +315,9 @@ export default function ChooseDiscountType() {
 
   return (
     <Page
-      title="Dashboard"
-      subtitle="Pick a template to get started — you can fully customize it later."
+      title="Choose Winning Bundle Theme"
+      subtitle="Full customization coming right after — pick a template to get started."
     >
-      {/* Activation status — first thing the merchant sees. Reads
-          straight from App Bridge's extensions() API so the answer
-          matches whatever Shopify's UI shows in the theme editor. */}
       <div style={{ marginBottom: 16 }}>
         <AppEmbedStatusBanner shopDomain={shopDomain} />
       </div>
@@ -533,16 +341,6 @@ export default function ChooseDiscountType() {
           />
         ))}
       </div>
-
-      {comingSoonShown && (
-        <div style={{ marginBottom: 16 }}>
-          <Banner tone="info" onDismiss={() => setComingSoonShown(null)}>
-            <Text as="p">
-              <strong>{comingSoonShown}</strong> is coming soon.
-            </Text>
-          </Banner>
-        </div>
-      )}
 
       <div
         style={{
@@ -570,8 +368,8 @@ export default function ChooseDiscountType() {
               style={{
                 background: "#fff",
                 border: `2px solid ${isSelected ? theme : "#e5e7eb"}`,
-                borderRadius: 12,
-                padding: 16,
+                borderRadius: 16,
+                padding: 18,
                 cursor: "pointer",
                 display: "flex",
                 flexDirection: "column",
@@ -582,19 +380,17 @@ export default function ChooseDiscountType() {
               }}
               aria-pressed={isSelected}
             >
+              <CardTitle>{card.title}</CardTitle>
               <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-start" }}>
                 <PreviewComp />
               </div>
-              <div style={{ textAlign: "center" }}>
-                <Text as="p" variant="headingSm">
-                  {card.title}
-                  {card.comingSoon && (
-                    <Text as="span" variant="bodySm" tone="subdued">  · Coming soon</Text>
-                  )}
-                </Text>
-              </div>
-              <Button fullWidth variant="primary" onClick={() => onChoose(card)}>
-                Choose
+              <Button
+                fullWidth
+                size="large"
+                variant="primary"
+                onClick={() => onChoose(card)}
+              >
+                {card.cta}
               </Button>
             </div>
           );
@@ -603,4 +399,3 @@ export default function ChooseDiscountType() {
     </Page>
   );
 }
-
