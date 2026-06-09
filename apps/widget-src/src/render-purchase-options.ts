@@ -1,5 +1,6 @@
 import type { SubscriptionConfig, SellingPlanGroup, SellingPlanAllocation } from "./types";
 import { formatMoney } from "./format";
+import { t } from "./i18n";
 
 export type PurchaseSelection = { mode: "onetime" | "subscribe"; sellingPlanId: string | null };
 export type PurchaseOptionsCtx = {
@@ -29,7 +30,7 @@ export function createPurchaseOptions(mount: HTMLElement, cfg: SubscriptionConfi
     const sp = subPrice(planId);
     if (!cfg.showDiscountLabel || sp >= ctx.oneTimePriceCents) return "";
     const pct = Math.round((1 - sp / ctx.oneTimePriceCents) * 100);
-    return `<span class="pumper-po-save">Save ${pct}%</span>`;
+    return `<span class="pumper-po-save">${t("po.save", { pct })}</span>`;
   };
 
   const render = () => {
@@ -41,7 +42,7 @@ export function createPurchaseOptions(mount: HTMLElement, cfg: SubscriptionConfi
         <div class="pumper-po-heading">${esc(cfg.heading)}</div>
         <label class="pumper-po-row" data-po-mode="onetime" aria-selected="${mode === "onetime"}">
           <input type="radio" name="pumper-po" ${mode === "onetime" ? "checked" : ""} />
-          <span class="pumper-po-onetime">One-time purchase</span>
+          <span class="pumper-po-onetime">${esc(t("po.oneTime"))}</span>
           <span class="pumper-po-price">${formatMoney(ctx.oneTimePriceCents, ctx.currency, ctx.locale)}</span>
         </label>
         <label class="pumper-po-row" data-po-mode="subscribe" aria-selected="${mode === "subscribe"}">

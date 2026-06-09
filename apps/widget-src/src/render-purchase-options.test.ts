@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { createPurchaseOptions } from "./render-purchase-options";
+import { setLocale } from "./i18n";
 import type { SubscriptionConfig, SellingPlanGroup, SellingPlanAllocation } from "./types";
 
 const cfg: SubscriptionConfig = {
@@ -29,5 +30,17 @@ describe("createPurchaseOptions", () => {
     const po = createPurchaseOptions(mount, cfg, { groups: [], allocations: [], oneTimePriceCents: 2495, currency: "USD", locale: "en" });
     expect(po.active).toBe(false);
     expect(mount.children.length).toBe(0);
+  });
+
+  describe("localization", () => {
+    afterEach(() => setLocale("en"));
+
+    it("localizes the one-time label and savings badge per active locale", () => {
+      setLocale("fr");
+      createPurchaseOptions(mount, cfg, { groups, allocations: allocs, oneTimePriceCents: 2495, currency: "EUR", locale: "fr" });
+      expect(mount.querySelector(".pumper-po-onetime")?.textContent).toBe("Achat unique");
+      // 2246/2495 ≈ 10% off → localized "Économisez 10 %"
+      expect(mount.querySelector(".pumper-po-save")?.textContent).toContain("Économisez");
+    });
   });
 });
