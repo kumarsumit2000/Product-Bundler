@@ -98,6 +98,27 @@ function Radio({ selected }: { selected: boolean }) {
   return <span style={r.radio(selected)} />;
 }
 
+function ImgTile({ emoji, size = 44 }: { emoji: string; size?: number }) {
+  return (
+    <span
+      style={{
+        width: size,
+        height: size,
+        borderRadius: 10,
+        background: "#fff",
+        border: "1px solid #eccfd5",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: Math.round(size * 0.55),
+        flexShrink: 0,
+      }}
+    >
+      {emoji}
+    </span>
+  );
+}
+
 function Dropdown({ children, width }: { children: React.ReactNode; width?: number }) {
   return (
     <span style={{ ...r.dropdown, ...(width ? { minWidth: width } : {}) }}>
@@ -110,7 +131,7 @@ function Dropdown({ children, width }: { children: React.ReactNode; width?: numb
 // A standard tier row: [radio] [image?] title + badge ........ price / strike
 function Tier(props: {
   selected?: boolean;
-  imageBg?: string;
+  emoji?: string;
   title: string;
   std?: boolean;
   off?: string;
@@ -119,21 +140,21 @@ function Tier(props: {
   strike?: string;
   corner?: string;
 }) {
-  const { selected = false, imageBg, title, std, off, sub, price, strike, corner } = props;
+  const { selected = false, emoji, title, std, off, sub, price, strike, corner } = props;
   return (
-    <div style={r.card(selected)}>
+    <div style={{ ...r.card(selected), paddingTop: corner ? 16 : 12 }}>
       {corner && <span style={r.cornerPill}>{corner}</span>}
       <Radio selected={selected} />
-      {imageBg && <span style={{ ...r.thumb, background: imageBg }} />}
+      {emoji && <ImgTile emoji={emoji} />}
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <span style={{ fontWeight: 700 }}>{title}</span>
           {std && <span style={r.stdPill}>Standard Price</span>}
           {off && <span style={r.offPill}>{off}</span>}
         </div>
         {sub && <span style={{ color: "var(--pumper-theme, #b21e36)", fontSize: 12 }}>{sub}</span>}
       </div>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0 }}>
         <span style={r.price}>{price}</span>
         {strike && <span style={r.strike}>{strike}</span>}
       </div>
@@ -157,9 +178,9 @@ function PreviewBuyMoreSaveMore() {
 function PreviewBogoOffers() {
   return (
     <BlockStack gap="300">
-      <Tier selected imageBg="#9aa0a6" title="Buy 1" std price="$24.95" />
-      <Tier imageBg="#7b8088" title="Buy 2 Get 1 Free!" off="33% OFF" price="$49.90" strike="$74.85" />
-      <Tier imageBg="#5f646b" title="Buy 3 Get 2 Free!" off="40% OFF" price="$74.85" strike="$124.75" />
+      <Tier selected emoji="🧥" title="Buy 1" std price="$24.95" />
+      <Tier emoji="🧥" title="Buy 2 Get 1 Free!" off="33% OFF" price="$49.90" strike="$74.85" />
+      <Tier emoji="🧥" title="Buy 3 Get 2 Free!" off="40% OFF" price="$74.85" strike="$124.75" />
     </BlockStack>
   );
 }
@@ -170,35 +191,39 @@ function PreviewUnlockFreeGifts() {
       <div style={{ ...r.card(true), flexDirection: "column", alignItems: "stretch", gap: 8 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <Radio selected />
-          <div style={{ flex: 1 }}>
+          <ImgTile emoji="🧴" />
+          <div style={{ flex: 1, minWidth: 0 }}>
             <span style={{ fontWeight: 700 }}>Single</span>{" "}
             <span style={{ color: "var(--pumper-theme, #b21e36)", fontSize: 12 }}>Standard Price</span>
           </div>
-          <span style={r.price}>$24.95</span>
+          <span style={{ ...r.price, flexShrink: 0 }}>$24.95</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, paddingLeft: 30 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, paddingLeft: 30, flexWrap: "wrap" }}>
           <span style={{ fontSize: 12, color: "#6b7280" }}>Title</span>
           <span style={{ fontSize: 11, color: "#9aa0a6" }}>#1</span>
           <Dropdown width={150}>Selling Plans S…</Dropdown>
         </div>
       </div>
-      <div style={{ position: "relative", border: "2px solid var(--pumper-theme, #7b1e2a)", borderRadius: 12, overflow: "hidden" }}>
+      <div style={{ position: "relative" }}>
         <span style={r.cornerPill}>Most Popular</span>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: "#fdeef0" }}>
-          <Radio selected={false} />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700 }}>Duo</div>
-            <span style={{ color: "var(--pumper-theme, #b21e36)", fontSize: 12 }}>You Save $9.98</span>
+        <div style={{ border: "2px solid var(--pumper-theme, #7b1e2a)", borderRadius: 12, overflow: "hidden" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 14px 12px", background: "#fdeef0" }}>
+            <Radio selected={false} />
+            <ImgTile emoji="🎁" />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 700 }}>Duo</div>
+              <span style={{ color: "var(--pumper-theme, #b21e36)", fontSize: 12 }}>You Save $9.98</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0 }}>
+              <span style={r.price}>$39.92</span>
+              <span style={r.strike}>$49.90</span>
+            </div>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-            <span style={r.price}>$39.92</span>
-            <span style={r.strike}>$49.90</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "var(--pumper-theme, #b21e36)" }}>
+            <span style={{ fontSize: 20 }}>🎁</span>
+            <span style={{ flex: 1, color: "#fff", fontWeight: 700 }}>+1 FREE GIFT</span>
+            <span style={{ textDecoration: "line-through", color: "#fbe4e7", fontSize: 12 }}>$100.00</span>
           </div>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "var(--pumper-theme, #e89aa8)" }}>
-          <span style={{ fontSize: 20 }}>🎁</span>
-          <span style={{ flex: 1, color: "#fff", fontWeight: 700 }}>+1 FREE GIFT</span>
-          <span style={{ ...r.strike, color: "#fbe4e7" }}>$100.00</span>
         </div>
       </div>
     </BlockStack>
@@ -208,8 +233,8 @@ function PreviewUnlockFreeGifts() {
 function PreviewSubscribeSave() {
   return (
     <BlockStack gap="300">
-      <Tier selected imageBg="#cfd4da" title="1 Pack" std price="$24.95" />
-      <Tier imageBg="#cfd4da" title="2 Packs" off="20% OFF" price="$39.92" strike="$49.90" />
+      <Tier selected emoji="🧴" title="1 Pack" std price="$24.95" />
+      <Tier emoji="🧴" title="2 Packs" off="20% OFF" price="$39.92" strike="$49.90" />
       <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "2px 0" }}>
         <span style={{ flex: 1, height: 1, background: "#f0c8cf" }} />
         <Text as="span" variant="headingSm" tone="subdued">Purchase Options</Text>
@@ -346,7 +371,7 @@ export default function ChooseDiscountType() {
         style={{
           // CSS variable consumed by every preview to tint accent colors
           ["--pumper-theme" as string]: theme,
-          columnCount: 3,
+          columnCount: 2,
           columnGap: 16,
         }}
       >
