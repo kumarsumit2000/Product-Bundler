@@ -17,6 +17,10 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 type CardKey = "qb_volume_4" | "bxgy" | "qb_free_gift" | "qb_subscribe" | "mix_match";
 
 const ACCENT = "var(--pumper-theme, #7B1E2A)";
+// Tints derived from the active theme color so every fill (card backgrounds,
+// pills, the free-gift row) re-colors when the merchant picks a theme — not
+// just the borders. `pct` is how much theme color is mixed over white.
+const tint = (pct: number) => `color-mix(in srgb, ${ACCENT} ${pct}%, #fff)`;
 
 // ---- primitives ---------------------------------------------------------
 const S = {
@@ -28,7 +32,7 @@ const S = {
     padding: "12px 14px",
     borderRadius: 14,
     border: `2px solid ${selected ? ACCENT : "transparent"}`,
-    background: selected ? "#fff" : "#fce7ec",
+    background: selected ? "#fff" : tint(10),
     cursor: "pointer",
     fontSize: 15,
     color: "#1a1a1a",
@@ -55,7 +59,7 @@ function Radio({ on }: { on: boolean }) {
         width: 20,
         height: 20,
         borderRadius: 999,
-        border: `2px solid ${on ? ACCENT : "#d8b3bb"}`,
+        border: `2px solid ${on ? ACCENT : tint(45)}`,
         background: on ? `radial-gradient(${ACCENT} 6px, #fff 7px)` : "#fff",
         flexShrink: 0,
       }}
@@ -70,7 +74,7 @@ function Check({ on }: { on: boolean }) {
         width: 20,
         height: 20,
         borderRadius: 6,
-        border: `2px solid ${on ? ACCENT : "#d8b3bb"}`,
+        border: `2px solid ${on ? ACCENT : tint(45)}`,
         background: on ? ACCENT : "#fff",
         color: "#fff",
         display: "flex",
@@ -93,7 +97,7 @@ function Dropdown({ children, width }: { children: React.ReactNode; width?: numb
         alignItems: "center",
         justifyContent: "space-between",
         gap: 8,
-        border: "1px solid #d8b3bb",
+        border: `1px solid ${tint(45)}`,
         borderRadius: 8,
         padding: "5px 10px",
         fontSize: 12,
@@ -116,7 +120,7 @@ function Tile({ emoji, size = 46 }: { emoji: string; size?: number }) {
         height: size,
         borderRadius: 10,
         background: "#fff",
-        border: "1px solid #ecccd3",
+        border: `1px solid ${tint(30)}`,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -139,7 +143,7 @@ function StdPill() {
 
 function OffPill({ children }: { children: React.ReactNode }) {
   return (
-    <span style={{ background: "#f7c9d4", color: ACCENT, fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 6, whiteSpace: "nowrap" }}>
+    <span style={{ background: tint(22), color: ACCENT, fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 6, whiteSpace: "nowrap" }}>
       {children}
     </span>
   );
@@ -236,7 +240,7 @@ function UnlockFreeGifts() {
       <div style={{ position: "relative" }}>
         <span style={S.corner}>Most Popular</span>
         <div style={{ borderRadius: 14, overflow: "hidden", border: `2px solid ${sel === 1 ? ACCENT : "transparent"}` }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: "16px 14px 12px", background: sel === 1 ? "#fff" : "#fce7ec", cursor: "pointer" }} onClick={(e) => { e.stopPropagation(); setSel(1); }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: "16px 14px 12px", background: sel === 1 ? "#fff" : tint(10), cursor: "pointer" }} onClick={(e) => { e.stopPropagation(); setSel(1); }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <Radio on={sel === 1} />
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -261,7 +265,7 @@ function UnlockFreeGifts() {
             )}
           </div>
           {/* free gift row */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "#f4b9c6" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: tint(42) }}>
             <Tile emoji="🎁" size={40} />
             <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               <span style={{ fontSize: 11, background: "#fff", borderRadius: 5, padding: "1px 6px", color: ACCENT, fontWeight: 700 }}>1x</span>
@@ -305,9 +309,9 @@ function SubscribeSave() {
         </div>
       ))}
       <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "2px 0" }}>
-        <span style={{ flex: 1, height: 1, background: "#f0c8cf" }} />
+        <span style={{ flex: 1, height: 1, background: tint(30) }} />
         <span style={{ color: ACCENT, fontWeight: 700, fontSize: 13 }}>Purchase Options</span>
-        <span style={{ flex: 1, height: 1, background: "#f0c8cf" }} />
+        <span style={{ flex: 1, height: 1, background: tint(30) }} />
       </div>
       <div style={{ border: `2px dashed ${ACCENT}`, borderRadius: 14, padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10, cursor: "pointer" }} onClick={(e) => { e.stopPropagation(); setSub((v) => !v); }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -328,7 +332,7 @@ function SubscribeSave() {
 function BundleSave() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ background: "#fce0e7", borderRadius: 18, padding: "30px 18px", display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
+      <div style={{ background: tint(12), borderRadius: 18, padding: "30px 18px", display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <Tile emoji="🩳" size={66} />
           <span style={{ color: ACCENT, fontSize: 22, fontWeight: 800 }}>+</span>
