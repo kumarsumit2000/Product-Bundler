@@ -23,20 +23,27 @@ export async function loader({ context, params }: LoaderFunctionArgs) {
   const widgetJsUrl = env.WIDGET_JS_URL ?? "/widget.js";
   const widgetCssUrl = env.WIDGET_CSS_URL ?? "/widget.css";
 
+  // Dashboard template cards embed this iframe at id="template". In that mode
+  // strip the customer-facing chrome — the "Preview" banner and the Add-to-cart
+  // CTA — so the card shows only the clean widget (the card has its own
+  // "Customize it now" / "Create a Bundle" button).
+  const isCard = String(params.id ?? "") === "template";
+
   const html = `<!doctype html>
 <html><head>
 <meta charset="utf-8">
 <title>Preview</title>
 <link rel="stylesheet" href="${widgetCssUrl}">
 <style>
-  body { margin:0; padding:16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background:#fff; }
+  body { margin:0; padding:${isCard ? "2px" : "16px"}; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background:#fff; }
   .pumper-preview-context { padding: 12px; background:#f6f6f7; border-radius:8px; margin-bottom:16px; font-size:13px; color:#666; }
   .pumper-preview-context strong { color:#111; }
+  ${isCard ? ".pumper-cta, [data-action=add-to-cart] { display:none !important; }" : ""}
 </style>
 </head><body>
-<div class="pumper-preview-context">
+${isCard ? "" : `<div class="pumper-preview-context">
   <strong>Preview</strong> — this is how the widget will appear on a product page.
-</div>
+</div>`}
 <div class="pumper-mount" data-pumper-type="${type}" data-product-id="0" data-shop="preview"></div>
 <script>
   window._pumperPreview = true;
