@@ -2,6 +2,7 @@ import { Button, ButtonGroup, BlockStack, InlineStack, TextField, Select, Checkb
 import { useRef, useState } from "react";
 import { VariantPicker, type PickedVariant } from "./VariantPicker";
 import { ProductPicker, type PickedProduct } from "./ProductPicker";
+import { ShopifyImageField } from "./ShopifyImageField";
 import { reorderTiers, duplicateTier, setMostPopular, setTierEnabled } from "~/lib/qb-tier-ops";
 import { tierDiscountTab, applyDiscountTab, type DiscountTab } from "~/lib/qb-tier-discount";
 
@@ -62,7 +63,14 @@ const DEFAULT_TIER: TierFormValue = {
 
 export function QbTierBuilder({ tiers, onChange, maxTiers = 10, restrictToProductId }: Props) {
   const [openRows, setOpenRows] = useState<Record<number, boolean>>({});
+  // Local visibility for the Free Gift / Image add-on config blocks. A chip is
+  // "active" when its data is set OR it's been locally toggled open.
+  const [addonOpen, setAddonOpen] = useState<Record<number, { gift?: boolean; image?: boolean }>>({});
   const dragFrom = useRef<number | null>(null);
+
+  const setAddon = (index: number, patch: { gift?: boolean; image?: boolean }) => {
+    setAddonOpen((prev) => ({ ...prev, [index]: { ...prev[index], ...patch } }));
+  };
 
   const updateTier = (index: number, patch: Partial<TierFormValue>) => {
     onChange(tiers.map((t, i) => (i === index ? { ...t, ...patch } : t)));
@@ -226,6 +234,66 @@ export function QbTierBuilder({ tiers, onChange, maxTiers = 10, restrictToProduc
                             )}
                             <TextField label="Bonus quantity" type="number" autoComplete="off" value={String(tier.bogoBonusQty ?? 1)} onChange={(v) => updateTier(i, { bogoBonusQty: Math.max(1, parseInt(v, 10) || 1) })} />
                           </BlockStack>
+                        )}
+                      </BlockStack>
+                    );
+                  })()}
+                  {(() => {
+                    const giftActive = !!tier.freeGiftVariant || !!addonOpen[i]?.gift;
+                    const imageActive = !!tier.image || !!addonOpen[i]?.image;
+                    const shipActive = tier.freeShipping === true;
+                    return (
+                      <BlockStack gap="200">
+                        <Text as="span" variant="bodySm" tone="subdued">Add-Ons</Text>
+                        <ButtonGroup>
+                          <Button
+                            pressed={giftActive}
+                            onClick={() => {
+                              if (giftActive) {
+                                setAddon(i, { gift: false });
+                                updateTier(i, { freeGiftVariant: null });
+                              } else {
+                                setAddon(i, { gift: true });
+                              }
+                            }}
+                          >
+                            + Free Gift
+                          </Button>
+                          <Button
+                            pressed={imageActive}
+                            onClick={() => {
+                              if (imageActive) {
+                                setAddon(i, { image: false });
+                                updateTier(i, { image: undefined });
+                              } else {
+                                setAddon(i, { image: true });
+                              }
+                            }}
+                          >
+                            + Image
+                          </Button>
+                          <Button
+                            pressed={shipActive}
+                            onClick={() => updateTier(i, { freeShipping: !tier.freeShipping })}
+                          >
+                            + Free Ship
+                          </Button>
+                        </ButtonGroup>
+                        {giftActive && (
+                          <BlockStack gap="100">
+                            <Text as="span" variant="bodySm" tone="subdued">Free gift</Text>
+                            <VariantPicker
+                              variant={tier.freeGiftVariant ?? null}
+                              onChange={(pv) => updateTier(i, { freeGiftVariant: pv })}
+                            />
+                          </BlockStack>
+                        )}
+                        {imageActive && (
+                          <ShopifyImageField
+                            label="Tier image"
+                            value={tier.image ?? ""}
+                            onChange={(url) => updateTier(i, { image: url || undefined })}
+                          />
                         )}
                       </BlockStack>
                     );
