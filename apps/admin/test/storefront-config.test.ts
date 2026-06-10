@@ -151,6 +151,34 @@ describe("buildStorefrontConfig", () => {
     expect(cfg.quantityBreaks[0]!.tiers[1]!.enabled).toBeUndefined();
   });
 
+  it("serializes per-tier image + freeShipping", async () => {
+    db.insert(schema.quantityBreaks).values({
+      id: "q1", shopId: SHOP, name: "Q",
+      status: "active",
+      productId: "gid://shopify/Product/1",
+      collectionId: null,
+      tiers: [
+        { qty: 1, discountType: "percentage", discountValue: 0, label: "Buy 1", isMostPopular: false, image: "https://cdn/x.png", freeShipping: true },
+      ],
+      combinable: false, styleOverrides: null,
+      createdAt: new Date(), updatedAt: new Date(),
+    }).run();
+
+    const admin = mockAdmin({
+      data: { nodes: [{
+        __typename: "Product",
+        id: "gid://shopify/Product/1",
+        title: "Snowboard",
+        featuredImage: { url: "img" },
+        variants: { nodes: [{ id: "gid://shopify/ProductVariant/1", title: "Default", availableForSale: true, price: "100.00" }] },
+      }]},
+    });
+
+    const cfg = await buildStorefrontConfig(db, admin, SHOP);
+    expect(cfg.quantityBreaks[0]!.tiers[0]!.image).toBe("https://cdn/x.png");
+    expect(cfg.quantityBreaks[0]!.tiers[0]!.freeShipping).toBe(true);
+  });
+
   it("emits textOverrides on bundles and quantityBreaks", async () => {
     const bundleId = crypto.randomUUID();
     const qbId = crypto.randomUUID();

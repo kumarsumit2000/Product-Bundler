@@ -174,6 +174,8 @@ export async function buildStorefrontConfig(
       label: tr.label,
       isMostPopular: tr.isMostPopular,
       enabled: tr.enabled,
+      image: tr.image ?? null,
+      freeShipping: tr.freeShipping ?? false,
       available: variants.some((v) => v.available),
       freeGiftVariantId: tr.freeGiftVariantId ?? null,
       freeGiftVariantTitle: tr.freeGiftVariantId
