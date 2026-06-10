@@ -37,6 +37,8 @@ export type QbTier = {
   label: string;
   isMostPopular: boolean;
   enabled?: boolean; // Phase A: a disabled tier is excluded from the widget. Absent = enabled.
+  image?: string;          // tier image URL (display only)
+  freeShipping?: boolean;  // grant free shipping when this tier is the active tier
   freeGiftVariantId?: string;
   bogo?: {
     mode: "add_same" | "add_different" | "nth_free";

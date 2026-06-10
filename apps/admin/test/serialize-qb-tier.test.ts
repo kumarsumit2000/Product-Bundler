@@ -22,4 +22,14 @@ describe("serializeTierForm", () => {
     expect(out.bogo).toBeUndefined();
     expect(out.freeGiftVariantId).toBeUndefined();
   });
+  it("carries image and freeShipping", () => {
+    const out = serializeTierForm({ qty: 3, discountType: "percentage", discountValue: 10, label: "", isMostPopular: false, image: "https://cdn/x.png", freeShipping: true } as never);
+    expect(out.image).toBe("https://cdn/x.png");
+    expect(out.freeShipping).toBe(true);
+  });
+  it("omits image/freeShipping when unset/false", () => {
+    const out = serializeTierForm({ qty: 1, discountType: "percentage", discountValue: 0, label: "", isMostPopular: false } as never);
+    expect(out.image).toBeUndefined();
+    expect(out.freeShipping).toBeUndefined();
+  });
 });

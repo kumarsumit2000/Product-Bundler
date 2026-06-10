@@ -12,6 +12,8 @@ export type TierFormValue = {
   label: string;
   isMostPopular: boolean;
   enabled?: boolean;
+  image?: string;
+  freeShipping?: boolean;
   freeGiftVariant?: PickedVariant | null;
   bogoMode?: "" | "add_same" | "add_different" | "nth_free";
   bogoTargetVariant?: PickedVariant | null;
@@ -49,6 +51,8 @@ const DEFAULT_TIER: TierFormValue = {
   label: "",
   isMostPopular: false,
   enabled: true,
+  image: undefined,
+  freeShipping: false,
   freeGiftVariant: null,
   bogoMode: "",
   bogoTargetVariant: null,

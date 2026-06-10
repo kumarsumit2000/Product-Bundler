@@ -13,6 +13,8 @@ export function serializeTierForm(t: TierFormValue): QbTier {
     label: t.label,
     isMostPopular: t.isMostPopular,
     enabled: t.enabled,
+    image: t.image || undefined,
+    freeShipping: t.freeShipping || undefined,
     freeGiftVariantId: t.freeGiftVariant?.variantId ?? undefined,
     bogo: hasBogo
       ? { mode: t.bogoMode as "add_same" | "add_different" | "nth_free", targetVariantId: t.bogoTargetVariant?.variantId ?? undefined, bonusQty: t.bogoBonusQty ?? 1 }

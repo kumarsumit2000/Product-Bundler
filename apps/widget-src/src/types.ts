@@ -146,6 +146,8 @@ export type QbTier = {
   label: string;
   isMostPopular: boolean;
   enabled?: boolean;
+  image?: string;          // tier image URL (display only)
+  freeShipping?: boolean;  // grant free shipping when this tier is the active tier
   available: boolean;
   freeGiftVariantId?: string | null;
   freeGiftVariantTitle?: string | null;
