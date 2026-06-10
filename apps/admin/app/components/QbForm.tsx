@@ -2,7 +2,6 @@ import { Form, useNavigation, useNavigate } from "@remix-run/react";
 import {
   BlockStack,
   Box,
-  Card,
   ChoiceList,
   Banner,
   TextField,
@@ -26,6 +25,7 @@ import type { StickyAtcConfig, SubscriptionConfig } from "../../drizzle/schema";
 import { type StylePanelValues } from "./StylePanel";
 import { SimpleQbStylePanel } from "./SimpleQbStylePanel";
 import { EMPTY_STYLE_FORM, buildStyleOverrides } from "~/lib/preview-overrides";
+import { CollapsibleSection } from "~/components/CollapsibleSection";
 
 // DOM id the route uses to wire a Polaris Page primaryAction "Save"
 // button to this form.
@@ -228,70 +228,118 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange, pro
           </Banner>
         )}
 
-        <Card>
-          <BlockStack gap="400">
-            <Text as="h2" variant="headingMd">Name</Text>
-            <TextField
-              label="Name"
-              labelHidden
-              name="name"
-              value={values.name}
-              onChange={(v) => update("name", v)}
-              error={errors?.name}
-              autoComplete="off"
-              maxLength={100}
-              placeholder="Internal name (e.g. Holiday QB)"
-            />
-          </BlockStack>
-        </Card>
+        <CollapsibleSection title="Select Product & Basic Setup" defaultOpen>
+          <BlockStack gap="500">
+            <BlockStack gap="400">
+              <Text as="h2" variant="headingMd">Deal Name</Text>
+              <TextField
+                label="Deal Name"
+                labelHidden
+                name="name"
+                value={values.name}
+                onChange={(v) => update("name", v)}
+                error={errors?.name}
+                autoComplete="off"
+                maxLength={100}
+                placeholder="Internal name (e.g. Holiday QB)"
+              />
+            </BlockStack>
 
-        <Card>
-          <BlockStack gap="400">
-            <Text as="h2" variant="headingMd">Product</Text>
-            <ChoiceList
-              title="Apply discount to"
-              titleHidden
-              choices={[
-                {
-                  label: "A specific product",
-                  value: "specific",
-                  helpText: "The discount always applies to the product you pick below.",
-                },
-                {
-                  label: "Whichever product the customer is viewing",
-                  value: "current",
-                  helpText: "Universal template — works on every product page without binding to one product.",
-                },
-              ]}
-              selected={[values.bindToCurrentProduct ? "current" : "specific"]}
-              onChange={(s) => update("bindToCurrentProduct", s[0] === "current")}
-            />
+            <BlockStack gap="400">
+              <Text as="h2" variant="headingMd">Header Text</Text>
+              <Text as="p" tone="subdued">Override the headline shown on this widget. Leave empty to use shop defaults.</Text>
+              <TextField
+                label="Header Text"
+                labelHidden
+                value={values.headline}
+                onChange={(v) => update("headline", v)}
+                error={errors?.headline}
+                placeholder="Choose your savings"
+                autoComplete="off"
+                maxLength={100}
+              />
+            </BlockStack>
+
             {!values.bindToCurrentProduct && (
-              <>
-                <Text as="p" tone="subdued">
-                  Pick the product whose variants get added to the cart when a tier is chosen.
-                  Visibility settings (below) independently control which PDPs the widget shows on.
-                </Text>
-                <ProductPicker
-                  products={values.product}
-                  onChange={(p) => update("product", p)}
-                  showQty={false}
+              <BlockStack gap="400">
+                <Text as="h2" variant="headingMd">Apply Deal on</Text>
+                <Text as="p" tone="subdued">Control which product pages this widget shows on.</Text>
+                <ChoiceList
+                  title="Show on"
+                  titleHidden
+                  choices={[
+                    { label: "All products", value: "all" },
+                    { label: "All products except selected", value: "all_except" },
+                    { label: "Specific products", value: "specific" },
+                    { label: "Products in selected collections", value: "collections" },
+                  ]}
+                  selected={[values.visibility]}
+                  onChange={(s) => update("visibility", s[0] as QbVisibility)}
                 />
-                {errors?.productId && <Banner tone="critical">{errors.productId}</Banner>}
-              </>
+                {(values.visibility === "all_except" || values.visibility === "specific") && (
+                  <ProductPicker
+                    products={values.visibilityProducts}
+                    onChange={(p) => update("visibilityProducts", p)}
+                    multiple
+                    showQty={false}
+                  />
+                )}
+                {values.visibility === "collections" && (
+                  <MultiCollectionPicker
+                    collections={values.visibilityCollections}
+                    onChange={(c) => update("visibilityCollections", c)}
+                  />
+                )}
+                {errors?.visibility && <Banner tone="critical">{errors.visibility}</Banner>}
+              </BlockStack>
             )}
-            {values.bindToCurrentProduct && (
-              <Banner tone="info">
-                The widget will read the current product's variants and prices directly from
-                the PDP. Tier discounts apply as a percentage off whatever the customer is viewing.
-              </Banner>
-            )}
-          </BlockStack>
-        </Card>
 
-        <Card>
+            <BlockStack gap="400">
+              <Text as="h2" variant="headingMd">Product</Text>
+              <ChoiceList
+                title="Apply discount to"
+                titleHidden
+                choices={[
+                  {
+                    label: "A specific product",
+                    value: "specific",
+                    helpText: "The discount always applies to the product you pick below.",
+                  },
+                  {
+                    label: "Whichever product the customer is viewing",
+                    value: "current",
+                    helpText: "Universal template — works on every product page without binding to one product.",
+                  },
+                ]}
+                selected={[values.bindToCurrentProduct ? "current" : "specific"]}
+                onChange={(s) => update("bindToCurrentProduct", s[0] === "current")}
+              />
+              {!values.bindToCurrentProduct && (
+                <>
+                  <Text as="p" tone="subdued">
+                    Pick the product whose variants get added to the cart when a tier is chosen.
+                    Visibility settings (above) independently control which PDPs the widget shows on.
+                  </Text>
+                  <ProductPicker
+                    products={values.product}
+                    onChange={(p) => update("product", p)}
+                    showQty={false}
+                  />
+                  {errors?.productId && <Banner tone="critical">{errors.productId}</Banner>}
+                </>
+              )}
+              {values.bindToCurrentProduct && (
+                <Banner tone="info">
+                  The widget will read the current product's variants and prices directly from
+                  the PDP. Tier discounts apply as a percentage off whatever the customer is viewing.
+                </Banner>
+              )}
+            </BlockStack>
+          </BlockStack>
+        </CollapsibleSection>
+
+        <CollapsibleSection title="Edit Tier Deals" defaultOpen>
           <BlockStack gap="400">
-            <Text as="h2" variant="headingMd">Tiers</Text>
             <QbTierBuilder
               tiers={values.tiers}
               onChange={(t) => update("tiers", t)}
@@ -299,54 +347,19 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange, pro
             />
             {errors?.tiers && <Banner tone="critical">{errors.tiers}</Banner>}
           </BlockStack>
-        </Card>
+        </CollapsibleSection>
 
-        {!values.bindToCurrentProduct && (
-          <Card>
-            <BlockStack gap="400">
-              <Text as="h2" variant="headingMd">Visibility</Text>
-              <Text as="p" tone="subdued">Control which product pages this widget shows on.</Text>
-              <ChoiceList
-                title="Show on"
-                titleHidden
-                choices={[
-                  { label: "All products", value: "all" },
-                  { label: "All products except selected", value: "all_except" },
-                  { label: "Specific products", value: "specific" },
-                  { label: "Products in selected collections", value: "collections" },
-                ]}
-                selected={[values.visibility]}
-                onChange={(s) => update("visibility", s[0] as QbVisibility)}
-              />
-              {(values.visibility === "all_except" || values.visibility === "specific") && (
-                <ProductPicker
-                  products={values.visibilityProducts}
-                  onChange={(p) => update("visibilityProducts", p)}
-                  multiple
-                  showQty={false}
-                />
-              )}
-              {values.visibility === "collections" && (
-                <MultiCollectionPicker
-                  collections={values.visibilityCollections}
-                  onChange={(c) => update("visibilityCollections", c)}
-                />
-              )}
-              {errors?.visibility && <Banner tone="critical">{errors.visibility}</Banner>}
-            </BlockStack>
-          </Card>
-        )}
+        <BlockStack gap="100">
+          <Text as="h2" variant="headingLg">Cherries on Top</Text>
+          <Text as="p" tone="subdued" variant="bodySm">Color &amp; style, Subscription, Sticky bar, and more</Text>
+        </BlockStack>
 
-        <WidgetAddonsCard
-          progressiveGifts={progressiveGiftOptions}
-          linkedProgressiveGiftId={values.linkedProgressiveGiftId}
-          widgetLabel="Quantity break widget"
-          onChange={(patch) => setValues((s) => ({ ...s, ...patch }))}
-        />
+        <CollapsibleSection title="Color & style">
+          <SimpleQbStylePanel values={values} onChange={(next) => setValues((s) => ({ ...s, ...next }))} />
+        </CollapsibleSection>
 
-        <Card>
+        <CollapsibleSection title="Free gift">
           <BlockStack gap="400">
-            <Text as="h2" variant="headingMd">Free gift</Text>
             <Checkbox
               label="Include a free gift with this quantity break"
               checked={values.freeGiftEnabled}
@@ -411,28 +424,42 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange, pro
               </BlockStack>
             )}
           </BlockStack>
-        </Card>
+        </CollapsibleSection>
 
-        <QbUpsellsBuilder
-          enabled={values.checkboxUpsellsEnabled}
-          onEnabledChange={(checkboxUpsellsEnabled) => update("checkboxUpsellsEnabled", checkboxUpsellsEnabled)}
-          upsells={values.checkboxUpsells}
-          onUpsellsChange={(checkboxUpsells) => update("checkboxUpsells", checkboxUpsells)}
-        />
+        <CollapsibleSection title="Checkbox upsells">
+          <QbUpsellsBuilder
+            enabled={values.checkboxUpsellsEnabled}
+            onEnabledChange={(checkboxUpsellsEnabled) => update("checkboxUpsellsEnabled", checkboxUpsellsEnabled)}
+            upsells={values.checkboxUpsells}
+            onUpsellsChange={(checkboxUpsells) => update("checkboxUpsells", checkboxUpsells)}
+          />
+        </CollapsibleSection>
 
-        <StickyAtcCard
-          value={values.stickyAtc}
-          onChange={(stickyAtc) => update("stickyAtc", stickyAtc)}
-        />
+        <CollapsibleSection title="Add-ons">
+          <WidgetAddonsCard
+            progressiveGifts={progressiveGiftOptions}
+            linkedProgressiveGiftId={values.linkedProgressiveGiftId}
+            widgetLabel="Quantity break widget"
+            onChange={(patch) => setValues((s) => ({ ...s, ...patch }))}
+          />
+        </CollapsibleSection>
 
-        <SubscriptionPanel
-          value={values.subscription}
-          onChange={(v) => update("subscription", v)}
-        />
+        <CollapsibleSection title="Subscription">
+          <SubscriptionPanel
+            value={values.subscription}
+            onChange={(v) => update("subscription", v)}
+          />
+        </CollapsibleSection>
 
-        <Card>
+        <CollapsibleSection title="Sticky bar">
+          <StickyAtcCard
+            value={values.stickyAtc}
+            onChange={(stickyAtc) => update("stickyAtc", stickyAtc)}
+          />
+        </CollapsibleSection>
+
+        <CollapsibleSection title="Settings">
           <BlockStack gap="400">
-            <Text as="h2" variant="headingMd">Settings</Text>
             <ChoiceList
               title="Status"
               choices={[
@@ -472,22 +499,7 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange, pro
               autoComplete="off"
               helpText="Widget hides automatically after this. Leave blank for no expiry."
             />
-          </BlockStack>
-        </Card>
 
-        <Card>
-          <BlockStack gap="400">
-            <Text as="h2" variant="headingMd">Headline & CTA</Text>
-            <Text as="p" tone="subdued">Override the headline and CTA shown on this widget. Leave empty to use shop defaults.</Text>
-            <TextField
-              label="Headline (optional)"
-              value={values.headline}
-              onChange={(v) => update("headline", v)}
-              error={errors?.headline}
-              placeholder="Choose your savings"
-              autoComplete="off"
-              maxLength={100}
-            />
             <TextField
               label="CTA label (optional)"
               value={values.ctaLabel}
@@ -497,14 +509,8 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange, pro
               autoComplete="off"
               maxLength={50}
             />
-          </BlockStack>
-        </Card>
 
-        <SimpleQbStylePanel values={values} onChange={(next) => setValues((s) => ({ ...s, ...next }))} />
-
-        <Card>
-          <BlockStack gap="400">
-            <Text as="h2" variant="headingMd">Text overrides</Text>
+            <Text as="h3" variant="headingSm">Text overrides</Text>
             <Text as="p" tone="subdued">Rename the labels and badges shown on the widget. Leave empty to use defaults.</Text>
             <TextField
               label="Tier label"
@@ -566,7 +572,7 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange, pro
               <Banner tone="critical">{errors?.styleOverrides || errors?.textOverrides}</Banner>
             )}
           </BlockStack>
-        </Card>
+        </CollapsibleSection>
 
         <Box paddingBlockEnd="600">
           <InlineStack align="end" gap="300">
