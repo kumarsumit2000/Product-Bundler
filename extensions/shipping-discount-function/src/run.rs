@@ -10,6 +10,8 @@ use serde::Deserialize;
 struct ShopConfig {
     #[serde(rename = "progressiveGifts", default)]
     progressive_gifts: Vec<ProgressiveGift>,
+    #[serde(rename = "quantityBreaks", default)]
+    quantity_breaks: Vec<QuantityBreak>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -25,6 +27,31 @@ struct ShippingThreshold {
     min_spend_cents: u64,
 }
 
+#[derive(Deserialize, Debug)]
+struct QuantityBreak {
+    status: String,
+    #[serde(rename = "productId")]
+    product_id: String,
+    #[serde(default)]
+    tiers: Vec<QbTier>,
+}
+
+#[derive(Deserialize, Debug)]
+struct QbTier {
+    qty: u32,
+    #[serde(rename = "freeShipping", default)]
+    free_shipping: bool,
+}
+
+/// True when the active tier (max qty <= line_qty) has free shipping.
+fn active_tier_free_ship(tiers: &[QbTier], line_qty: u32) -> bool {
+    tiers.iter()
+        .filter(|t| line_qty >= t.qty)
+        .max_by_key(|t| t.qty)
+        .map(|t| t.free_shipping)
+        .unwrap_or(false)
+}
+
 #[shopify_function]
 fn run(input: schema::run::Input) -> Result<schema::FunctionRunResult> {
     let no_discount = schema::FunctionRunResult { discounts: vec![] };
@@ -37,21 +64,47 @@ fn run(input: schema::run::Input) -> Result<schema::FunctionRunResult> {
         None => return Ok(no_discount),
     };
 
-    // Lowest threshold across all active progressive gifts. If the cart's
-    // subtotal clears it, free shipping kicks in.
+    // Progressive-gift qualification: lowest threshold across all active
+    // progressive gifts. If the cart's subtotal clears it, free shipping kicks in.
     let mut lowest: Option<u64> = None;
     for pg in config.progressive_gifts.iter().filter(|p| p.status == "active") {
         for t in &pg.shipping_thresholds {
             lowest = Some(lowest.map_or(t.min_spend_cents, |cur| cur.min(t.min_spend_cents)));
         }
     }
-    let threshold_cents = match lowest {
-        Some(v) => v,
-        None => return Ok(no_discount),
+    let pg_qualifies = match lowest {
+        Some(threshold_cents) => {
+            let subtotal_cents =
+                (input.cart().cost().subtotal_amount().amount().as_f64() * 100.0).round() as u64;
+            subtotal_cents >= threshold_cents
+        }
+        None => false,
     };
 
-    let subtotal_cents = (input.cart().cost().subtotal_amount().amount().as_f64() * 100.0).round() as u64;
-    if subtotal_cents < threshold_cents {
+    // Quantity-break qualification: any active QB whose product appears in the
+    // cart with a line whose active tier (max qty <= line.quantity) has
+    // `freeShipping: true`.
+    let mut qb_qualifies = false;
+    'qb: for qb in config.quantity_breaks.iter().filter(|q| q.status == "active") {
+        for line in input.cart().lines() {
+            use schema::run::input::cart::lines::Merchandise;
+            let variant = match line.merchandise() {
+                Merchandise::ProductVariant(pv) => pv,
+                _ => continue,
+            };
+            let product_id = variant.product().id().to_string();
+            if product_id != qb.product_id {
+                continue;
+            }
+            let quantity = *line.quantity() as u32;
+            if active_tier_free_ship(&qb.tiers, quantity) {
+                qb_qualifies = true;
+                break 'qb;
+            }
+        }
+    }
+
+    if !(pg_qualifies || qb_qualifies) {
         return Ok(no_discount);
     }
 
@@ -78,4 +131,18 @@ fn run(input: schema::run::Input) -> Result<schema::FunctionRunResult> {
     };
 
     Ok(schema::FunctionRunResult { discounts: vec![discount] })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    fn tier(qty: u32, fs: bool) -> QbTier { QbTier { qty, free_shipping: fs } }
+    #[test]
+    fn active_tier_qualifies() {
+        let tiers = vec![tier(2, false), tier(5, true)];
+        assert!(active_tier_free_ship(&tiers, 5));   // active = qty5 (free ship)
+        assert!(active_tier_free_ship(&tiers, 7));   // active = qty5
+        assert!(!active_tier_free_ship(&tiers, 4));  // active = qty2 (no free ship)
+        assert!(!active_tier_free_ship(&tiers, 1));  // no tier reached
+    }
 }

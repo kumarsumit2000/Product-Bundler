@@ -5,6 +5,15 @@ query Input {
         amount
       }
     }
+    lines {
+      quantity
+      merchandise {
+        __typename
+        ... on ProductVariant {
+          product { id }
+        }
+      }
+    }
     deliveryGroups {
       deliveryOptions {
         handle
