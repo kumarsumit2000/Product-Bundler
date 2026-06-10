@@ -1,8 +1,9 @@
-import { Button, BlockStack, InlineStack, TextField, Select, Checkbox, Text, Collapsible, Box } from "@shopify/polaris";
+import { Button, ButtonGroup, BlockStack, InlineStack, TextField, Select, Checkbox, Text, Collapsible, Box } from "@shopify/polaris";
 import { useRef, useState } from "react";
 import { VariantPicker, type PickedVariant } from "./VariantPicker";
 import { ProductPicker, type PickedProduct } from "./ProductPicker";
 import { reorderTiers, duplicateTier, setMostPopular, setTierEnabled } from "~/lib/qb-tier-ops";
+import { tierDiscountTab, applyDiscountTab, type DiscountTab } from "~/lib/qb-tier-discount";
 
 export type TierFormValue = {
   qty: number;
@@ -144,57 +145,88 @@ export function QbTierBuilder({ tiers, onChange, maxTiers = 10, restrictToProduc
             </div>
             <Collapsible open={isOpen} id={`qb-tier-body-${i}`}>
               <Box paddingBlockStart="300">
-                <InlineStack gap="200" blockAlign="end">
-                  <Box minWidth="5rem">
-                    <TextField
-                      label="Qty"
-                      type="number"
-                      value={String(tier.qty)}
-                      onChange={(v) => updateTier(i, { qty: parseInt(v, 10) || 0 })}
-                      autoComplete="off"
-                      min={1}
-                    />
-                  </Box>
-                  <Box minWidth="10rem">
-                    <Select
-                      label="Discount type"
-                      options={[
-                        { label: "Percentage", value: "percentage" },
-                        { label: "Flat", value: "flat" },
-                        { label: "Fixed per unit", value: "fixed_per_unit" },
-                      ]}
-                      value={tier.discountType}
-                      onChange={(v) => {
-                        if (typeof v === "string") {
-                          updateTier(i, { discountType: v as TierFormValue["discountType"] });
-                        }
-                      }}
-                    />
-                  </Box>
-                  <Box minWidth="6.25rem">
-                    <TextField
-                      label="Value"
-                      type="number"
-                      value={String(tier.discountValue)}
-                      onChange={(v) => updateTier(i, { discountValue: parseFloat(v) || 0 })}
-                      autoComplete="off"
-                      min={0}
-                      step={0.01}
-                    />
-                  </Box>
-                  <div style={{ flex: 1 }}>
-                    <TextField
-                      label="Label"
-                      value={tier.label}
-                      onChange={(v) => updateTier(i, { label: v })}
-                      autoComplete="off"
-                      maxLength={50}
-                    />
-                  </div>
-                  <Button onClick={() => removeTier(i)} tone="critical" variant="plain">
-                    Remove
-                  </Button>
-                </InlineStack>
+                <BlockStack gap="300">
+                  <InlineStack gap="200" blockAlign="end">
+                    <Box minWidth="5rem">
+                      <TextField
+                        label="Qty"
+                        type="number"
+                        value={String(tier.qty)}
+                        onChange={(v) => updateTier(i, { qty: parseInt(v, 10) || 0 })}
+                        autoComplete="off"
+                        min={1}
+                      />
+                    </Box>
+                    <div style={{ flex: 1 }}>
+                      <TextField
+                        label="Label"
+                        value={tier.label}
+                        onChange={(v) => updateTier(i, { label: v })}
+                        autoComplete="off"
+                        maxLength={50}
+                      />
+                    </div>
+                    <Button onClick={() => removeTier(i)} tone="critical" variant="plain">
+                      Remove
+                    </Button>
+                  </InlineStack>
+                  {(() => {
+                    const activeTab = tierDiscountTab(tier);
+                    const TABS: { tab: DiscountTab; label: string }[] = [
+                      { tab: "percentage", label: "% Off" },
+                      { tab: "flat", label: "Flat" },
+                      { tab: "fixed_per_unit", label: "Specific" },
+                      { tab: "bogo", label: "BOGO" },
+                      { tab: "none", label: "None" },
+                    ];
+                    return (
+                      <BlockStack gap="200">
+                        <Text as="span" variant="bodySm" tone="subdued">Select discount type</Text>
+                        <ButtonGroup variant="segmented">
+                          {TABS.map(({ tab, label }) => (
+                            <Button key={tab} pressed={activeTab === tab} onClick={() => updateTier(i, applyDiscountTab(tier, tab))}>{label}</Button>
+                          ))}
+                        </ButtonGroup>
+                        {activeTab === "percentage" && (
+                          <TextField label="Discount in %" type="number" autoComplete="off" value={String(tier.discountValue)} onChange={(v) => updateTier(i, { discountValue: parseFloat(v) || 0 })} />
+                        )}
+                        {activeTab === "flat" && (
+                          <TextField label="Discount amount" type="number" autoComplete="off" value={String(tier.discountValue)} onChange={(v) => updateTier(i, { discountValue: parseFloat(v) || 0 })} />
+                        )}
+                        {activeTab === "fixed_per_unit" && (
+                          <TextField label="Price per unit" type="number" autoComplete="off" value={String(tier.discountValue)} onChange={(v) => updateTier(i, { discountValue: parseFloat(v) || 0 })} />
+                        )}
+                        {activeTab === "none" && (
+                          <Text as="p" tone="subdued" variant="bodySm">This tier sells at standard price.</Text>
+                        )}
+                        {activeTab === "bogo" && (
+                          <BlockStack gap="200">
+                            <Select
+                              label="BOGO type"
+                              options={[
+                                { label: "Add same product free", value: "add_same" },
+                                { label: "Add a different product free", value: "add_different" },
+                                { label: "Every Nth free", value: "nth_free" },
+                              ]}
+                              value={tier.bogoMode || "add_same"}
+                              onChange={(v) => updateTier(i, { bogoMode: v as TierFormValue["bogoMode"] })}
+                            />
+                            {tier.bogoMode === "add_different" && (
+                              <BlockStack gap="100">
+                                <Text as="span" variant="bodySm" tone="subdued">Free product</Text>
+                                <VariantPicker
+                                  variant={tier.bogoTargetVariant ?? null}
+                                  onChange={(pv) => updateTier(i, { bogoTargetVariant: pv })}
+                                />
+                              </BlockStack>
+                            )}
+                            <TextField label="Bonus quantity" type="number" autoComplete="off" value={String(tier.bogoBonusQty ?? 1)} onChange={(v) => updateTier(i, { bogoBonusQty: Math.max(1, parseInt(v, 10) || 1) })} />
+                          </BlockStack>
+                        )}
+                      </BlockStack>
+                    );
+                  })()}
+                </BlockStack>
               </Box>
             </Collapsible>
           </Box>
