@@ -152,7 +152,9 @@ export type QbTextKey =
   | "qb.mostPopular"
   | "qb.giftBadge"
   | "qb.freeGiftCallout"
-  | "qb.freeGiftCallout.hidden";
+  | "qb.freeGiftCallout.hidden"
+  | "qb.savingsBadge.hidden"
+  | "qb.mostPopular.hidden";
 export type BxgyTextKey = "bxgy.freeGiftCallout" | "bxgy.freeGiftCallout.hidden";
 export type TextOverrides = Partial<Record<BundleTextKey | QbTextKey | BxgyTextKey, string>>;
 

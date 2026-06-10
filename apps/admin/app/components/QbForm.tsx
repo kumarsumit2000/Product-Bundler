@@ -89,6 +89,8 @@ const DEFAULTS: QbFormValues = {
     "qb.giftBadge": "",
     "qb.freeGiftCallout": "",
     "qb.freeGiftCallout.hidden": "",
+    "qb.savingsBadge.hidden": "",
+    "qb.mostPopular.hidden": "",
   },
   bindToCurrentProduct: false,
   sortOrder: "0",
