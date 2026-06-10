@@ -9,7 +9,10 @@ import {
   Button,
   InlineStack,
   Text,
+  Popover,
+  ActionList,
 } from "@shopify/polaris";
+import { insertToken, QB_TEXT_TOKENS } from "~/lib/qb-text-tokens";
 import { useEffect, useState } from "react";
 import { ProductPicker, type PickedProduct } from "./ProductPicker";
 import { VariantPicker, type PickedVariant } from "./VariantPicker";
@@ -65,6 +68,13 @@ export type QbFormValues = StylePanelValues & {
 
 type AddonOption = { id: string; name: string };
 
+const TEXT_ROWS: { key: string; label: string; defaultText: string; hideable: boolean }[] = [
+  { key: "qb.tierLabel", label: "Tier label", defaultText: "Buy {qty}", hideable: false },
+  { key: "qb.savingsBadge", label: "Savings text", defaultText: "Save {DiscountAmountTotal}", hideable: true },
+  { key: "qb.mostPopular", label: "Most Popular badge", defaultText: "MOST POPULAR", hideable: true },
+  { key: "qb.freeGiftCallout", label: "Free-gift callout", defaultText: "Unlock Free Gift 🎁", hideable: true },
+];
+
 type Props = {
   initialValues?: Partial<QbFormValues>;
   errors?: Record<string, string>;
@@ -118,6 +128,7 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange, pro
   const isSubmitting = navigation.state === "submitting";
   const navigate = useNavigate();
   const submit = useSubmit();
+  const [tokenMenuFor, setTokenMenuFor] = useState<string | null>(null);
   const update = <K extends keyof QbFormValues>(k: K, v: QbFormValues[K]) =>
     setValues((s) => ({ ...s, [k]: v }));
 
@@ -538,64 +549,76 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange, pro
               maxLength={50}
             />
 
-            <Text as="h3" variant="headingSm">Text overrides</Text>
-            <Text as="p" tone="subdued">Rename the labels and badges shown on the widget. Leave empty to use defaults.</Text>
-            <TextField
-              label="Tier label"
-              value={values.textOverrides["qb.tierLabel"] ?? ""}
-              onChange={(v) => update("textOverrides", { ...values.textOverrides, "qb.tierLabel": v })}
-              placeholder="Buy {qty}"
-              helpText="Available variables: {qty}"
-              autoComplete="off"
-              maxLength={120}
-            />
-            <TextField
-              label="Savings badge"
-              value={values.textOverrides["qb.savingsBadge"] ?? ""}
-              onChange={(v) => update("textOverrides", { ...values.textOverrides, "qb.savingsBadge": v })}
-              placeholder="−{savings}"
-              helpText="Available variables: {savings}"
-              autoComplete="off"
-              maxLength={120}
-            />
-            <TextField
-              label='"Most popular" badge'
-              value={values.textOverrides["qb.mostPopular"] ?? ""}
-              onChange={(v) => update("textOverrides", { ...values.textOverrides, "qb.mostPopular": v })}
-              placeholder="MOST POPULAR"
-              autoComplete="off"
-              maxLength={120}
-            />
-            <TextField
-              label="Free gift badge"
-              value={values.textOverrides["qb.giftBadge"] ?? ""}
-              onChange={(v) => update("textOverrides", { ...values.textOverrides, "qb.giftBadge": v })}
-              placeholder="🎁 + Free {variantTitle}"
-              helpText="Available variables: {variantTitle}"
-              autoComplete="off"
-              maxLength={120}
-            />
-            <Checkbox
-              label="Show free gift callout"
-              checked={values.textOverrides["qb.freeGiftCallout.hidden"] !== "1"}
-              onChange={(checked) =>
-                update("textOverrides", {
-                  ...values.textOverrides,
-                  "qb.freeGiftCallout.hidden": checked ? "" : "1",
-                })
-              }
-              helpText="Hide this if you don't want any callout shown when a tier unlocks the free gift."
-            />
-            <TextField
-              label="Free gift unlocked callout"
-              value={values.textOverrides["qb.freeGiftCallout"] ?? ""}
-              onChange={(v) => update("textOverrides", { ...values.textOverrides, "qb.freeGiftCallout": v })}
-              placeholder="Unlock Free Gift 🎁"
-              helpText="Shown inside the tier card when its quantity unlocks the free gift."
-              autoComplete="off"
-              maxLength={120}
-              disabled={values.textOverrides["qb.freeGiftCallout.hidden"] === "1"}
-            />
+            <Text as="h3" variant="headingSm">Customize text</Text>
+            <Text as="p" tone="subdued">
+              Rename the labels and badges shown on the widget. Use{" "}
+              <Text as="span" fontWeight="bold">{"{!}"}</Text> to insert a live variable. Leave empty to use defaults.
+            </Text>
+            <BlockStack gap="400">
+              {TEXT_ROWS.map((row) => {
+                const hidden = values.textOverrides[row.key + ".hidden"] === "1";
+                return (
+                  <BlockStack gap="150" key={row.key}>
+                    <InlineStack gap="200" align="start" blockAlign="end" wrap={false}>
+                      <Box width="100%">
+                        <TextField
+                          label={row.label}
+                          value={values.textOverrides[row.key] ?? ""}
+                          onChange={(v) =>
+                            update("textOverrides", { ...values.textOverrides, [row.key]: v })
+                          }
+                          placeholder={row.defaultText}
+                          autoComplete="off"
+                          maxLength={120}
+                          disabled={hidden}
+                        />
+                      </Box>
+                      <Popover
+                        active={tokenMenuFor === row.key}
+                        onClose={() => setTokenMenuFor(null)}
+                        preferredAlignment="right"
+                        activator={
+                          <Button
+                            disabled={hidden}
+                            onClick={() =>
+                              setTokenMenuFor((cur) => (cur === row.key ? null : row.key))
+                            }
+                            accessibilityLabel={`Insert variable into ${row.label}`}
+                          >
+                            {"{!}"}
+                          </Button>
+                        }
+                      >
+                        <ActionList
+                          items={QB_TEXT_TOKENS.map((tok) => ({
+                            content: tok,
+                            onAction: () => {
+                              update("textOverrides", {
+                                ...values.textOverrides,
+                                [row.key]: insertToken(values.textOverrides[row.key] ?? "", tok),
+                              });
+                              setTokenMenuFor(null);
+                            },
+                          }))}
+                        />
+                      </Popover>
+                    </InlineStack>
+                    {row.hideable && (
+                      <Checkbox
+                        label="Hide"
+                        checked={hidden}
+                        onChange={(checked) =>
+                          update("textOverrides", {
+                            ...values.textOverrides,
+                            [row.key + ".hidden"]: checked ? "1" : "",
+                          })
+                        }
+                      />
+                    )}
+                  </BlockStack>
+                );
+              })}
+            </BlockStack>
             {(errors?.styleOverrides || errors?.textOverrides) && (
               <Banner tone="critical">{errors?.styleOverrides || errors?.textOverrides}</Banner>
             )}
