@@ -36,6 +36,7 @@ export type QbTier = {
   discountValue: number;
   label: string;
   isMostPopular: boolean;
+  enabled?: boolean; // Phase A: a disabled tier is excluded from the widget. Absent = enabled.
   freeGiftVariantId?: string;
   bogo?: {
     mode: "add_same" | "add_different" | "nth_free";
