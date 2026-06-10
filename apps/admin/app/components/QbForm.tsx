@@ -1,4 +1,4 @@
-import { Form, useNavigation, useNavigate } from "@remix-run/react";
+import { Form, useNavigation, useNavigate, useSubmit } from "@remix-run/react";
 import {
   BlockStack,
   Box,
@@ -115,12 +115,32 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange, pro
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
   const navigate = useNavigate();
+  const submit = useSubmit();
   const update = <K extends keyof QbFormValues>(k: K, v: QbFormValues[K]) =>
     setValues((s) => ({ ...s, [k]: v }));
 
   useEffect(() => {
     onValuesChange?.(values);
   }, [values, onValuesChange]);
+
+  // Submit-after-render: the footer buttons set `values.status` then flag a
+  // pending submit. We submit inside an effect (post-render) so the hidden
+  // `status` input has already re-rendered with the new value — submitting
+  // immediately after `update("status", ...)` would post the stale status.
+  const [pendingSubmit, setPendingSubmit] = useState<Status | null>(null);
+  useEffect(() => {
+    if (pendingSubmit === null) return;
+    // Only fire once the hidden input reflects the requested status.
+    if (values.status !== pendingSubmit) return;
+    setPendingSubmit(null);
+    const form = document.getElementById(QB_FORM_ID) as HTMLFormElement | null;
+    if (form) submit(form);
+  }, [pendingSubmit, values.status, submit]);
+
+  const saveWithStatus = (status: Status) => {
+    update("status", status);
+    setPendingSubmit(status);
+  };
 
   const hasErrors = errors && Object.keys(errors).length > 0;
 
@@ -589,6 +609,28 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange, pro
           </InlineStack>
         </Box>
       </BlockStack>
+
+      <div
+        style={{
+          position: "sticky",
+          bottom: 0,
+          zIndex: 5,
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: 12,
+          padding: "12px 0",
+          marginTop: 16,
+          background: "rgba(241,241,241,0.9)",
+          backdropFilter: "blur(2px)",
+        }}
+      >
+        <Button onClick={() => saveWithStatus("draft")} loading={isSubmitting}>
+          Save as draft
+        </Button>
+        <Button variant="primary" onClick={() => saveWithStatus("active")} loading={isSubmitting}>
+          Publish
+        </Button>
+      </div>
     </Form>
   );
 }
