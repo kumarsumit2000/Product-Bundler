@@ -73,6 +73,7 @@ const TEXT_ROWS: { key: string; label: string; defaultText: string; hideable: bo
   { key: "qb.savingsBadge", label: "Savings text", defaultText: "Save {DiscountAmountTotal}", hideable: true },
   { key: "qb.mostPopular", label: "Most Popular badge", defaultText: "MOST POPULAR", hideable: true },
   { key: "qb.freeGiftCallout", label: "Free-gift callout", defaultText: "Unlock Free Gift 🎁", hideable: true },
+  { key: "qb.giftBadge", label: "Free-gift badge", defaultText: "🎁 + Free {variantTitle}", hideable: false },
 ];
 
 type Props = {
