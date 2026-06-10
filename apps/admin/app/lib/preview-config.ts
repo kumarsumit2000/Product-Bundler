@@ -99,6 +99,7 @@ type QbShape = {
     discountValue: number;
     label: string;
     isMostPopular: boolean;
+    enabled?: boolean;
     available: boolean;
     freeGiftVariantId?: string | null;
     freeGiftVariantTitle?: string | null;

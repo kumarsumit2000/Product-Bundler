@@ -71,6 +71,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
       discountValue: t.discountValue,
       label: t.label,
       isMostPopular: t.isMostPopular,
+      enabled: (t as { enabled?: boolean }).enabled,
       freeGiftVariantId: (t as { freeGiftVariantId?: string | null }).freeGiftVariantId ?? undefined,
       bogo: (() => {
         const raw = (t as { bogo?: { mode: "add_same" | "add_different" | "nth_free"; targetVariantId?: string | null; bonusQty: number } | null }).bogo;
