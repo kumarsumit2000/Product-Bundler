@@ -25,6 +25,7 @@ import { StickyAtcPreview } from "~/components/StickyAtcPreview";
 import { buildPreviewQbConfig, defaultPreviewSettings } from "~/lib/preview-config";
 import { buildStyleOverrides, buildTextOverrides } from "~/lib/preview-overrides";
 import type { TierFormValue } from "~/components/QbTierBuilder";
+import { serializeTierForm } from "~/lib/serialize-qb-tier";
 import { EmbedCodeCard } from "~/components/EmbedCodeCard";
 import type { StyleOverrides, TextOverrides } from "../../drizzle/schema";
 
@@ -65,25 +66,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     name: (form.get("name") as string) || "",
     status: (form.get("status") as string) || "draft",
     productId: (form.get("productId") as string) || "",
-    tiers: tiersRaw.map((t) => ({
-      qty: t.qty,
-      discountType: t.discountType as "percentage" | "flat" | "fixed_per_unit",
-      discountValue: t.discountValue,
-      label: t.label,
-      isMostPopular: t.isMostPopular,
-      enabled: (t as { enabled?: boolean }).enabled,
-      freeGiftVariantId: (t as { freeGiftVariantId?: string | null }).freeGiftVariantId ?? undefined,
-      bogo: (() => {
-        const raw = (t as { bogo?: { mode: "add_same" | "add_different" | "nth_free"; targetVariantId?: string | null; bonusQty: number } | null }).bogo;
-        if (!raw) return undefined;
-        return {
-          mode: raw.mode,
-          targetVariantId: raw.targetVariantId ?? undefined,
-          bonusQty: raw.bonusQty,
-        };
-      })(),
-      extraProducts: ((t as { extraProducts?: Array<{ productId: string; variantId: string | null; qty: number }> }).extraProducts ?? []),
-    })),
+    tiers: tiersRaw.map(serializeTierForm),
     combinable: form.get("combinable") === "on",
     bindToCurrentProduct: form.get("bindToCurrentProduct") === "on",
     sortOrder: Math.max(0, parseInt((form.get("sortOrder") as string) || "0", 10) || 0),
