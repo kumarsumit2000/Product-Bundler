@@ -50,6 +50,26 @@ describe("renderQb", () => {
     expect(mount.querySelector("[data-tier-index='2']")?.classList.contains("pumper-qb-tier--unavailable")).toBe(true);
   });
 
+  it("skips a tier whose enabled is false", () => {
+    const q: QbConfig = { ...QB, tiers: [
+      { qty: 1, discountType: "percentage", discountValue: 0, label: "Buy 1", isMostPopular: false, available: true },
+      { qty: 2, discountType: "percentage", discountValue: 10, label: "10% off", isMostPopular: false, available: true, enabled: false },
+    ]};
+    renderQb(mount, q, CONFIG);
+    const rows = mount.querySelectorAll(".pumper-qb-tier");
+    expect(rows.length).toBe(1);
+    expect(mount.querySelector("[data-tier-index]")?.textContent ?? "").toMatch(/Buy 1|1/);
+  });
+
+  it("renders a single tier that omits enabled (backward compatible)", () => {
+    const q: QbConfig = { ...QB, tiers: [
+      { qty: 1, discountType: "percentage", discountValue: 0, label: "Buy 1", isMostPopular: false, available: true },
+    ]};
+    renderQb(mount, q, CONFIG);
+    const rows = mount.querySelectorAll(".pumper-qb-tier");
+    expect(rows.length).toBe(1);
+  });
+
   it("hides widget if all variants unavailable", () => {
     const q: QbConfig = { ...QB, productVariants: [{ ...QB.productVariants[0]!, available: false }] };
     renderQb(mount, q, CONFIG);

@@ -96,8 +96,14 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
     return;
   }
 
-  const popularIndex = qb.tiers.findIndex((tr) => tr.isMostPopular && tr.available);
-  let selectedIndex = popularIndex >= 0 ? popularIndex : qb.tiers.findIndex((tr) => tr.available);
+  // Phase A: a tier with enabled === false is excluded from the widget.
+  // Absent enabled = enabled (backward compatible). All rendering and
+  // selection below operates on visibleTiers so a disabled tier can never
+  // be shown or selected.
+  const visibleTiers = qb.tiers.filter((t) => t.enabled !== false);
+
+  const popularIndex = visibleTiers.findIndex((tr) => tr.isMostPopular && tr.available);
+  let selectedIndex = popularIndex >= 0 ? popularIndex : visibleTiers.findIndex((tr) => tr.available);
   if (selectedIndex < 0) selectedIndex = 0;
 
   const heading = qb.headline || config.settings.qbHeadline || t("qb.heading");
@@ -153,7 +159,7 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
     }
   };
 
-  const renderRows = () => qb.tiers.map((tr, i) => {
+  const renderRows = () => visibleTiers.map((tr, i) => {
     const unitCents = tierUnitCents(tr, variant.priceCents);
     const totalCents = unitCents * tr.qty;
     const baseTotal = variant.priceCents * tr.qty;
@@ -218,7 +224,7 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
   }).join("");
 
   const renderCta = () => {
-    const tr = qb.tiers[selectedIndex]!;
+    const tr = visibleTiers[selectedIndex]!;
     const unitCents = tierUnitCents(tr, variant.priceCents);
     const savings = Math.max(0, (variant.priceCents - unitCents) * tr.qty);
     const label = savings > 0
@@ -269,7 +275,7 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
 
   const renderQbGiftRow = (): string => {
     const minQty = qb.freeGiftMinQty ?? 1;
-    const selectedTier = qb.tiers[selectedIndex];
+    const selectedTier = visibleTiers[selectedIndex];
     const unlocked = !!selectedTier && selectedTier.qty >= minQty;
     const buildLockedNote = () => {
       const remaining = minQty - (selectedTier?.qty ?? 0);
@@ -339,11 +345,11 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
     mount.querySelectorAll<HTMLElement>("[data-action=select-tier]").forEach((row) => {
       row.addEventListener("click", () => {
         const idx = parseInt(row.dataset.tierIndex!, 10);
-        if (qb.tiers[idx]?.available === false) return;
+        if (visibleTiers[idx]?.available === false) return;
         selectedIndex = idx;
         // Persist the purchase-options choice across the re-render below.
         savedSelection = purchaseOptions.getSelection();
-        emit("widget_click", { widgetType: "qb", widgetId: qb.id, productId: qb.productId, tierQty: qb.tiers[idx]!.qty });
+        emit("widget_click", { widgetType: "qb", widgetId: qb.id, productId: qb.productId, tierQty: visibleTiers[idx]!.qty });
         renderAll();
       });
     });
@@ -352,7 +358,7 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
     if (cta) {
       cta.addEventListener("click", async () => {
         if (!variant) return; // narrowing for async closure (variant is checked at top of renderQb)
-        const tr = qb.tiers[selectedIndex]!;
+        const tr = visibleTiers[selectedIndex]!;
         cta.disabled = true;
         const unitCents = tierUnitCents(tr, variant.priceCents);
 
