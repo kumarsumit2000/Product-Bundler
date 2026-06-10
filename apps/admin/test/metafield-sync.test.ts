@@ -256,6 +256,56 @@ describe("syncShopConfig", () => {
     expect(tier.bogo.bonusQty).toBe(1);
   });
 
+  it("syncs freeShipping but omits image from QB tier metafield", async () => {
+    await qbRepo.create(setup.db, SHOP, {
+      name: "Q",
+      status: "active",
+      productId: "gid://shopify/Product/1",
+      collectionId: null,
+      tiers: [
+        {
+          qty: 3,
+          discountType: "percentage",
+          discountValue: 10,
+          label: "10% off",
+          isMostPopular: true,
+          image: "x",
+          freeShipping: true,
+        },
+      ],
+      combinable: false,
+      bindToCurrentProduct: false,
+      sortOrder: 0,
+      activeStartAt: null,
+      activeEndAt: null,
+      styleOverrides: null,
+      textOverrides: null,
+      headline: null,
+      ctaLabel: null,
+      visibility: "specific",
+      visibilityProductIds: [],
+      visibilityCollectionIds: [],
+      checkboxUpsellsEnabled: false,
+      checkboxUpsells: [],
+      linkedCountdownId: null,
+      linkedProgressiveGiftId: null,
+      stickyAtc: null,
+      addonsOrder: null,
+      freeGiftVariantId: null,
+      freeGiftProductId: null,
+      subscription: null,
+      freeGiftMinQty: 1,
+    });
+    const { admin, calls } = makeAdmin();
+    await syncShopConfig(setup.db, admin, SHOP);
+    const setCall = calls.find((c) => c.query.includes("metafieldsSet"));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const value = JSON.parse((setCall!.variables as any).metafields[0]!.value);
+    const syncedTier = value.quantityBreaks[0].tiers[0];
+    expect(syncedTier.freeShipping).toBe(true);
+    expect(syncedTier.image).toBeUndefined();
+  });
+
   it("throws when JSON exceeds 50KB", async () => {
     await bundleRepo.create(setup.db, SHOP, {
       name: "Big",
