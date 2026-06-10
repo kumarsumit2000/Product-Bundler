@@ -248,16 +248,22 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange, pro
             <BlockStack gap="400">
               <Text as="h2" variant="headingMd">Header Text</Text>
               <Text as="p" tone="subdued">Override the headline shown on this widget. Leave empty to use shop defaults.</Text>
-              <TextField
-                label="Header Text"
-                labelHidden
-                value={values.headline}
-                onChange={(v) => update("headline", v)}
-                error={errors?.headline}
-                placeholder="Choose your savings"
-                autoComplete="off"
-                maxLength={100}
-              />
+              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                <div style={{ flex: 1 }}>
+                  <TextField
+                    label="Header Text"
+                    labelHidden
+                    value={values.headline}
+                    onChange={(v) => update("headline", v)}
+                    error={errors?.headline}
+                    placeholder="Choose your savings"
+                    autoComplete="off"
+                    maxLength={100}
+                  />
+                </div>
+                <span aria-hidden style={{ color: "#9aa0a6", fontSize: 18 }}>→</span>
+                <Text as="span" variant="headingMd">{values.headline || "Choose your savings"}</Text>
+              </div>
             </BlockStack>
 
             {!values.bindToCurrentProduct && (
