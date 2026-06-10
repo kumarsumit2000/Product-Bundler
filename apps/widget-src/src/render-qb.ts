@@ -164,11 +164,16 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
     const totalCents = unitCents * tr.qty;
     const baseTotal = variant.priceCents * tr.qty;
     const savings = Math.max(0, baseTotal - totalCents);
-    const popularBadge = tr.isMostPopular
+    const discountPercent = variant.priceCents > 0 ? Math.round((1 - unitCents / variant.priceCents) * 100) : 0;
+    const savingsFormatted = formatMoney(savings, config.settings.currency, config.settings.locale);
+    const tierVars = { qty: tr.qty, DiscountPercentage: discountPercent, DiscountAmountTotal: savingsFormatted };
+    const popularHidden = qb.textOverrides?.["qb.mostPopular.hidden"] === "1";
+    const popularBadge = tr.isMostPopular && !popularHidden
       ? `<span class="pumper-qb-popular-badge">${tWith(qb.textOverrides, "qb.mostPopular")}</span>`
       : "";
-    const savingsBadge = savings > 0
-      ? `<span class="pumper-qb-savings">${tWith(qb.textOverrides, "qb.savingsBadge", { savings: formatMoney(savings, config.settings.currency, config.settings.locale) })}</span>`
+    const savingsHidden = qb.textOverrides?.["qb.savingsBadge.hidden"] === "1";
+    const savingsBadge = savings > 0 && !savingsHidden
+      ? `<span class="pumper-qb-savings">${tWith(qb.textOverrides, "qb.savingsBadge", { savings: savingsFormatted, ...tierVars })}</span>`
       : "";
     const tierImage = tr.image
       ? `<img class="pumper-qb-tier-img" src="${escapeHtml(tr.image)}" alt="" loading="lazy" />`
@@ -214,7 +219,7 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
         <div class="pumper-qb-tier-row">
           ${tierImage}
           <div class="pumper-qb-tier-meta">
-            <div class="pumper-qb-tier-title">${escapeHtml(tWith(qb.textOverrides, "qb.tierLabel", { qty: tr.qty }))}${tr.discountValue > 0 ? ` — ${escapeHtml(tr.label)}` : ""}</div>
+            <div class="pumper-qb-tier-title">${escapeHtml(tWith(qb.textOverrides, "qb.tierLabel", tierVars))}${tr.discountValue > 0 ? ` — ${escapeHtml(tr.label)}` : ""}</div>
             <div class="pumper-qb-tier-sub">
               ${tr.discountValue > 0
                 ? `<span class="pumper-strike">${formatMoney(variant.priceCents, config.settings.currency, config.settings.locale)}</span> `

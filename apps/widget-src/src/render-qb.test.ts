@@ -172,6 +172,37 @@ describe("renderQb", () => {
     expect(el.innerHTML).toContain("MOST POPULAR");
   });
 
+  it("interpolates {DiscountPercentage} and {DiscountAmountTotal} in a savings override", () => {
+    const q: QbConfig = {
+      ...QB,
+      tiers: [{ qty: 2, discountType: "percentage", discountValue: 20, label: "20% off", isMostPopular: false, available: true, freeGiftVariantId: null, freeGiftAvailable: null, bogo: null }],
+      textOverrides: { "qb.savingsBadge": "{DiscountPercentage}% off — save {DiscountAmountTotal}" },
+    };
+    renderQb(mount, q, CONFIG);
+    const badge = mount.querySelector(".pumper-qb-savings")!;
+    expect(badge.textContent).toContain("20% off");
+  });
+
+  it("hides the savings badge when qb.savingsBadge.hidden is set", () => {
+    const q: QbConfig = {
+      ...QB,
+      tiers: [{ qty: 2, discountType: "percentage", discountValue: 20, label: "20% off", isMostPopular: false, available: true, freeGiftVariantId: null, freeGiftAvailable: null, bogo: null }],
+      textOverrides: { "qb.savingsBadge.hidden": "1" },
+    };
+    renderQb(mount, q, CONFIG);
+    expect(mount.querySelector(".pumper-qb-savings")).toBeNull();
+  });
+
+  it("hides the most-popular badge when qb.mostPopular.hidden is set", () => {
+    const q: QbConfig = {
+      ...QB,
+      tiers: [{ qty: 2, discountType: "percentage", discountValue: 20, label: "20% off", isMostPopular: true, available: true, freeGiftVariantId: null, freeGiftAvailable: null, bogo: null }],
+      textOverrides: { "qb.mostPopular.hidden": "1" },
+    };
+    renderQb(mount, q, CONFIG);
+    expect(mount.querySelector(".pumper-qb-popular-badge")).toBeNull();
+  });
+
   it("uses qb.headline column when set", () => {
     const el = document.createElement("div");
     const q: QbConfig = { ...QB, headline: "Volume savings", textOverrides: null };
