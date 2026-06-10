@@ -124,6 +124,31 @@ describe("renderQb", () => {
     expect(tierRow.querySelector(".pumper-qb-tier-gift--unavailable")).not.toBeNull();
   });
 
+  it("renders a tier image thumbnail when the tier has an image", () => {
+    const q: QbConfig = { ...QB, tiers: [
+      { ...QB.tiers[0]!, image: "https://cdn/x.png" },
+      QB.tiers[1]!,
+      QB.tiers[2]!,
+    ]};
+    renderQb(mount, q, CONFIG);
+    expect(mount.querySelector('img[src="https://cdn/x.png"]')).not.toBeNull();
+  });
+
+  it("renders a free-shipping badge when the tier has freeShipping", () => {
+    const q: QbConfig = { ...QB, tiers: [
+      { ...QB.tiers[0]!, freeShipping: true },
+      QB.tiers[1]!,
+      QB.tiers[2]!,
+    ]};
+    renderQb(mount, q, CONFIG);
+    expect(mount.textContent ?? "").toContain("Free shipping");
+  });
+
+  it("renders no tier image when the tier has none", () => {
+    renderQb(mount, QB, CONFIG);
+    expect(mount.querySelector(".pumper-qb-tier img")).toBeNull();
+  });
+
   it("renders override for qb.mostPopular when set", () => {
     const el = document.createElement("div");
     const q: QbConfig = {
