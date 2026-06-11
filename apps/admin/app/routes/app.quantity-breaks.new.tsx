@@ -139,6 +139,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     collectionId: null,
     tiers: input.tiers,
     combinable: input.combinable,
+    afterAddToCart: "drawer",
     bindToCurrentProduct: input.bindToCurrentProduct,
     sortOrder: input.sortOrder,
     activeStartAt: input.activeStartAt,

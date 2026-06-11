@@ -221,6 +221,7 @@ export const quantityBreaks = sqliteTable("quantity_breaks", {
   collectionId: text("collection_id"),
   tiers: text("tiers", { mode: "json" }).$type<QbTier[]>().notNull(),
   combinable: integer("combinable", { mode: "boolean" }).notNull().default(false),
+  afterAddToCart: text("after_add_to_cart").notNull().default("drawer"),
   styleOverrides: text("style_overrides", { mode: "json" }).$type<StyleOverrides | null>(),
   textOverrides: text("text_overrides", { mode: "json" }).$type<TextOverrides | null>(),
   headline: text("headline"),

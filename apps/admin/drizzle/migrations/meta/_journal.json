@@ -337,6 +337,13 @@
       "when": 1778393400000,
       "tag": "0047_subscription_purchase_options",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "6",
+      "when": 1778394600000,
+      "tag": "0048_qb_after_add_to_cart",
+      "breakpoints": true
     }
   ]
 }

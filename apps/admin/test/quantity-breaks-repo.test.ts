@@ -25,6 +25,7 @@ const NEW_QB_INPUT = {
     { qty: 2, discountType: "percentage" as const, discountValue: 10, label: "10% off", isMostPopular: true },
   ],
   combinable: false,
+  afterAddToCart: "drawer" as const,
   bindToCurrentProduct: false,
   sortOrder: 0,
   activeStartAt: null,
