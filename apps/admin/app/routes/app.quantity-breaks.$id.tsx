@@ -2,7 +2,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/cloudfla
 import { json, redirect } from "@remix-run/cloudflare";
 import { useActionData, useLoaderData, useNavigation } from "@remix-run/react";
 import { useState } from "react";
-import { Page, Layout } from "@shopify/polaris";
+import { Page, Layout, Select } from "@shopify/polaris";
 import { authenticate, type AppLoadContext } from "~/shopify.server";
 import { getDb } from "~/db.server";
 import * as qbRepo from "~/lib/quantity-breaks/repo";
@@ -84,10 +84,29 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
     getUsage(db, session.shop),
         pgRepo.listByShop(db, session.shop),
   ]);
+
+  const prodRes = await admin.graphql(`#graphql
+    query PreviewProducts {
+      products(first: 50, sortKey: TITLE) {
+        nodes { id title featuredImage { url } variants(first: 1) { nodes { id price } } }
+      }
+    }`);
+  const prodJson = (await prodRes.json()) as {
+    data?: { products?: { nodes?: Array<{ id: string; title: string; featuredImage?: { url?: string } | null; variants?: { nodes?: Array<{ id: string; price: string }> } }> } };
+  };
+  const previewProducts = (prodJson.data?.products?.nodes ?? []).map((p) => ({
+    id: p.id,
+    title: p.title,
+    image: p.featuredImage?.url ?? null,
+    variantId: p.variants?.nodes?.[0]?.id ?? "",
+    priceCents: Math.round(parseFloat(p.variants?.nodes?.[0]?.price ?? "0") * 100),
+  }));
+
   return json({
     qb, productTitle, productImage, tierVariantDetails, giftProductDetails, plan: usage.plan,
     progressiveGiftOptions: pgs.map((p) => ({ id: p.id, name: p.name })),
     allProgressiveGifts: await enrichProgressiveGiftsForPreview(admin, pgs),
+    previewProducts,
   });
 }
 
@@ -216,7 +235,7 @@ export async function action({
 }
 
 export default function QbEdit() {
-  const { qb, productTitle, productImage, tierVariantDetails, giftProductDetails, plan, progressiveGiftOptions, allProgressiveGifts } = useLoaderData<typeof loader>();
+  const { qb, productTitle, productImage, tierVariantDetails, giftProductDetails, plan, progressiveGiftOptions, allProgressiveGifts, previewProducts } = useLoaderData<typeof loader>();
   useSavedToast();
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
@@ -226,6 +245,11 @@ export default function QbEdit() {
     actionData && "errors" in actionData ? actionData.errors : undefined;
 
   const [values, setValues] = useState<QbFormValues | null>(null);
+
+  const [previewProductId, setPreviewProductId] = useState(
+    qb.productId ?? values?.product?.[0]?.productId ?? previewProducts[0]?.id ?? "",
+  );
+  const previewProduct = previewProducts.find((p) => p.id === previewProductId) ?? previewProducts[0];
 
   const initial: Partial<QbFormValues> = {
     name: qb.name,
@@ -350,23 +374,23 @@ export default function QbEdit() {
     ? buildPreviewQbConfig({
         shop: "preview",
         mockProduct: {
-          productId: values.product[0]?.productId ?? "gid://shopify/Product/0",
-          title: values.product[0]?.title ?? "Sample",
-          priceCents: 4999,
+          productId: previewProduct?.id ?? values.product[0]?.productId ?? "gid://shopify/Product/0",
+          title: previewProduct?.title ?? values.product[0]?.title ?? "Sample",
+          priceCents: previewProduct?.priceCents || 4999,
         },
         settings: defaultPreviewSettings(),
         qb: {
           id: qb.id,
           name: values.name,
-          productId: values.product[0]?.productId ?? "gid://shopify/Product/0",
-          productTitle: values.product[0]?.title ?? "Sample product",
-          productImage: values.product[0]?.image ?? null,
+          productId: previewProduct?.id ?? values.product[0]?.productId ?? "gid://shopify/Product/0",
+          productTitle: previewProduct?.title ?? values.product[0]?.title ?? "Sample product",
+          productImage: previewProduct?.image ?? values.product[0]?.image ?? null,
           productVariants: [
             {
-              variantId: values.product[0]?.variantId ?? "v0",
+              variantId: previewProduct?.variantId || values.product[0]?.variantId || "v0",
               title: "Default",
               available: true,
-              priceCents: 4999,
+              priceCents: previewProduct?.priceCents || 4999,
             },
           ],
           tiers: values.tiers.map((tr) => ({
@@ -473,6 +497,16 @@ export default function QbEdit() {
           />
         </div>
         <div style={{ position: "sticky", top: 16, display: "flex", flexDirection: "column", gap: 16 }}>
+          {previewProducts.length > 0 && (
+            <div style={{ marginBottom: 12 }}>
+              <Select
+                label="Choose a product to preview"
+                options={previewProducts.map((p) => ({ label: p.title, value: p.id }))}
+                value={previewProductId}
+                onChange={setPreviewProductId}
+              />
+            </div>
+          )}
           {previewConfig && (
             <PreviewPane type="qb" id={qb.id} config={previewConfig} />
           )}
