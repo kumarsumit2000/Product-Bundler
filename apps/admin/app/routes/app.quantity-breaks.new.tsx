@@ -160,6 +160,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
     tiers: input.tiers,
     combinable: input.combinable,
     afterAddToCart: v.afterAddToCart,
+    showAddToCart: true,
+    showBuyNow: false,
     bindToCurrentProduct: input.bindToCurrentProduct,
     sortOrder: input.sortOrder,
     activeStartAt: input.activeStartAt,

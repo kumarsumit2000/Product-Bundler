@@ -26,6 +26,8 @@ const NEW_QB_INPUT = {
   ],
   combinable: false,
   afterAddToCart: "drawer" as const,
+  showAddToCart: true,
+  showBuyNow: false,
   bindToCurrentProduct: false,
   sortOrder: 0,
   activeStartAt: null,
