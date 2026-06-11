@@ -5,6 +5,7 @@ import { createPurchaseOptions } from "./render-purchase-options";
 import type { PurchaseOptions, PurchaseSelection } from "./render-purchase-options";
 import { emit } from "./analytics";
 import { formatMoney } from "./format";
+import { roundCharmCents } from "./round-charm";
 import { t, tWith } from "./i18n";
 
 const INERT_PURCHASE_OPTIONS: PurchaseOptions = {
@@ -102,8 +103,10 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
   // be shown or selected.
   const visibleTiers = qb.tiers.filter((t) => t.enabled !== false);
 
-  const popularIndex = visibleTiers.findIndex((tr) => tr.isMostPopular && tr.available);
-  let selectedIndex = popularIndex >= 0 ? popularIndex : visibleTiers.findIndex((tr) => tr.available);
+  // A tier is unavailable when it's out of stock OR manually marked sold out.
+  const tierUnavailable = (tr: QbTier) => tr.soldOut === true || tr.available === false;
+  const popularIndex = visibleTiers.findIndex((tr) => tr.isMostPopular && !tierUnavailable(tr));
+  let selectedIndex = popularIndex >= 0 ? popularIndex : visibleTiers.findIndex((tr) => !tierUnavailable(tr));
   if (selectedIndex < 0) selectedIndex = 0;
 
   const heading = qb.headline || config.settings.qbHeadline || t("qb.heading");
@@ -160,7 +163,9 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
   };
 
   const renderRows = () => visibleTiers.map((tr, i) => {
-    const unitCents = tierUnitCents(tr, variant.priceCents);
+    const unavailable = tierUnavailable(tr);
+    let unitCents = tierUnitCents(tr, variant.priceCents);
+    if (tr.priceRounding != null) unitCents = roundCharmCents(unitCents, tr.priceRounding);
     const totalCents = unitCents * tr.qty;
     const baseTotal = variant.priceCents * tr.qty;
     const savings = Math.max(0, baseTotal - totalCents);
@@ -181,10 +186,13 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
     const freeShipBadge = tr.freeShipping
       ? `<span class="pumper-qb-freeship">${escapeHtml(t("qb.freeShipping"))}</span>`
       : "";
+    const soldOutLabel = unavailable
+      ? `<span class="pumper-qb-soldout">${escapeHtml(t("qb.soldOut"))}</span>`
+      : "";
     const classes = [
       "pumper-qb-tier",
       i === selectedIndex ? "pumper-qb-tier--selected" : "",
-      tr.available ? "" : "pumper-qb-tier--unavailable",
+      unavailable ? "pumper-qb-tier--unavailable" : "",
     ].filter(Boolean).join(" ");
 
     const extras = (tr.extraProducts ?? []).filter((p) => p.title || p.image);
@@ -226,6 +234,7 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
                 : ""}<strong>${formatMoney(unitCents, config.settings.currency, config.settings.locale)}</strong> each · ${formatMoney(totalCents, config.settings.currency, config.settings.locale)} total
             </div>
           </div>
+          ${soldOutLabel}
           ${freeShipBadge}
           ${savingsBadge}
         </div>
@@ -358,7 +367,8 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
     mount.querySelectorAll<HTMLElement>("[data-action=select-tier]").forEach((row) => {
       row.addEventListener("click", () => {
         const idx = parseInt(row.dataset.tierIndex!, 10);
-        if (visibleTiers[idx]?.available === false) return;
+        const clicked = visibleTiers[idx];
+        if (clicked && tierUnavailable(clicked)) return;
         selectedIndex = idx;
         // Persist the purchase-options choice across the re-render below.
         savedSelection = purchaseOptions.getSelection();

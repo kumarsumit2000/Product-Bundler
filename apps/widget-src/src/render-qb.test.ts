@@ -50,6 +50,30 @@ describe("renderQb", () => {
     expect(mount.querySelector("[data-tier-index='2']")?.classList.contains("pumper-qb-tier--unavailable")).toBe(true);
   });
 
+  it("marks a soldOut tier unavailable, shows Sold out, and skips it in default selection", () => {
+    const q: QbConfig = { ...QB, tiers: [
+      { qty: 1, discountType: "percentage", discountValue: 0,  label: "Buy 1",  isMostPopular: false, available: true, soldOut: true },
+      { qty: 2, discountType: "percentage", discountValue: 10, label: "10% off", isMostPopular: false, available: true },
+    ]};
+    renderQb(mount, q, CONFIG);
+    const tiers = mount.querySelectorAll(".pumper-qb-tier");
+    expect(tiers[0]!.className).toContain("pumper-qb-tier--unavailable");
+    expect(tiers[0]!.textContent).toContain("Sold out");
+    expect(tiers[1]!.className).toContain("pumper-qb-tier--selected"); // default selection skipped tier 0
+  });
+
+  it("rounds the displayed unit price when priceRounding is set", () => {
+    const q: QbConfig = {
+      ...QB,
+      productVariants: [{ variantId: "v1", title: "Default", available: true, priceCents: 2495 }],
+      tiers: [
+        { qty: 1, discountType: "percentage", discountValue: 20, label: "20% off", isMostPopular: false, available: true, priceRounding: 99 },
+      ],
+    };
+    renderQb(mount, q, CONFIG);
+    expect(mount.textContent).toContain("$19.99");
+  });
+
   it("skips a tier whose enabled is false", () => {
     const q: QbConfig = { ...QB, tiers: [
       { qty: 1, discountType: "percentage", discountValue: 0, label: "Buy 1", isMostPopular: false, available: true },
