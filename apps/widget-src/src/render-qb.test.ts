@@ -50,6 +50,31 @@ describe("renderQb", () => {
     expect(mount.querySelector("[data-tier-index='2']")?.classList.contains("pumper-qb-tier--unavailable")).toBe(true);
   });
 
+  it("renders a horizontal grid when styleOverrides.layoutVariant is grid", () => {
+    const q: QbConfig = { ...QB, styleOverrides: { layoutVariant: "grid", gridColumns: 3 } };
+    renderQb(mount, q, CONFIG);
+    const container = mount.querySelector(".pumper-qb-tiers")!;
+    expect(container.className).toContain("pumper-qb-tiers--horizontal");
+    expect((container as HTMLElement).style.getPropertyValue("--pumper-qb-cols")).toBe("3");
+  });
+
+  it("clamps columns to the visible tier count", () => {
+    const q: QbConfig = {
+      ...QB,
+      tiers: [QB.tiers[0]!, QB.tiers[1]!],
+      styleOverrides: { layoutVariant: "grid", gridColumns: 4 },
+    };
+    renderQb(mount, q, CONFIG);
+    const container = mount.querySelector(".pumper-qb-tiers")!;
+    expect((container as HTMLElement).style.getPropertyValue("--pumper-qb-cols")).toBe("2");
+  });
+
+  it("stays a plain vertical column for list / absent layout", () => {
+    renderQb(mount, QB, CONFIG);
+    const container = mount.querySelector(".pumper-qb-tiers")!;
+    expect(container.className).not.toContain("pumper-qb-tiers--horizontal");
+  });
+
   it("marks a soldOut tier unavailable, shows Sold out, and skips it in default selection", () => {
     const q: QbConfig = { ...QB, tiers: [
       { qty: 1, discountType: "percentage", discountValue: 0,  label: "Buy 1",  isMostPopular: false, available: true, soldOut: true },

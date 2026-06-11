@@ -28,6 +28,8 @@
 
 /* QB */
 .pumper-qb-tiers { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.pumper-qb-tiers--horizontal { display: grid; grid-template-columns: repeat(var(--pumper-qb-cols, 3), 1fr); }
+@media (max-width: 480px) { .pumper-qb-tiers--horizontal { grid-template-columns: 1fr 1fr; } }
 .pumper-qb-tier { background: #fff; border: 1px solid #e3e3e3; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px; cursor: pointer; position: relative; }
 .pumper-qb-tier-row { display: flex; align-items: center; gap: 10px; }
 .pumper-qb-tier--selected {

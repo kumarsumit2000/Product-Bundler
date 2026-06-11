@@ -349,10 +349,14 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
   };
 
   const renderAll = () => {
+    const qbLayout = qb.styleOverrides?.layoutVariant;
+    const qbCols = Math.min(qb.styleOverrides?.gridColumns ?? 3, visibleTiers.length || 1);
+    const tiersClass = qbLayout === "grid" ? "pumper-qb-tiers pumper-qb-tiers--horizontal" : "pumper-qb-tiers";
+    const tiersStyle = qbLayout === "grid" ? ` style="--pumper-qb-cols:${qbCols}"` : "";
     mount.innerHTML = `
       <section class="pumper-card pumper-qb">
         <h3 class="pumper-qb-heading">${escapeHtml(heading)}</h3>
-        <div class="pumper-qb-tiers">${renderRows()}</div>
+        <div class="${tiersClass}"${tiersStyle}>${renderRows()}</div>
         ${renderQbGiftRow()}
         ${renderUpsells()}
         ${subEnabled ? `<div class="pumper-qb-po"></div>` : ""}
