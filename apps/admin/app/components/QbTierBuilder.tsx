@@ -302,6 +302,27 @@ export function QbTierBuilder({ tiers, onChange, maxTiers = 10, restrictToProduc
                       </BlockStack>
                     );
                   })()}
+                  <BlockStack gap="200">
+                    <Text as="span" variant="bodySm" tone="subdued">Pricing options</Text>
+                    <Checkbox
+                      label="Mark as sold out"
+                      checked={tier.soldOut === true}
+                      onChange={(v) => updateTier(i, { soldOut: v })}
+                    />
+                    <Checkbox
+                      label="Round price"
+                      checked={tier.priceRounding != null}
+                      onChange={(v) => updateTier(i, { priceRounding: v ? 99 : undefined })}
+                    />
+                    {tier.priceRounding != null && (
+                      <Select
+                        label="Ending"
+                        options={[{ label: ".99", value: "99" }, { label: ".95", value: "95" }, { label: ".00", value: "0" }]}
+                        value={String(tier.priceRounding ?? 99)}
+                        onChange={(v) => updateTier(i, { priceRounding: parseInt(v, 10) })}
+                      />
+                    )}
+                  </BlockStack>
                 </BlockStack>
               </Box>
             </Collapsible>
