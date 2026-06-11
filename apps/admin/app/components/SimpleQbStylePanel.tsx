@@ -1,6 +1,6 @@
 import { BlockStack, Card, FormLayout, TextField, Text } from "@shopify/polaris";
-import { ColorSwatchPicker } from "./ColorSwatchPicker";
 import { LayoutPresetPicker } from "./LayoutPresetPicker";
+import { StyleSections } from "./StyleSections";
 import type { StylePanelValues } from "./StylePanel";
 import { QB_PALETTES, applyPalette, mixHex } from "~/lib/qb-palettes";
 
@@ -9,9 +9,10 @@ type Props = {
   onChange: (patch: Partial<StylePanelValues>) => void;
 };
 
-// Slim style panel for Quantity Breaks — only the fields merchants actually
-// use. The full StylePanel had ~36 fields; this exposes the 10 that matter
-// (background, border, headings, button, badges, radius, padding).
+// Full "Customize" panel for Quantity Breaks. The palette row + layout +
+// radius/spacing live here; the complete grouped color set and per-element
+// font controls are rendered via the shared StyleSections (same UI the bundle
+// StylePanel uses), so every element color + font is editable.
 export function SimpleQbStylePanel({ values, onChange }: Props) {
   return (
     <Card>
@@ -61,68 +62,6 @@ export function SimpleQbStylePanel({ values, onChange }: Props) {
         </BlockStack>
         <FormLayout>
           <FormLayout.Group>
-            <ColorSwatchPicker
-              label="Background"
-              value={values.cardsBg}
-              onChange={(cardsBg) => onChange({ cardsBg })}
-              placeholder="#FFFFFF"
-            />
-            <ColorSwatchPicker
-              label="Border"
-              value={values.borderColor}
-              onChange={(borderColor) => onChange({ borderColor })}
-              placeholder="#E5E7EB"
-            />
-          </FormLayout.Group>
-          <FormLayout.Group>
-            <ColorSwatchPicker
-              label="Heading text"
-              value={values.blockTitleColor}
-              onChange={(blockTitleColor) => onChange({ blockTitleColor })}
-              placeholder="#1A1A1A"
-            />
-            <ColorSwatchPicker
-              label="Body text"
-              value={values.subtitleColor}
-              onChange={(subtitleColor) => onChange({ subtitleColor })}
-              placeholder="#666666"
-            />
-          </FormLayout.Group>
-          <FormLayout.Group>
-            <ColorSwatchPicker
-              label="Unselected tier bg"
-              value={values.tierBg}
-              onChange={(tierBg) => onChange({ tierBg })}
-              placeholder="#FFFFFF"
-            />
-            <ColorSwatchPicker
-              label="Selected tier bg"
-              value={values.selectedBg}
-              onChange={(selectedBg) => onChange({ selectedBg })}
-              placeholder="#FFF7F8"
-            />
-          </FormLayout.Group>
-          <ColorSwatchPicker
-            label="Primary / button color"
-            value={values.primaryColor}
-            onChange={(primaryColor) => onChange({ primaryColor })}
-            placeholder="#7B1E2A"
-          />
-          <FormLayout.Group>
-            <ColorSwatchPicker
-              label="Savings badge bg"
-              value={values.badgeBg}
-              onChange={(badgeBg) => onChange({ badgeBg })}
-              placeholder="#FCE4E7"
-            />
-            <ColorSwatchPicker
-              label="Savings badge text"
-              value={values.badgeText}
-              onChange={(badgeText) => onChange({ badgeText })}
-              placeholder="#D9263A"
-            />
-          </FormLayout.Group>
-          <FormLayout.Group>
             <TextField
               label="Border radius (px)"
               type="number"
@@ -144,57 +83,20 @@ export function SimpleQbStylePanel({ values, onChange }: Props) {
               placeholder="6"
             />
           </FormLayout.Group>
-          <Text as="h3" variant="headingSm">Font sizes</Text>
-          <FormLayout.Group>
-            <TextField
-              label="Heading"
-              type="number"
-              value={values.blockTitleFontSize}
-              onChange={(blockTitleFontSize) => onChange({ blockTitleFontSize })}
-              autoComplete="off"
-              min={10}
-              max={48}
-              placeholder="14"
-              suffix="px"
-            />
-            <TextField
-              label="Tier title"
-              type="number"
-              value={values.titleFontSize}
-              onChange={(titleFontSize) => onChange({ titleFontSize })}
-              autoComplete="off"
-              min={10}
-              max={48}
-              placeholder="13"
-              suffix="px"
-            />
-          </FormLayout.Group>
-          <FormLayout.Group>
-            <TextField
-              label="Tier subtitle"
-              type="number"
-              value={values.subtitleFontSize}
-              onChange={(subtitleFontSize) => onChange({ subtitleFontSize })}
-              autoComplete="off"
-              min={10}
-              max={48}
-              placeholder="11"
-              suffix="px"
-            />
-            <TextField
-              label="Savings badge"
-              type="number"
-              value={values.savingsFontSize}
-              onChange={(savingsFontSize) => onChange({ savingsFontSize })}
-              autoComplete="off"
-              min={10}
-              max={48}
-              placeholder="11"
-              suffix="px"
-              helpText="Right-side pill"
-            />
-          </FormLayout.Group>
+          <TextField
+            label="Savings badge font size"
+            type="number"
+            value={values.savingsFontSize}
+            onChange={(savingsFontSize) => onChange({ savingsFontSize })}
+            autoComplete="off"
+            min={10}
+            max={48}
+            placeholder="11"
+            suffix="px"
+            helpText="Right-side pill"
+          />
         </FormLayout>
+        <StyleSections values={values} onChange={onChange} />
       </BlockStack>
     </Card>
   );
