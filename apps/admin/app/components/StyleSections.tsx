@@ -84,7 +84,9 @@ export function StyleSections({ values, onChange }: Props) {
       <BlockStack gap="300">
         <Text as="h3" variant="headingMd">Colors</Text>
         {colorGroup("General", [
+          { key: "primaryColor", label: "Primary / button" },
           { key: "cardsBg", label: "Cards bg" },
+          { key: "tierBg", label: "Tier bg" },
           { key: "selectedBg", label: "Selected bg" },
           { key: "borderColor", label: "Border color" },
           { key: "blockTitleColor", label: "Block title" },
