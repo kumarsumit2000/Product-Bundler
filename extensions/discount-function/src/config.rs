@@ -68,6 +68,8 @@ pub struct QbTier {
     pub free_gift_variant_id: Option<String>,
     #[serde(default)]
     pub bogo: Option<BogoConfig>,
+    #[serde(rename = "priceRounding", default)]
+    pub price_rounding: Option<u32>,
 }
 
 #[derive(Deserialize, Debug, Clone)]

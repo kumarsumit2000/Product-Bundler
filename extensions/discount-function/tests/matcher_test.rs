@@ -123,6 +123,7 @@ fn match_qb_tier_returns_highest_satisfied_tier() {
                 is_most_popular: false,
                 free_gift_variant_id: None,
                 bogo: None,
+                price_rounding: None,
             },
             QbTier {
                 qty: 2,
@@ -132,6 +133,7 @@ fn match_qb_tier_returns_highest_satisfied_tier() {
                 is_most_popular: false,
                 free_gift_variant_id: None,
                 bogo: None,
+                price_rounding: None,
             },
             QbTier {
                 qty: 3,
@@ -141,6 +143,7 @@ fn match_qb_tier_returns_highest_satisfied_tier() {
                 is_most_popular: true,
                 free_gift_variant_id: None,
                 bogo: None,
+                price_rounding: None,
             },
         ],
         combinable: true,
@@ -165,6 +168,7 @@ fn match_qb_tier_returns_none_for_wrong_product() {
             is_most_popular: false,
             free_gift_variant_id: None,
             bogo: None,
+            price_rounding: None,
         }],
         combinable: true,
     };
@@ -187,6 +191,7 @@ fn match_qb_tier_returns_none_when_qty_below_lowest_tier() {
             is_most_popular: false,
             free_gift_variant_id: None,
             bogo: None,
+            price_rounding: None,
         }],
         combinable: true,
     };

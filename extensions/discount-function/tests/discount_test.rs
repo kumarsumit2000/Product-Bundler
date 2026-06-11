@@ -27,6 +27,7 @@ fn tier(discount_type: &str, value: f64) -> QbTier {
         is_most_popular: false,
         free_gift_variant_id: None,
         bogo: None,
+        price_rounding: None,
     }
 }
 
@@ -125,6 +126,7 @@ fn nth_free_overrides_tier_discount_to_one_third() {
             target_variant_id: None,
             bonus_qty: 1,
         }),
+        price_rounding: None,
     };
     let value = compute_qb_tier_value(&tier, 100.0);
     match value {
@@ -147,6 +149,7 @@ fn nth_free_with_bonus_qty_zero_falls_through() {
             target_variant_id: None,
             bonus_qty: 0,
         }),
+        price_rounding: None,
     };
     let value = compute_qb_tier_value(&tier, 100.0);
     match value {
@@ -169,6 +172,7 @@ fn add_same_bogo_does_not_override_tier_discount() {
             target_variant_id: Some("gid://shopify/ProductVariant/1".into()),
             bonus_qty: 1,
         }),
+        price_rounding: None,
     };
     let value = compute_qb_tier_value(&tier, 100.0);
     match value {

@@ -110,6 +110,12 @@ fn run(input: schema::run::Input) -> Result<schema::FunctionRunResult> {
                     .map(|l| l.cost().amount_per_quantity().amount().as_f64())
                     .unwrap_or(0.0);
                 let value = discount::compute_qb_tier_value(tier, amount_per_unit);
+                let value = match tier.price_rounding {
+                    Some(ending) => DiscountValue::FixedAmountPerItem(
+                        discount::rounded_per_item_off(tier, amount_per_unit, ending),
+                    ),
+                    None => value,
+                };
                 discounts.push(build_discount(&qb.name, &[line.id.clone()], value));
             }
         }
@@ -151,6 +157,10 @@ fn build_discount(message: &str, line_ids: &[String], value: DiscountValue) -> s
         DiscountValue::FixedAmount(a) => schema::Value::FixedAmount(schema::FixedAmount {
             amount: Decimal(a),
             applies_to_each_item: None,
+        }),
+        DiscountValue::FixedAmountPerItem(a) => schema::Value::FixedAmount(schema::FixedAmount {
+            amount: Decimal(a),
+            applies_to_each_item: Some(true),
         }),
     };
 
