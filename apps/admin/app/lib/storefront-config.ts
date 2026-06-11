@@ -217,6 +217,8 @@ export async function buildStorefrontConfig(
       tiers,
       combinable: q.combinable,
       afterAddToCart: q.afterAddToCart ?? "drawer",
+      showAddToCart: q.showAddToCart ?? true,
+      showBuyNow: q.showBuyNow ?? false,
       styleOverrides: q.styleOverrides,
       textOverrides: q.textOverrides,
       headline: q.headline,

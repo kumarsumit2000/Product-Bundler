@@ -117,6 +117,12 @@ export function StyleSections({ values, onChange }: Props) {
           { key: "upsellSelectedBg", label: "Selected bg" },
           { key: "upsellSelectedText", label: "Selected text" },
         ])}
+        {colorGroup("Buttons", [
+          { key: "ctaBg", label: "Add-to-cart bg" },
+          { key: "ctaText", label: "Add-to-cart text" },
+          { key: "buyNowBg", label: "Buy-now bg" },
+          { key: "buyNowText", label: "Buy-now text" },
+        ])}
       </BlockStack>
 
       <BlockStack gap="300">

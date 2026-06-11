@@ -17,6 +17,8 @@ export type QbInput = {
   tiers: QbTier[];
   combinable: boolean;
   afterAddToCart: string;
+  showAddToCart: boolean;
+  showBuyNow: boolean;
   headline: string | null;
   ctaLabel: string | null;
   styleOverrides: Record<string, unknown> | null;
@@ -28,7 +30,7 @@ export type QbInput = {
 };
 
 export type ValidationResult =
-  | { valid: true; afterAddToCart: string }
+  | { valid: true; afterAddToCart: string; showAddToCart: boolean; showBuyNow: boolean }
   | { valid: false; errors: Record<string, string> };
 
 export function validateQb(input: QbInput): ValidationResult {
@@ -171,6 +173,6 @@ export function validateQb(input: QbInput): ValidationResult {
     : "drawer";
 
   return Object.keys(errors).length === 0
-    ? { valid: true, afterAddToCart }
+    ? { valid: true, afterAddToCart, showAddToCart: input.showAddToCart, showBuyNow: input.showBuyNow }
     : { valid: false, errors };
 }

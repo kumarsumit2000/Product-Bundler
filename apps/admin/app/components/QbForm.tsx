@@ -44,6 +44,8 @@ export type QbFormValues = StylePanelValues & {
   tiers: TierFormValue[];
   combinable: boolean;
   afterAddToCart: string;
+  showAddToCart: boolean;
+  showBuyNow: boolean;
   status: Status;
   headline: string;
   ctaLabel: string;
@@ -93,6 +95,8 @@ const DEFAULTS: QbFormValues = {
   tiers: [{ qty: 1, discountType: "percentage", discountValue: 0, label: "Buy 1", isMostPopular: false }],
   combinable: false,
   afterAddToCart: "drawer",
+  showAddToCart: true,
+  showBuyNow: false,
   status: "draft",
   headline: "",
   ctaLabel: "",
@@ -230,6 +234,8 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange, pro
       <input type="hidden" name="status" value={values.status} />
       <input type="hidden" name="combinable" value={values.combinable ? "on" : ""} />
       <input type="hidden" name="afterAddToCart" value={values.afterAddToCart} />
+      <input type="hidden" name="showAddToCart" value={values.showAddToCart ? "on" : ""} />
+      <input type="hidden" name="showBuyNow" value={values.showBuyNow ? "on" : ""} />
       <input type="hidden" name="bindToCurrentProduct" value={values.bindToCurrentProduct ? "on" : ""} />
       <input type="hidden" name="sortOrder" value={values.sortOrder} />
       <input type="hidden" name="activeStartAt" value={values.activeStartAt} />
@@ -518,6 +524,16 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange, pro
               label="Combinable with other discounts"
               checked={values.combinable}
               onChange={(c) => update("combinable", c)}
+            />
+            <Checkbox
+              label="Show Add to cart button"
+              checked={values.showAddToCart}
+              onChange={(v) => update("showAddToCart", v)}
+            />
+            <Checkbox
+              label="Show Buy now button"
+              checked={values.showBuyNow}
+              onChange={(v) => update("showBuyNow", v)}
             />
             <Select
               label="After add to cart"

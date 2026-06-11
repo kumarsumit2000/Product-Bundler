@@ -12,6 +12,8 @@ const VALID: Parameters<typeof validateQb>[0] = {
   ],
   combinable: false,
   afterAddToCart: "drawer",
+  showAddToCart: true,
+  showBuyNow: false,
   headline: null,
   ctaLabel: null,
   styleOverrides: null,
@@ -23,7 +25,7 @@ const VALID: Parameters<typeof validateQb>[0] = {
 
 describe("validateQb", () => {
   it("accepts a valid QB", () => {
-    expect(validateQb(VALID)).toEqual({ valid: true, afterAddToCart: "drawer" });
+    expect(validateQb(VALID)).toEqual({ valid: true, afterAddToCart: "drawer", showAddToCart: true, showBuyNow: false });
   });
 
   it("rejects empty name", () => {
@@ -93,7 +95,7 @@ describe("validateQb", () => {
         { ...VALID.tiers[0]!, freeGiftVariantId: "gid://shopify/ProductVariant/1" },
       ],
     });
-    expect(r).toEqual({ valid: true, afterAddToCart: "drawer" });
+    expect(r).toEqual({ valid: true, afterAddToCart: "drawer", showAddToCart: true, showBuyNow: false });
   });
 
   it("accepts a tier with bogo add_same + targetVariantId + bonusQty", () => {
@@ -103,7 +105,7 @@ describe("validateQb", () => {
         { ...VALID.tiers[0]!, bogo: { mode: "add_same", targetVariantId: "gid://shopify/ProductVariant/1", bonusQty: 1 } },
       ],
     });
-    expect(r).toEqual({ valid: true, afterAddToCart: "drawer" });
+    expect(r).toEqual({ valid: true, afterAddToCart: "drawer", showAddToCart: true, showBuyNow: false });
   });
 
   it("accepts a tier with bogo nth_free where bonusQty < qty", () => {
@@ -113,7 +115,7 @@ describe("validateQb", () => {
         { ...VALID.tiers[0]!, qty: 3, bogo: { mode: "nth_free", bonusQty: 1 } },
       ],
     });
-    expect(r).toEqual({ valid: true, afterAddToCart: "drawer" });
+    expect(r).toEqual({ valid: true, afterAddToCart: "drawer", showAddToCart: true, showBuyNow: false });
   });
 
   it("rejects bogo add_same without a targetVariantId", () => {
@@ -166,6 +168,15 @@ describe("validateQb", () => {
     expect(r.valid).toBe(true);
     if (r.valid) expect(r.afterAddToCart).toBe("drawer");
   });
+
+  it("round-trips showAddToCart / showBuyNow", () => {
+    const r = validateQb({ ...VALID, showAddToCart: false, showBuyNow: true });
+    expect(r.valid).toBe(true);
+    if (r.valid) {
+      expect(r.showAddToCart).toBe(false);
+      expect(r.showBuyNow).toBe(true);
+    }
+  });
 });
 
 describe("validateQb textOverrides + styleOverrides + headline/cta", () => {
@@ -176,6 +187,8 @@ describe("validateQb textOverrides + styleOverrides + headline/cta", () => {
     tiers: [{ qty: 1, discountType: "percentage" as const, discountValue: 10, label: "Buy 1", isMostPopular: false }],
     combinable: false,
     afterAddToCart: "drawer",
+    showAddToCart: true,
+    showBuyNow: false,
     headline: null,
     ctaLabel: null,
     visibility: "all" as const,
