@@ -96,6 +96,12 @@ export function applyCssVars(
   setVar(target, "--pumper-badge-bg",   o.badgeBg);
   setVar(target, "--pumper-badge-text", o.badgeText);
 
+  // CTA buttons
+  setVar(target, "--pumper-cta-bg",      o.ctaBg);
+  setVar(target, "--pumper-cta-text",    o.ctaText);
+  setVar(target, "--pumper-buynow-bg",   o.buyNowBg);
+  setVar(target, "--pumper-buynow-text", o.buyNowText);
+
   // Free gift
   setVar(target, "--pumper-fg-bg",       o.freeGiftBg);
   setVar(target, "--pumper-fg-text",     o.freeGiftText);

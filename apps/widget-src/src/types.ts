@@ -226,6 +226,8 @@ export type QbConfig = {
   }> | null;
   subscription?: SubscriptionConfig | null;
   afterAddToCart?: "drawer" | "cart" | "checkout";
+  showAddToCart?: boolean;
+  showBuyNow?: boolean;
 };
 
 export type Settings = {

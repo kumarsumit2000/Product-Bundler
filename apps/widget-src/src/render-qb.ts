@@ -431,6 +431,24 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
     return "";
   };
 
+  const renderCtas = () => {
+    const tr = visibleTiers[selectedIndex];
+    if (!tr || !variant) return "";
+    const unitCents = tierUnitCents(tr, variant.priceCents);
+    const savings = Math.max(0, (variant.priceCents - unitCents) * tr.qty);
+    const atcLabel = qb.ctaLabel || (savings > 0
+      ? t("qb.ctaSavings", { qty: tr.qty, savings: formatMoney(savings, config.settings.currency, config.settings.locale) })
+      : t("qb.cta", { qty: tr.qty }));
+    const disabled = tr.available ? "" : "disabled";
+    const atc = qb.showAddToCart !== false
+      ? `<button class="pumper-cta pumper-cta--atc" data-action="add-to-cart" ${disabled}>${escapeHtml(atcLabel)}</button>`
+      : "";
+    const buy = qb.showBuyNow
+      ? `<button class="pumper-cta pumper-cta--buynow" data-action="buy-now" ${disabled}>${escapeHtml(t("qb.buyNow"))}</button>`
+      : "";
+    return atc + buy;
+  };
+
   const renderAll = () => {
     const qbLayout = qb.styleOverrides?.layoutVariant;
     const qbCols = Math.min(qb.styleOverrides?.gridColumns ?? 3, visibleTiers.length || 1);
@@ -443,6 +461,7 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
         ${renderQbGiftRow()}
         ${renderUpsells()}
         ${subEnabled ? `<div class="pumper-qb-po"></div>` : ""}
+        ${renderCtas()}
       </section>
     `;
     mountPurchaseOptions();
@@ -450,6 +469,19 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
   };
 
   function bindHandlers() {
+    const runAdd = async (btn: HTMLButtonElement, after: "drawer" | "cart" | "checkout" | undefined) => {
+      if (!variant) return;
+      btn.disabled = true;
+      const tr = visibleTiers[selectedIndex]!;
+      emit("add_to_cart", { widgetType: "qb", widgetId: qb.id, productId: qb.productId, tierQty: tr.qty });
+      const res = await addToCart(qb.id, buildTierLines(tr), { afterAddToCart: after });
+      if (!res.ok) btn.disabled = false;
+    };
+    mount.querySelector<HTMLButtonElement>("[data-action=add-to-cart]")
+      ?.addEventListener("click", (e) => runAdd(e.currentTarget as HTMLButtonElement, qb.afterAddToCart));
+    mount.querySelector<HTMLButtonElement>("[data-action=buy-now]")
+      ?.addEventListener("click", (e) => runAdd(e.currentTarget as HTMLButtonElement, "checkout"));
+
     mount.querySelectorAll<HTMLElement>("[data-action=select-tier]").forEach((row) => {
       row.addEventListener("click", () => {
         const idx = parseInt(row.dataset.tierIndex!, 10);

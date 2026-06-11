@@ -459,3 +459,29 @@
   box-shadow: none;
 }
 
+
+/* QB CTA buttons — Add-to-cart + Buy-now */
+.pumper-cta {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+  border-radius: var(--pumper-radius, 8px);
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 8px;
+}
+.pumper-cta[disabled] {
+  opacity: .5;
+  cursor: not-allowed;
+}
+.pumper-cta--atc {
+  background: var(--pumper-cta-bg, var(--pumper-primary, #7B1E2A));
+  color: var(--pumper-cta-text, #fff);
+}
+.pumper-cta--buynow {
+  background: var(--pumper-buynow-bg, var(--pumper-primary, #7B1E2A));
+  color: var(--pumper-buynow-text, #fff);
+}

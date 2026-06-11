@@ -3,6 +3,17 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { renderQb } from "./render-qb";
 import type { QbConfig, WidgetConfig } from "./types";
 
+// Stub a 200 /cart/add.js response and a writable window.location so the
+// widget's add-to-cart / buy-now buttons can drive the real fetch path.
+function stubCartAdd() {
+  const f = vi.fn().mockResolvedValue(
+    new Response("{}", { status: 200, headers: { "Content-Type": "application/json" } }),
+  );
+  vi.stubGlobal("fetch", f);
+  Object.defineProperty(window, "location", { value: { href: "" }, writable: true });
+  return f;
+}
+
 const SETTINGS: WidgetConfig["settings"] = {
   primaryColor: "#7B1E2A", textColor: "#1A1A1A", backgroundColor: "#FFFFFF",
   borderRadius: 8, fontFamily: "inherit",
@@ -26,6 +37,7 @@ const QB: QbConfig = {
 describe("renderQb", () => {
   let mount: HTMLElement;
   beforeEach(() => { document.body.innerHTML = ""; mount = document.createElement("div"); document.body.appendChild(mount); });
+  afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
   it("renders all tiers, marks MOST POPULAR, and selects first tier by default", () => {
     renderQb(mount, QB, CONFIG);
@@ -41,9 +53,34 @@ describe("renderQb", () => {
     expect(tiers[0]!.className).toContain("pumper-qb-tier--selected");
   });
 
-  it("does not render its own add-to-cart button", () => {
+  it("renders the Add-to-cart button by default and adds on click", async () => {
+    const f = stubCartAdd();
     renderQb(mount, QB, CONFIG);
-    expect(mount.querySelector("[data-action=add-to-cart]")).toBeNull();
+    const btn = mount.querySelector(".pumper-cta--atc") as HTMLButtonElement;
+    expect(btn).not.toBeNull();
+    btn.click();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(f).toHaveBeenCalled();
+    expect(f.mock.calls[0]![0]).toBe("/cart/add.js");
+  });
+
+  it("renders a Buy-now button that redirects to /checkout", async () => {
+    const f = stubCartAdd();
+    const q: QbConfig = { ...QB, showBuyNow: true };
+    renderQb(mount, q, CONFIG);
+    const btn = mount.querySelector(".pumper-cta--buynow") as HTMLButtonElement;
+    expect(btn).not.toBeNull();
+    btn.click();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(f).toHaveBeenCalled();
+    expect(window.location.href).toBe("/checkout");
+  });
+
+  it("renders no widget buttons when both toggles are off", () => {
+    const q: QbConfig = { ...QB, showAddToCart: false, showBuyNow: false };
+    renderQb(mount, q, CONFIG);
     expect(mount.querySelector(".pumper-cta")).toBeNull();
   });
 
