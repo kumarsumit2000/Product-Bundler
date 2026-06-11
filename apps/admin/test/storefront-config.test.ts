@@ -179,6 +179,34 @@ describe("buildStorefrontConfig", () => {
     expect(cfg.quantityBreaks[0]!.tiers[0]!.freeShipping).toBe(true);
   });
 
+  it("serializes per-tier soldOut + priceRounding", async () => {
+    db.insert(schema.quantityBreaks).values({
+      id: "q1", shopId: SHOP, name: "Q",
+      status: "active",
+      productId: "gid://shopify/Product/1",
+      collectionId: null,
+      tiers: [
+        { qty: 1, discountType: "percentage", discountValue: 0, label: "Buy 1", isMostPopular: false, soldOut: true, priceRounding: 99 },
+      ],
+      combinable: false, styleOverrides: null,
+      createdAt: new Date(), updatedAt: new Date(),
+    }).run();
+
+    const admin = mockAdmin({
+      data: { nodes: [{
+        __typename: "Product",
+        id: "gid://shopify/Product/1",
+        title: "Snowboard",
+        featuredImage: { url: "img" },
+        variants: { nodes: [{ id: "gid://shopify/ProductVariant/1", title: "Default", availableForSale: true, price: "100.00" }] },
+      }]},
+    });
+
+    const cfg = await buildStorefrontConfig(db, admin, SHOP);
+    expect(cfg.quantityBreaks[0]!.tiers[0]!.soldOut).toBe(true);
+    expect(cfg.quantityBreaks[0]!.tiers[0]!.priceRounding).toBe(99);
+  });
+
   it("emits textOverrides on bundles and quantityBreaks", async () => {
     const bundleId = crypto.randomUUID();
     const qbId = crypto.randomUUID();

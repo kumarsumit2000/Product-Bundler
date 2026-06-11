@@ -46,6 +46,7 @@ interface SyncConfig {
       label: string;
       isMostPopular: boolean;
       freeShipping?: boolean;
+      priceRounding?: number | null;
       freeGiftVariantId?: string | null;
       bogo?: {
         mode: string;
@@ -103,6 +104,7 @@ export async function syncShopConfig(
         label: tr.label,
         isMostPopular: tr.isMostPopular,
         freeShipping: tr.freeShipping ?? false,
+        priceRounding: tr.priceRounding ?? null,
         freeGiftVariantId: tr.freeGiftVariantId ?? null,
         bogo: tr.bogo ?? null,
       })),

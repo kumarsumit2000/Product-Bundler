@@ -306,6 +306,56 @@ describe("syncShopConfig", () => {
     expect(syncedTier.image).toBeUndefined();
   });
 
+  it("syncs priceRounding but omits soldOut from QB tier metafield", async () => {
+    await qbRepo.create(setup.db, SHOP, {
+      name: "Q",
+      status: "active",
+      productId: "gid://shopify/Product/1",
+      collectionId: null,
+      tiers: [
+        {
+          qty: 2,
+          discountType: "percentage",
+          discountValue: 20,
+          label: "20% off",
+          isMostPopular: false,
+          soldOut: true,
+          priceRounding: 99,
+        },
+      ],
+      combinable: false,
+      bindToCurrentProduct: false,
+      sortOrder: 0,
+      activeStartAt: null,
+      activeEndAt: null,
+      styleOverrides: null,
+      textOverrides: null,
+      headline: null,
+      ctaLabel: null,
+      visibility: "specific",
+      visibilityProductIds: [],
+      visibilityCollectionIds: [],
+      checkboxUpsellsEnabled: false,
+      checkboxUpsells: [],
+      linkedCountdownId: null,
+      linkedProgressiveGiftId: null,
+      stickyAtc: null,
+      addonsOrder: null,
+      freeGiftVariantId: null,
+      freeGiftProductId: null,
+      subscription: null,
+      freeGiftMinQty: 1,
+    });
+    const { admin, calls } = makeAdmin();
+    await syncShopConfig(setup.db, admin, SHOP);
+    const setCall = calls.find((c) => c.query.includes("metafieldsSet"));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const value = JSON.parse((setCall!.variables as any).metafields[0]!.value);
+    const syncedTier = value.quantityBreaks[0].tiers[0];
+    expect(syncedTier.priceRounding).toBe(99);
+    expect(syncedTier.soldOut).toBeUndefined();
+  });
+
   it("throws when JSON exceeds 50KB", async () => {
     await bundleRepo.create(setup.db, SHOP, {
       name: "Big",
