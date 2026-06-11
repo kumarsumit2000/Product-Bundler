@@ -49,6 +49,11 @@ export type StyleOverrides = Partial<{
   // Badge
   badgeBg: string;
   badgeText: string;
+  // CTA buttons
+  ctaBg: string;
+  ctaText: string;
+  buyNowBg: string;
+  buyNowText: string;
   // Free gift
   freeGiftBg: string;
   freeGiftText: string;
