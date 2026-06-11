@@ -11,6 +11,7 @@ import {
   Text,
   Popover,
   ActionList,
+  Select,
 } from "@shopify/polaris";
 import { insertToken, QB_TEXT_TOKENS } from "~/lib/qb-text-tokens";
 import { useEffect, useState } from "react";
@@ -42,6 +43,7 @@ export type QbFormValues = StylePanelValues & {
   product: PickedProduct[];
   tiers: TierFormValue[];
   combinable: boolean;
+  afterAddToCart: string;
   status: Status;
   headline: string;
   ctaLabel: string;
@@ -90,6 +92,7 @@ const DEFAULTS: QbFormValues = {
   product: [],
   tiers: [{ qty: 1, discountType: "percentage", discountValue: 0, label: "Buy 1", isMostPopular: false }],
   combinable: false,
+  afterAddToCart: "drawer",
   status: "draft",
   headline: "",
   ctaLabel: "",
@@ -226,6 +229,7 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange, pro
       />
       <input type="hidden" name="status" value={values.status} />
       <input type="hidden" name="combinable" value={values.combinable ? "on" : ""} />
+      <input type="hidden" name="afterAddToCart" value={values.afterAddToCart} />
       <input type="hidden" name="bindToCurrentProduct" value={values.bindToCurrentProduct ? "on" : ""} />
       <input type="hidden" name="sortOrder" value={values.sortOrder} />
       <input type="hidden" name="activeStartAt" value={values.activeStartAt} />
@@ -514,6 +518,16 @@ export function QbForm({ initialValues, errors, submitLabel, onValuesChange, pro
               label="Combinable with other discounts"
               checked={values.combinable}
               onChange={(c) => update("combinable", c)}
+            />
+            <Select
+              label="After add to cart"
+              options={[
+                { label: "Open cart drawer", value: "drawer" },
+                { label: "Go to cart", value: "cart" },
+                { label: "Go to checkout", value: "checkout" },
+              ]}
+              value={values.afterAddToCart}
+              onChange={(v) => update("afterAddToCart", v)}
             />
             <TextField
               label="Sort order"
