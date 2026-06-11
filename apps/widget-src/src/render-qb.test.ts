@@ -25,14 +25,26 @@ const QB: QbConfig = {
 
 describe("renderQb", () => {
   let mount: HTMLElement;
-  beforeEach(() => { mount = document.createElement("div"); document.body.appendChild(mount); });
+  beforeEach(() => { document.body.innerHTML = ""; mount = document.createElement("div"); document.body.appendChild(mount); });
 
-  it("renders all tiers, marks MOST POPULAR, and selects most-popular tier by default", () => {
+  it("renders all tiers, marks MOST POPULAR, and selects first tier by default", () => {
     renderQb(mount, QB, CONFIG);
     const rows = mount.querySelectorAll(".pumper-qb-tier");
     expect(rows.length).toBe(3);
     expect(mount.querySelector(".pumper-qb-popular-badge")?.textContent ?? "").toContain("MOST POPULAR");
-    expect(mount.querySelector(".pumper-qb-tier--selected")?.getAttribute("data-tier-index")).toBe("1");
+    expect(mount.querySelector(".pumper-qb-tier--selected")?.getAttribute("data-tier-index")).toBe("0");
+  });
+
+  it("preselects the first available tier (ignores most-popular)", () => {
+    renderQb(mount, QB, CONFIG);
+    const tiers = [...mount.querySelectorAll(".pumper-qb-tier")];
+    expect(tiers[0]!.className).toContain("pumper-qb-tier--selected");
+  });
+
+  it("does not render its own add-to-cart button", () => {
+    renderQb(mount, QB, CONFIG);
+    expect(mount.querySelector("[data-action=add-to-cart]")).toBeNull();
+    expect(mount.querySelector(".pumper-cta")).toBeNull();
   });
 
   it("renders a radio indicator on each tier", () => {
@@ -68,8 +80,6 @@ describe("renderQb", () => {
     const tier3 = mount.querySelector("[data-tier-index='2']") as HTMLElement;
     tier3.click();
     expect(mount.querySelector(".pumper-qb-tier--selected")?.getAttribute("data-tier-index")).toBe("2");
-    const cta = mount.querySelector("[data-action=add-to-cart]");
-    expect(cta?.textContent ?? "").toMatch(/3/);
   });
 
   it("disables unavailable tier rows", () => {
@@ -311,12 +321,18 @@ describe("renderQb", () => {
       return Object.keys(items).sort((a, b) => Number(a) - Number(b)).map((k) => items[k]!);
     }
 
+    // Both tiers carry an extra product so the theme add-to-cart path
+    // intercepts the native submit (hasExtras() === true) and posts our
+    // multi-line /cart/add.js payload — letting us assert items[0] (the main
+    // variant + selling_plan) exactly as the old widget CTA did.
     const SUB_QB: QbConfig = {
       ...QB,
       productVariants: [{ variantId: "v1", title: "Default", available: true, priceCents: 2495 }],
       tiers: [
-        { qty: 1, discountType: "percentage", discountValue: 0, label: "Buy 1", isMostPopular: true, available: true },
-        { qty: 2, discountType: "percentage", discountValue: 10, label: "10% off", isMostPopular: false, available: true },
+        { qty: 1, discountType: "percentage", discountValue: 0, label: "Buy 1", isMostPopular: true, available: true,
+          extraProducts: [{ productId: "ep1", variantId: "ex1", qty: 1, title: "Extra", image: null }] },
+        { qty: 2, discountType: "percentage", discountValue: 10, label: "10% off", isMostPopular: false, available: true,
+          extraProducts: [{ productId: "ep1", variantId: "ex1", qty: 1, title: "Extra", image: null }] },
       ],
       subscription: {
         enabled: true, heading: "Purchase Options", title: "Subscribe & Save",
@@ -350,13 +366,26 @@ describe("renderQb", () => {
       expect(mount.querySelector('[data-po-mode="subscribe"]')).not.toBeNull();
     });
 
+    // Wrap `mount` inside a theme product form so renderQb binds the native
+    // add-to-cart path. Submitting the form drives the same /cart/add.js call
+    // the old widget CTA used to make.
+    function wrapInProductForm(): HTMLFormElement {
+      const form = document.createElement("form");
+      form.setAttribute("action", "/cart/add");
+      form.innerHTML = '<input name="quantity" value="1"><button type="submit" name="add"></button>';
+      document.body.appendChild(form);
+      form.appendChild(mount);
+      return form;
+    }
+
     it("adds the line with items[0][selling_plan] when subscribe is chosen", async () => {
       setPumperConfig();
       const f = mockFetch();
+      const form = wrapInProductForm();
       renderQb(mount, SUB_QB, CONFIG);
 
       (mount.querySelector('[data-po-mode="subscribe"]') as HTMLElement).click();
-      (mount.querySelector("[data-action=add-to-cart]") as HTMLElement).click();
+      form.dispatchEvent(new Event("submit", { cancelable: true }));
       await Promise.resolve();
       await Promise.resolve();
 
@@ -369,9 +398,10 @@ describe("renderQb", () => {
     it("posts no selling_plan for one-time (default) selection", async () => {
       setPumperConfig();
       const f = mockFetch();
+      const form = wrapInProductForm();
       renderQb(mount, SUB_QB, CONFIG);
 
-      (mount.querySelector("[data-action=add-to-cart]") as HTMLElement).click();
+      form.dispatchEvent(new Event("submit", { cancelable: true }));
       await Promise.resolve();
       await Promise.resolve();
 
@@ -383,6 +413,7 @@ describe("renderQb", () => {
     it("persists the subscribe choice across a tier switch", async () => {
       setPumperConfig();
       const f = mockFetch();
+      const form = wrapInProductForm();
       renderQb(mount, SUB_QB, CONFIG);
 
       (mount.querySelector('[data-po-mode="subscribe"]') as HTMLElement).click();
@@ -390,7 +421,7 @@ describe("renderQb", () => {
       // After re-render the subscribe row should still be selected.
       expect(mount.querySelector('[data-po-mode="subscribe"]')?.getAttribute("aria-selected")).toBe("true");
 
-      (mount.querySelector("[data-action=add-to-cart]") as HTMLElement).click();
+      form.dispatchEvent(new Event("submit", { cancelable: true }));
       await Promise.resolve();
       await Promise.resolve();
       const init = f.mock.calls[0]![1] as RequestInit;

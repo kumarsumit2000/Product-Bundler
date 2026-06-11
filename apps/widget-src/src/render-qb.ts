@@ -6,6 +6,7 @@ import type { PurchaseOptions, PurchaseSelection } from "./render-purchase-optio
 import { emit } from "./analytics";
 import { formatMoney } from "./format";
 import { roundCharmCents } from "./round-charm";
+import { findProductForm, syncThemeQuantity, bindThemeAddToCart } from "./theme-atc";
 import { t, tWith } from "./i18n";
 
 const INERT_PURCHASE_OPTIONS: PurchaseOptions = {
@@ -105,9 +106,14 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
 
   // A tier is unavailable when it's out of stock OR manually marked sold out.
   const tierUnavailable = (tr: QbTier) => tr.soldOut === true || tr.available === false;
-  const popularIndex = visibleTiers.findIndex((tr) => tr.isMostPopular && !tierUnavailable(tr));
-  let selectedIndex = popularIndex >= 0 ? popularIndex : visibleTiers.findIndex((tr) => !tierUnavailable(tr));
+  let selectedIndex = visibleTiers.findIndex((tr) => !tierUnavailable(tr));
   if (selectedIndex < 0) selectedIndex = 0;
+
+  // Theme add-to-cart integration: in the live storefront we drive the theme's
+  // native product form instead of rendering our own CTA. In the admin preview
+  // iframe there's no theme form, so we skip it.
+  const isPreview = typeof window !== "undefined" && !!(window as unknown as { _pumperPreview?: boolean })._pumperPreview;
+  const themeForm = isPreview ? null : findProductForm(mount);
 
   const heading = qb.headline || config.settings.qbHeadline || t("qb.heading");
 
@@ -241,15 +247,96 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
     `;
   }).join("");
 
-  const renderCta = () => {
-    const tr = visibleTiers[selectedIndex]!;
-    const unitCents = tierUnitCents(tr, variant.priceCents);
-    const savings = Math.max(0, (variant.priceCents - unitCents) * tr.qty);
-    const label = savings > 0
-      ? (qb.ctaLabel || t("qb.ctaSavings", { qty: tr.qty, savings: formatMoney(savings, config.settings.currency, config.settings.locale) }))
-      : (qb.ctaLabel || t("qb.cta", { qty: tr.qty }));
-    return `<button class="pumper-cta" data-action="add-to-cart" ${tr.available ? "" : "disabled"}>${escapeHtml(label)}</button>`;
+  // Build the exact cart lines for a given tier: main product variant +
+  // free gift + QB-level free gift + BOGO bonus + tier extras. This is the
+  // single source of truth for the cart payload, shared by the theme-driven
+  // add-to-cart path (extras interception) and the hasExtras check.
+  const buildTierLines = (tr: (typeof visibleTiers)[number]): CartLineInput[] => {
+    const poSel = purchaseOptions.getSelection();
+    const lines: CartLineInput[] = [
+      { variantId: variant.variantId, qty: tr.qty, bundleId: qb.id, sellingPlanId: poSel.sellingPlanId ?? undefined },
+    ];
+
+    if (tr.freeGiftVariantId && tr.freeGiftAvailable !== false) {
+      lines.push({
+        variantId: tr.freeGiftVariantId,
+        qty: 1,
+        bundleId: qb.id,
+        giftBundleId: qb.id,
+      });
+    }
+
+    // QB-level free gift — only when the selected tier meets the min qty
+    // threshold ("Buy N or more to unlock the gift").
+    const qbGiftTag = `${qb.id}:gift`;
+    const qbGiftMinQty = qb.freeGiftMinQty ?? 1;
+    const qbGiftUnlocked = tr.qty >= qbGiftMinQty;
+    if (qbGiftUnlocked && qb.freeGiftVariantId && qb.freeGiftAvailable) {
+      lines.push({
+        variantId: qb.freeGiftVariantId,
+        qty: 1,
+        bundleId: qb.id,
+        giftBundleId: qbGiftTag,
+      });
+    } else if (qbGiftUnlocked && qb.freeGiftProductId && (qb.freeGiftProductVariants?.length ?? 0) > 0) {
+      const giftVariants = qb.freeGiftProductVariants ?? [];
+      const giftSelect = mount.querySelector<HTMLSelectElement>("[data-pumper-qb-gift-variant]");
+      const chosenGift = giftSelect?.value
+        || giftVariants.find((v) => v.available)?.variantId
+        || giftVariants[0]?.variantId;
+      if (chosenGift) {
+        lines.push({
+          variantId: chosenGift,
+          qty: 1,
+          bundleId: qb.id,
+          giftBundleId: qbGiftTag,
+        });
+      }
+    }
+
+    if (tr.bogo) {
+      if (tr.bogo.mode === "add_same") {
+        // Bonus = N more of the SAME variant the customer is buying.
+        // targetVariantId is optional; fall back to the QB's main variant.
+        const target = tr.bogo.targetVariantId ?? variant.variantId;
+        lines.push({
+          variantId: target,
+          qty: tr.bogo.bonusQty,
+          bundleId: qb.id,
+          giftBundleId: qb.id,
+        });
+      } else if (
+        tr.bogo.mode === "add_different"
+        && tr.bogo.targetVariantId
+        && tr.bogo.targetAvailable !== false
+      ) {
+        lines.push({
+          variantId: tr.bogo.targetVariantId,
+          qty: tr.bogo.bonusQty,
+          bundleId: qb.id,
+          giftBundleId: qb.id,
+        });
+      }
+      // bogo.mode === "nth_free" → no extra line; Discount Function handles the math.
+    }
+
+    // Pack QB extras — tier-attached bundled products.
+    if (tr.extraProducts) {
+      for (const ep of tr.extraProducts) {
+        if (!ep.variantId) continue;
+        lines.push({
+          variantId: ep.variantId,
+          qty: ep.qty,
+          bundleId: qb.id,
+        });
+      }
+    }
+
+    return lines;
   };
+
+  const tierHasExtraLines = (tr: (typeof visibleTiers)[number]): boolean =>
+    buildTierLines(tr).length > 1;
 
   const renderUpsells = () => {
     if (!qb.checkboxUpsellsEnabled || !qb.checkboxUpsells?.length) return "";
@@ -356,7 +443,6 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
         ${renderQbGiftRow()}
         ${renderUpsells()}
         ${subEnabled ? `<div class="pumper-qb-po"></div>` : ""}
-        ${renderCta()}
       </section>
     `;
     mountPurchaseOptions();
@@ -372,110 +458,22 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
         selectedIndex = idx;
         // Persist the purchase-options choice across the re-render below.
         savedSelection = purchaseOptions.getSelection();
+        syncThemeQuantity(themeForm, visibleTiers[idx]!.qty);
         emit("widget_click", { widgetType: "qb", widgetId: qb.id, productId: qb.productId, tierQty: visibleTiers[idx]!.qty });
         renderAll();
       });
     });
-
-    const cta = mount.querySelector<HTMLButtonElement>("[data-action=add-to-cart]");
-    if (cta) {
-      cta.addEventListener("click", async () => {
-        if (!variant) return; // narrowing for async closure (variant is checked at top of renderQb)
-        const tr = visibleTiers[selectedIndex]!;
-        cta.disabled = true;
-        const unitCents = tierUnitCents(tr, variant.priceCents);
-
-        const poSel = purchaseOptions.getSelection();
-        const lines: CartLineInput[] = [
-          { variantId: variant.variantId, qty: tr.qty, bundleId: qb.id, sellingPlanId: poSel.sellingPlanId ?? undefined },
-        ];
-
-        if (tr.freeGiftVariantId && tr.freeGiftAvailable !== false) {
-          lines.push({
-            variantId: tr.freeGiftVariantId,
-            qty: 1,
-            bundleId: qb.id,
-            giftBundleId: qb.id,
-          });
-        }
-
-        // QB-level free gift — only when the selected tier meets the min qty
-        // threshold ("Buy N or more to unlock the gift").
-        const qbGiftTag = `${qb.id}:gift`;
-        const qbGiftMinQty = qb.freeGiftMinQty ?? 1;
-        const qbGiftUnlocked = tr.qty >= qbGiftMinQty;
-        if (qbGiftUnlocked && qb.freeGiftVariantId && qb.freeGiftAvailable) {
-          lines.push({
-            variantId: qb.freeGiftVariantId,
-            qty: 1,
-            bundleId: qb.id,
-            giftBundleId: qbGiftTag,
-          });
-        } else if (qbGiftUnlocked && qb.freeGiftProductId && (qb.freeGiftProductVariants?.length ?? 0) > 0) {
-          const giftVariants = qb.freeGiftProductVariants ?? [];
-          const giftSelect = mount.querySelector<HTMLSelectElement>("[data-pumper-qb-gift-variant]");
-          const chosenGift = giftSelect?.value
-            || giftVariants.find((v) => v.available)?.variantId
-            || giftVariants[0]?.variantId;
-          if (chosenGift) {
-            lines.push({
-              variantId: chosenGift,
-              qty: 1,
-              bundleId: qb.id,
-              giftBundleId: qbGiftTag,
-            });
-          }
-        }
-
-        if (tr.bogo) {
-          if (tr.bogo.mode === "add_same") {
-            // Bonus = N more of the SAME variant the customer is buying.
-            // targetVariantId is optional; fall back to the QB's main variant.
-            const target = tr.bogo.targetVariantId ?? variant.variantId;
-            lines.push({
-              variantId: target,
-              qty: tr.bogo.bonusQty,
-              bundleId: qb.id,
-              giftBundleId: qb.id,
-            });
-          } else if (
-            tr.bogo.mode === "add_different"
-            && tr.bogo.targetVariantId
-            && tr.bogo.targetAvailable !== false
-          ) {
-            lines.push({
-              variantId: tr.bogo.targetVariantId,
-              qty: tr.bogo.bonusQty,
-              bundleId: qb.id,
-              giftBundleId: qb.id,
-            });
-          }
-          // bogo.mode === "nth_free" → no extra line; Discount Function handles the math.
-        }
-
-        // Pack QB extras — tier-attached bundled products.
-        if (tr.extraProducts) {
-          for (const ep of tr.extraProducts) {
-            if (!ep.variantId) continue;
-            lines.push({
-              variantId: ep.variantId,
-              qty: ep.qty,
-              bundleId: qb.id,
-            });
-          }
-        }
-
-        const result = await addToCart(qb.id, lines, { afterAddToCart: qb.afterAddToCart });
-        if (!result.ok) {
-          cta.disabled = false;
-          cta.textContent = t("addToCart.error");
-        } else {
-          emit("add_to_cart", { widgetType: "qb", widgetId: qb.id, valueCents: unitCents * tr.qty });
-        }
-      });
-    }
   }
 
   emit("widget_impression", { widgetType: "qb", widgetId: qb.id, productId: qb.productId });
   renderAll();
+
+  syncThemeQuantity(themeForm, visibleTiers[selectedIndex]?.qty ?? 1);
+  if (themeForm) {
+    bindThemeAddToCart(themeForm, {
+      hasExtras: () => tierHasExtraLines(visibleTiers[selectedIndex]!),
+      addLines: () =>
+        addToCart(qb.id, buildTierLines(visibleTiers[selectedIndex]!), { afterAddToCart: qb.afterAddToCart }).then(() => {}),
+    });
+  }
 }
