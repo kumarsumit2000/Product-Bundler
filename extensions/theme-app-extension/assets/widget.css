@@ -66,11 +66,27 @@
 .pumper-qb-tier-img { width: 40px; height: 40px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
 .pumper-qb-freeship { background: #e7f5ec; color: #1a7f43; font-size: 12px; padding: 3px 6px; border-radius: 4px; font-weight: 600; }
 .pumper-qb-soldout { background: #f1f1f1; color: #6b7280; font-size: 12px; padding: 3px 6px; border-radius: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: .3px; }
-.pumper-qb-tier-meta { flex: 1; }
-.pumper-qb-tier-title { font-size: 13px; font-weight: 600; }
 .pumper-qb-tier-sub { font-size: 11px; color: #888; }
 .pumper-qb-savings { background: #fde7ea; color: var(--pumper-primary, #7B1E2A); font-size: var(--pumper-savings-fs, 11px); padding: 3px 6px; border-radius: 4px; font-weight: 600; }
 .pumper-qb-popular-badge { position: absolute; top: -8px; right: 10px; background: var(--pumper-primary, #7B1E2A); color: #fff; font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 700; letter-spacing: .5px; }
+
+/* QB radio-card redesign */
+.pumper-qb-radio { width: 18px; height: 18px; flex-shrink: 0; border: 2px solid var(--pumper-border, #cbd5e1); border-radius: 50%; position: relative; box-sizing: border-box; }
+.pumper-qb-tier--selected .pumper-qb-radio { border-color: var(--pumper-primary, #7B1E2A); }
+.pumper-qb-tier--selected .pumper-qb-radio::after { content: ""; position: absolute; inset: 3px; border-radius: 50%; background: var(--pumper-primary, #7B1E2A); }
+.pumper-qb-tier-meta { flex: 1; min-width: 0; }
+.pumper-qb-tier-title { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.pumper-qb-tier-badge { display: inline-block; margin-left: 4px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--pumper-primary, #7B1E2A) 35%, #fff); color: var(--pumper-primary, #7B1E2A); white-space: nowrap; }
+.pumper-qb-tier-subbadges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.pumper-qb-tier-price { margin-left: auto; text-align: right; flex-shrink: 0; }
+.pumper-qb-price-total { font-size: 16px; font-weight: 700; color: var(--pumper-price-color, #1a1a1a); }
+.pumper-qb-price-strike { display: block; font-size: 12px; text-decoration: line-through; color: #9aa0a6; }
+.pumper-qb-tier--discount { background: var(--pumper-tier-bg, #fde7ea); border-color: color-mix(in srgb, var(--pumper-primary, #7B1E2A) 30%, #fff); }
+.pumper-qb-heading { display: flex; align-items: center; justify-content: center; gap: 12px; text-align: center; }
+.pumper-qb-heading::before, .pumper-qb-heading::after { content: ""; flex: 1; height: 1px; background: var(--pumper-border, #e3e3e3); }
+.pumper-qb-tiers--horizontal .pumper-qb-tier-row { flex-wrap: wrap; }
+/* Selected state must win over --discount: keep this AFTER the --discount rule. */
+.pumper-qb-tier--selected { background: var(--pumper-selected-bg, #fff); border: 2px solid var(--pumper-primary, #7B1E2A); }
 
 /* Mix & Match */
 .pumper-mm-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
@@ -135,6 +151,12 @@
   background: var(--pumper-tier-bg, var(--pumper-cards-bg, #fff));
   border-color: var(--pumper-border, #e3e3e3);
 }
+/* Discounted tiers stay tinted even though the base .pumper-qb-tier rule
+   above also sets a background — this re-asserts the tint after it. */
+.pumper-qb-tier--discount {
+  background: var(--pumper-tier-bg, #fde7ea);
+  border-color: color-mix(in srgb, var(--pumper-primary, #7B1E2A) 30%, #fff);
+}
 
 /* Block / section title (the heading at the top of the widget) */
 .pumper-bundle-heading,
@@ -198,9 +220,12 @@
   color: var(--pumper-fg-sel-text, var(--pumper-fg-text, #7c3a00));
 }
 
-/* Selected QB tier surface uses selectedBg if set */
+/* Selected QB tier surface uses selectedBg if set. This is the LAST
+   --selected rule in the file, so its background + border win over the
+   --discount tint above for a tier that is both selected and discounted. */
 .pumper-qb-tier--selected {
   background: var(--pumper-selected-bg, var(--pumper-cards-bg, #fff));
+  border: 2px solid var(--pumper-primary, #7B1E2A);
 }
 
 /* Spacing — gap between tier rows / bundle rows */

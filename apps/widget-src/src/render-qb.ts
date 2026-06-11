@@ -176,10 +176,7 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
     const popularBadge = tr.isMostPopular && !popularHidden
       ? `<span class="pumper-qb-popular-badge">${tWith(qb.textOverrides, "qb.mostPopular")}</span>`
       : "";
-    const savingsHidden = qb.textOverrides?.["qb.savingsBadge.hidden"] === "1";
-    const savingsBadge = savings > 0 && !savingsHidden
-      ? `<span class="pumper-qb-savings">${tWith(qb.textOverrides, "qb.savingsBadge", { savings: savingsFormatted, ...tierVars })}</span>`
-      : "";
+    const badgeText = savings > 0 ? (tr.label.trim() || `${discountPercent}% OFF`) : t("qb.standardPrice");
     const tierImage = tr.image
       ? `<img class="pumper-qb-tier-img" src="${escapeHtml(tr.image)}" alt="" loading="lazy" />`
       : "";
@@ -192,6 +189,7 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
     const classes = [
       "pumper-qb-tier",
       i === selectedIndex ? "pumper-qb-tier--selected" : "",
+      savings > 0 ? "pumper-qb-tier--discount" : "",
       unavailable ? "pumper-qb-tier--unavailable" : "",
     ].filter(Boolean).join(" ");
 
@@ -225,18 +223,16 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
       <div class="${classes}" data-tier-index="${i}" data-action="select-tier" role="button" tabindex="0">
         ${popularBadge}
         <div class="pumper-qb-tier-row">
+          <span class="pumper-qb-radio" aria-hidden="true"></span>
           ${tierImage}
           <div class="pumper-qb-tier-meta">
-            <div class="pumper-qb-tier-title">${escapeHtml(tWith(qb.textOverrides, "qb.tierLabel", tierVars))}${tr.discountValue > 0 ? ` — ${escapeHtml(tr.label)}` : ""}</div>
-            <div class="pumper-qb-tier-sub">
-              ${tr.discountValue > 0
-                ? `<span class="pumper-strike">${formatMoney(variant.priceCents, config.settings.currency, config.settings.locale)}</span> `
-                : ""}<strong>${formatMoney(unitCents, config.settings.currency, config.settings.locale)}</strong> each · ${formatMoney(totalCents, config.settings.currency, config.settings.locale)} total
-            </div>
+            <div class="pumper-qb-tier-title">${escapeHtml(tWith(qb.textOverrides, "qb.tierLabel", tierVars))}<span class="pumper-qb-tier-badge">${escapeHtml(badgeText)}</span></div>
+            ${soldOutLabel || freeShipBadge ? `<div class="pumper-qb-tier-subbadges">${soldOutLabel}${freeShipBadge}</div>` : ""}
           </div>
-          ${soldOutLabel}
-          ${freeShipBadge}
-          ${savingsBadge}
+          <div class="pumper-qb-tier-price">
+            <span class="pumper-qb-price-total">${formatMoney(totalCents, config.settings.currency, config.settings.locale)}</span>
+            ${savings > 0 ? `<span class="pumper-qb-price-strike">${formatMoney(baseTotal, config.settings.currency, config.settings.locale)}</span>` : ""}
+          </div>
         </div>
         ${extrasRow}
         ${giftCallout}

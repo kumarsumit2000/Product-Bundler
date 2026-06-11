@@ -35,6 +35,34 @@ describe("renderQb", () => {
     expect(mount.querySelector(".pumper-qb-tier--selected")?.getAttribute("data-tier-index")).toBe("1");
   });
 
+  it("renders a radio indicator on each tier", () => {
+    renderQb(mount, QB, CONFIG);
+    const radios = mount.querySelectorAll(".pumper-qb-radio");
+    expect(radios.length).toBe(mount.querySelectorAll(".pumper-qb-tier").length);
+  });
+
+  it("marks a discounted tier with --discount, a strike price, and a label badge", () => {
+    renderQb(mount, QB, CONFIG);
+    const tier = mount.querySelector(".pumper-qb-tier--discount")!;
+    expect(tier).not.toBeNull();
+    expect(tier.querySelector(".pumper-qb-price-strike")).not.toBeNull();
+    expect(tier.querySelector(".pumper-qb-tier-badge")!.textContent).toContain("10% off");
+  });
+
+  it("shows a Standard Price badge on the base (no-discount) tier", () => {
+    renderQb(mount, QB, CONFIG);
+    const tiers = [...mount.querySelectorAll(".pumper-qb-tier")];
+    const base = tiers.find((t) => !t.className.includes("pumper-qb-tier--discount"))!;
+    expect(base.querySelector(".pumper-qb-tier-badge")!.textContent).toContain("Standard Price");
+  });
+
+  it("shows the tier total in .pumper-qb-price-total", () => {
+    renderQb(mount, QB, CONFIG);
+    const totals = mount.querySelectorAll(".pumper-qb-price-total");
+    expect(totals.length).toBeGreaterThan(0);
+    expect(totals[0]!.textContent).toMatch(/\d/);
+  });
+
   it("clicking another tier re-renders with that tier selected", () => {
     renderQb(mount, QB, CONFIG);
     const tier3 = mount.querySelector("[data-tier-index='2']") as HTMLElement;
@@ -221,25 +249,26 @@ describe("renderQb", () => {
     expect(el.innerHTML).toContain("MOST POPULAR");
   });
 
-  it("interpolates {DiscountPercentage} and {DiscountAmountTotal} in a savings override", () => {
+  it("shows the tier label in the discount badge", () => {
     const q: QbConfig = {
       ...QB,
       tiers: [{ qty: 2, discountType: "percentage", discountValue: 20, label: "20% off", isMostPopular: false, available: true, freeGiftVariantId: null, freeGiftAvailable: null, bogo: null }],
-      textOverrides: { "qb.savingsBadge": "{DiscountPercentage}% off — save {DiscountAmountTotal}" },
+      textOverrides: null,
     };
     renderQb(mount, q, CONFIG);
-    const badge = mount.querySelector(".pumper-qb-savings")!;
+    const badge = mount.querySelector(".pumper-qb-tier--discount .pumper-qb-tier-badge")!;
     expect(badge.textContent).toContain("20% off");
   });
 
-  it("hides the savings badge when qb.savingsBadge.hidden is set", () => {
+  it("falls back to the computed percent when a discounted tier has a blank label", () => {
     const q: QbConfig = {
       ...QB,
-      tiers: [{ qty: 2, discountType: "percentage", discountValue: 20, label: "20% off", isMostPopular: false, available: true, freeGiftVariantId: null, freeGiftAvailable: null, bogo: null }],
-      textOverrides: { "qb.savingsBadge.hidden": "1" },
+      tiers: [{ qty: 2, discountType: "percentage", discountValue: 20, label: "  ", isMostPopular: false, available: true, freeGiftVariantId: null, freeGiftAvailable: null, bogo: null }],
+      textOverrides: null,
     };
     renderQb(mount, q, CONFIG);
-    expect(mount.querySelector(".pumper-qb-savings")).toBeNull();
+    const badge = mount.querySelector(".pumper-qb-tier--discount .pumper-qb-tier-badge")!;
+    expect(badge.textContent).toContain("20% OFF");
   });
 
   it("hides the most-popular badge when qb.mostPopular.hidden is set", () => {
