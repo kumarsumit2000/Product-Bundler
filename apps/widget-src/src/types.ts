@@ -148,6 +148,8 @@ export type QbTier = {
   enabled?: boolean;
   image?: string;          // tier image URL (display only)
   freeShipping?: boolean;  // grant free shipping when this tier is the active tier
+  soldOut?: boolean;        // manual "this tier is unavailable"
+  priceRounding?: number;   // charm ending in cents (99 | 95 | 0); absent = no rounding
   available: boolean;
   freeGiftVariantId?: string | null;
   freeGiftVariantTitle?: string | null;

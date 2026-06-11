@@ -15,6 +15,8 @@ export type TierFormValue = {
   enabled?: boolean;
   image?: string;
   freeShipping?: boolean;
+  soldOut?: boolean;
+  priceRounding?: number;
   freeGiftVariant?: PickedVariant | null;
   bogoMode?: "" | "add_same" | "add_different" | "nth_free";
   bogoTargetVariant?: PickedVariant | null;
@@ -54,6 +56,8 @@ const DEFAULT_TIER: TierFormValue = {
   enabled: true,
   image: undefined,
   freeShipping: false,
+  soldOut: false,
+  priceRounding: undefined,
   freeGiftVariant: null,
   bogoMode: "",
   bogoTargetVariant: null,

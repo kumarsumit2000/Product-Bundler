@@ -39,6 +39,8 @@ export type QbTier = {
   enabled?: boolean; // Phase A: a disabled tier is excluded from the widget. Absent = enabled.
   image?: string;          // tier image URL (display only)
   freeShipping?: boolean;  // grant free shipping when this tier is the active tier
+  soldOut?: boolean;        // manual "this tier is unavailable"
+  priceRounding?: number;   // charm ending in cents (99 | 95 | 0); absent = no rounding
   freeGiftVariantId?: string;
   bogo?: {
     mode: "add_same" | "add_different" | "nth_free";

@@ -32,4 +32,14 @@ describe("serializeTierForm", () => {
     expect(out.image).toBeUndefined();
     expect(out.freeShipping).toBeUndefined();
   });
+  it("carries soldOut and priceRounding", () => {
+    const out = serializeTierForm({ qty: 2, discountType: "percentage", discountValue: 20, label: "", isMostPopular: false, soldOut: true, priceRounding: 99 } as never);
+    expect(out.soldOut).toBe(true);
+    expect(out.priceRounding).toBe(99);
+  });
+  it("omits soldOut/priceRounding when unset/false", () => {
+    const out = serializeTierForm({ qty: 1, discountType: "percentage", discountValue: 0, label: "", isMostPopular: false } as never);
+    expect(out.soldOut).toBeUndefined();
+    expect(out.priceRounding).toBeUndefined();
+  });
 });
