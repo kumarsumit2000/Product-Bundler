@@ -24,7 +24,7 @@ export function toCartVariantId(variantId: string): string {
 export async function addToCart(
   bundleId: string,
   lines: CartLineInput[],
-  opts: { timeoutMs?: number } = {},
+  opts: { timeoutMs?: number; afterAddToCart?: "drawer" | "cart" | "checkout" } = {},
 ): Promise<AddResult> {
   // No-op in admin preview iframe: there is no real cart on this origin and
   // calling /cart/add.js would 404 then surface as "Couldn't add to cart".
@@ -87,6 +87,16 @@ export async function addToCart(
       // ignore
     }
     return { ok: false, error: errMsg };
+  }
+
+  // Explicit per-QB redirect: skip the drawer-wait entirely and navigate.
+  // Dispatch generic cart events first so cart-counter widgets update before
+  // the page navigates away.
+  if (opts.afterAddToCart === "cart" || opts.afterAddToCart === "checkout") {
+    document.dispatchEvent(new CustomEvent("cart:refresh"));
+    document.dispatchEvent(new CustomEvent("cart:update"));
+    window.location.href = opts.afterAddToCart === "checkout" ? "/checkout" : "/cart";
+    return { ok: true };
   }
 
   // Drawer-specific events / imperative API calls fire BEFORE we await drawerWillOpen.

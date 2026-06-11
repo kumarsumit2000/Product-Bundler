@@ -220,6 +220,7 @@ export type QbConfig = {
     priceCents: number;
   }> | null;
   subscription?: SubscriptionConfig | null;
+  afterAddToCart?: "drawer" | "cart" | "checkout";
 };
 
 export type Settings = {

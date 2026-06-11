@@ -130,6 +130,20 @@ describe("addToCart", () => {
     expect(window.location.href).toBe("");
   });
 
+  it("redirects to /cart when afterAddToCart is 'cart'", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("{}", { status: 200, headers: { "Content-Type": "application/json" } })));
+    Object.defineProperty(window, "location", { value: { href: "" }, writable: true });
+    await addToCart("b1", [{ variantId: "v1", qty: 1, bundleId: "b1" }], { afterAddToCart: "cart" });
+    expect(window.location.href).toBe("/cart");
+  });
+
+  it("redirects to /checkout when afterAddToCart is 'checkout'", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("{}", { status: 200, headers: { "Content-Type": "application/json" } })));
+    Object.defineProperty(window, "location", { value: { href: "" }, writable: true });
+    await addToCart("b1", [{ variantId: "v1", qty: 1, bundleId: "b1" }], { afterAddToCart: "checkout" });
+    expect(window.location.href).toBe("/checkout");
+  });
+
   it("appends items[i][selling_plan] when sellingPlanId is set", async () => {
     const calls: FormData[] = [];
     const fetchMock = vi.fn(async (_url: string, init: any) => {

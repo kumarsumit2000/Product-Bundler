@@ -469,7 +469,7 @@ export function renderQb(mount: HTMLElement, qb: QbConfig, config: WidgetConfig)
           }
         }
 
-        const result = await addToCart(qb.id, lines);
+        const result = await addToCart(qb.id, lines, { afterAddToCart: qb.afterAddToCart });
         if (!result.ok) {
           cta.disabled = false;
           cta.textContent = t("addToCart.error");
