@@ -2,6 +2,7 @@ import { BlockStack, Card, FormLayout, TextField, Text } from "@shopify/polaris"
 import { ColorSwatchPicker } from "./ColorSwatchPicker";
 import { LayoutPresetPicker } from "./LayoutPresetPicker";
 import type { StylePanelValues } from "./StylePanel";
+import { QB_PALETTES, applyPalette, mixHex } from "~/lib/qb-palettes";
 
 type Props = {
   values: StylePanelValues;
@@ -17,6 +18,29 @@ export function SimpleQbStylePanel({ values, onChange }: Props) {
       <BlockStack gap="300">
         <Text as="h2" variant="headingMd">Appearance</Text>
         <Text as="p" tone="subdued">Override layout, colors and shape. Leave any field blank to use defaults.</Text>
+        <BlockStack gap="100">
+          <Text as="span" variant="bodySm" tone="subdued">Color palettes</Text>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {QB_PALETTES.map((p) => {
+              const active = values.primaryColor === p.accent;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  aria-label={p.name}
+                  title={p.name}
+                  onClick={() => onChange(applyPalette(p.accent))}
+                  style={{
+                    width: 30, height: 30, borderRadius: 999, cursor: "pointer", padding: 0,
+                    border: active ? "2px solid #1a1a1a" : "2px solid #e5e7eb",
+                    boxShadow: active ? "0 0 0 2px #fff inset" : undefined,
+                    background: `linear-gradient(135deg, ${p.accent} 0 50%, ${mixHex(p.accent, 88)} 50% 100%)`,
+                  }}
+                />
+              );
+            })}
+          </div>
+        </BlockStack>
         <BlockStack gap="200">
           <LayoutPresetPicker
             value={values.layoutVariant}
