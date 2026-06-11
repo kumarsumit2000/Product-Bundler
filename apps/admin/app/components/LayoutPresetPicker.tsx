@@ -22,7 +22,7 @@ const gridCell: React.CSSProperties = {
 const PRESETS: Array<{ value: LayoutVariant; label: string; thumb: JSX.Element }> = [
   {
     value: "list",
-    label: "List",
+    label: "Vertical",
     thumb: (
       <>
         <span style={listRow} />
@@ -33,7 +33,7 @@ const PRESETS: Array<{ value: LayoutVariant; label: string; thumb: JSX.Element }
   },
   {
     value: "grid",
-    label: "Grid",
+    label: "Horizontal",
     thumb: (
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 4, padding: 6 }}>
         <span style={gridCell} />
